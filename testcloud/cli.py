@@ -10,13 +10,11 @@ This is the primary user entry point for testcloud
 
 import argparse
 import logging
-from time import sleep
 import os
 from . import config
 from . import image
 from . import instance
-from . import util
-from .exceptions import DomainNotFoundError, TestcloudCliError, TestcloudInstanceError
+from .exceptions import TestcloudCliError
 
 config_data = config.get_config()
 
@@ -97,7 +95,7 @@ def _create_instance(args):
         tc_instance.start(args.timeout)
 
         # find vm ip
-        vm_ip = find_vm_ip(args.name, args.connection)
+        vm_ip = tc_instance.get_ip()
 
         # Write ip to file
         tc_instance.create_ip_file(vm_ip)
@@ -341,41 +339,3 @@ def main():
     _configure_logging()
 
     args.func(args)
-
-
-def find_vm_ip(name, connection='qemu:///system'):
-    """Finds the ip of a local vm given it's name used by libvirt.
-
-    :param str name: name of the VM (as used by libvirt)
-    :param str connection: name of the libvirt connection uri
-    :returns: ip address of VM
-    :rtype: str
-    """
-
-    for _ in xrange(100):
-        vm_xml = util.get_vm_xml(name, connection)
-        if vm_xml is not None:
-            break
-
-        else:
-            sleep(.2)
-    else:
-        raise DomainNotFoundError
-
-    vm_mac = util.find_mac(vm_xml)
-    vm_mac = vm_mac[0]
-
-    #  The arp cache takes some time to populate, so this keeps looking
-    #  for the entry until it shows up.
-
-    for _ in xrange(100):
-        vm_ip = util.find_ip_from_mac(vm_mac.attrib['address'])
-
-        if vm_ip:
-            break
-
-        sleep(.2)
-    else:
-        raise TestcloudInstanceError('Could not find VM\'s ip before timeout')
-
-    return vm_ip
