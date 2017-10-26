@@ -11,6 +11,7 @@ This is the primary user entry point for testcloud
 import argparse
 import logging
 import os
+import libvirt
 from . import config
 from . import image
 from . import instance
@@ -339,3 +340,22 @@ def main():
     _configure_logging()
 
     args.func(args)
+
+
+def find_vm_ip(name, connection='qemu:///system'):
+    """Finds the ip of a local vm given its name used by libvirt.
+
+    THIS METHOD IS DEPRECATED, PLEASE USE instance.Instance.get_ip() INSTEAD
+
+    :param str name: name of the VM (as used by libvirt)
+    :param str connection: name of the libvirt connection uri
+    :returns: ip address of VM
+    :rtype: str
+    """
+
+    log.warn('cli.find_vm_ip() is deprecated, please use '
+             'instance.Instance.get_ip() instead')
+    inst = instance.Instance('fake-instance')
+    conn = libvirt.openReadOnly(connection)
+    domain = conn.lookupByName(name)
+    return inst.get_ip(domain=domain)
