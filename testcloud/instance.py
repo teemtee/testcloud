@@ -505,3 +505,46 @@ class Instance(object):
 
         log.debug('DEPRECATED: destroy() method was deprecated. Please use remove()')
         self.remove()
+
+    def get_ip(self, timeout=60):
+        '''Retrieve IP address of the instance (the first one, if there are
+        multiple).
+
+        :param int timeout: how long to wait if IP address is not yet ready
+                            (e.g. when booting), in seconds
+        :return: IP address of the instance
+        :rtype: str
+        :raises TestcloudInstanceError: when time runs out and no IP is
+                                        assigned
+        '''
+
+        dom = self._get_domain()
+        counter = 0
+        sleep_interval = 0.2
+
+        while counter <= timeout:
+            try:
+                output = dom.interfaceAddresses(
+                    libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+                # example output:
+                # {'vnet0': {'addrs': [{'addr': '192.168.11.33', 'prefix': 24, 'type': 0}],
+                #  'hwaddr': '52:54:00:54:4b:b4'}}
+                if output:
+                    addrs = [ addr['addr'] for iface in output.values()
+                              for addr in iface.get('addrs', [])
+                              if 'addr' in addr ]
+                    if addrs:
+                        return addrs[0]
+            except libvirt.libvirtError as e:
+                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                    # the domain is not yet running
+                    pass
+                else:
+                    raise e
+            counter += sleep_interval
+            time.sleep(sleep_interval)
+
+        msg = "Couldn't find IP for %s before %s second timeout" % (self.name,
+              timeout)
+        log.warn(msg)
+        raise TestcloudInstanceError(msg)
