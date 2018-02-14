@@ -132,6 +132,12 @@ runcmd:
     # identical to source image
     DISK_SIZE = 0
 
+    # Number of retries when stopping of instance fails (host is busy)
+    STOP_RETRIES = 3
+
+    # Waiting time between stop retries, in seconds
+    STOP_RETRY_WAIT = 1
+
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have
         names containing all upper case letters.

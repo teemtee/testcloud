@@ -56,3 +56,9 @@
 # Desired size, in GiB of instance disks. 0 leaves disk capacity
 # identical to source image
 #DISK_SIZE = 0
+
+# Number of retries when stopping of instance fails (host is busy)
+#STOP_RETRIES = 3
+
+# Waiting time between stop retries, in seconds
+#STOP_RETRY_WAIT = 1

@@ -448,7 +448,8 @@ class Instance(object):
     def stop(self):
         """Stop the instance
 
-        :raises TestcloudInstanceError: if the instance does not exist
+        :raises TestcloudInstanceError: if the instance does not exist or
+                                        if unable to stop the instance (host is busy)
         """
 
         log.debug("stopping instance {}.".format(self.name))
@@ -462,8 +463,25 @@ class Instance(object):
             log.debug('Instance already shut off, not stopping: {}'.format(self.name))
             return
 
-        # stop (destroy) the vm
-        self._get_domain().destroy()
+        retries = config_data.STOP_RETRIES
+
+        while retries > 0:
+            try:
+                # stop (destroy) the vm
+                self._get_domain().destroy()
+                return
+            except libvirt.libvirtError as e:
+                if e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR:
+                    # host is busy, see https://bugzilla.redhat.com/1205647#c13
+                    log.warn("Host is busy, retrying to stop the instance {}".format(self.name))
+                else:
+                    raise TestcloudInstanceError('Error while stopping instance {}: {}'
+                                                 .format(self.name, e))
+
+            retries -= 1
+            time.sleep(config_data.STOP_RETRY_WAIT)
+
+        raise TestcloudInstanceError("Unable to stop instance {}.".format(self.name))
 
     def remove(self, autostop=True):
         """Remove an already stopped instance
