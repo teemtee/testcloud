@@ -144,7 +144,7 @@ def list_instances(connection='qemu:///system'):
 
     for instance in all_instances:
         if instance['name'] not in domains.keys():
-            log.warn('{} is not registered, might want to delete it.'.format(instance['name']))
+            log.warn("{} is not registered, might want to delete it via 'testcloud instance clean'.".format(instance['name']))
             instance['state'] = 'de-sync'
 
             instances.append(instance)
@@ -158,6 +158,20 @@ def list_instances(connection='qemu:///system'):
 
     return instances
 
+def clean_instances(connection='qemu:///system'):
+    """
+    Removes all instances in 'de-sync' state.
+    """
+    domains = _list_domains(connection)
+    all_instances = _list_instances()
+
+    for instance in all_instances:
+        if instance['name'] not in domains.keys():
+            log.debug("Removing de-synced instance {}".format(instance['name']))
+            instance_path = "{}/instances/{}".format(config_data.DATA_DIR, instance['name'])
+
+            # remove from disk
+            shutil.rmtree(instance_path)
 
 class Instance(object):
     """Handles creating, starting, stopping and removing virtual machines

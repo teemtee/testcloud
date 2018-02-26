@@ -156,6 +156,15 @@ def _remove_instance(args):
 
     tc_instance.remove(autostop=args.force)
 
+def _clean_instances(args):
+    """Handler for 'instance clean' command. Expects the following elements in args:
+        * name(str)
+
+    :param args: args from argparser
+    """
+
+    instance.clean_instances()
+
 
 def _reboot_instance(args):
     """Handler for 'instance reboot' command. Expects the following elements in args:
@@ -256,6 +265,11 @@ def get_argparser():
                                  help="Stop the instance if it's running",
                                  action="store_true")
     instarg_destroy.set_defaults(func=_remove_instance)
+
+    # instance clean
+    instarg_clean = instarg_subp.add_parser("clean", help="remove non-existing libvirt vms from testcloud")
+    instarg_clean.set_defaults(func=_clean_instances)
+
     # instance reboot
     instarg_reboot = instarg_subp.add_parser("reboot", help="reboot instance")
     instarg_reboot.add_argument("name",
