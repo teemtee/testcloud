@@ -488,6 +488,9 @@ class Instance(object):
                 if e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR:
                     # host is busy, see https://bugzilla.redhat.com/1205647#c13
                     log.warn("Host is busy, retrying to stop the instance {}".format(self.name))
+                elif e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                    log.debug("Domain stopped between attempts, ignoring error: {}".format(e))
+                    return
                 else:
                     raise TestcloudInstanceError('Error while stopping instance {}: {}'
                                                  .format(self.name, e))
