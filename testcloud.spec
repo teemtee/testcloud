@@ -2,7 +2,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:           testcloud
-Version:        0.1.17
+# Update also version in testcloud/__init__.py when changing this!
+Version:        0.1.18
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -110,6 +111,9 @@ install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir
 %{_bindir}/testcloud
 
 %changelog
+* Wed May 02 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.1.18-1
+- Host /dev/random passthrough
+
 * Tue Mar 06 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.1.17-1
 - Add instance clean command
 - Ignore error when domain stopped between stop attempts
