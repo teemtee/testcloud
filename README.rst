@@ -10,14 +10,18 @@ Requirements
 
 Packages:
  - libvirt
- - libvirt-python
+ - python2-libvirt
+ - python3-libvirt
  - libguestfs
  - libguestfs-tools
- - python-requests (for whatever python version you're running)
+ - python2-requests
+ - python3-requests
 
 Optional (if you plan on running or working on the tests):
  - python2-pytest
- - python-pytest-cov
+ - python3-pytest
+ - python2-pytest-cov
+ - python3-pytest-cov
 
 All of these packages are in the Fedora repos (and likely other distros as
 well).
@@ -113,7 +117,8 @@ There is a small testsuite you can run with:
 
 .. code:: bash
 
-    py.test
+    python2 -m pytest
+    python3 -m pytest
 
 This is a good place to contribute if you're looking to help out.
 
@@ -121,7 +126,7 @@ Issue Tracking and Roadmap
 --------------------------
 
 Our project tracker is on the Fedora QA-devel
-`Phabricator <https://phab.qa.fedoraproject.org/tag/testcloud/>`_
+`Pagure <https://pagure.io/testcloud//>`_
 instance.
 
 Credit

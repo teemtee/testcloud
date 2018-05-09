@@ -11,6 +11,7 @@ This is the primary user entry point for testcloud
 import argparse
 import logging
 import os
+import sys
 import libvirt
 from . import config
 from . import image
@@ -353,7 +354,13 @@ def main():
 
     _configure_logging()
 
-    args.func(args)
+    try:
+        args.func(args)
+    except AttributeError:
+        # If no cmdline args were provided, func is missing
+        # https://bugs.python.org/issue16308
+        parser.print_help()
+        sys.exit(1)
 
 
 def find_vm_ip(name, connection='qemu:///system'):
