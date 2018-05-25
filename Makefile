@@ -70,6 +70,8 @@ mocksrpm: archive
 mockbuild: mocksrpm
 	mock -r $(BUILDTARGET) --no-clean --rebuild $(NVR).$(TARGETDIST).src.rpm
 	cp /var/lib/mock/$(BUILDTARGET)/result/$(NVR).$(TARGETDIST).noarch.rpm .
+	cp /var/lib/mock/$(BUILDTARGET)/result/python2-$(NVR).$(TARGETDIST).noarch.rpm .
+	cp /var/lib/mock/$(BUILDTARGET)/result/python3-$(NVR).$(TARGETDIST).noarch.rpm .
 
 .PHONY: nvr
 nvr:

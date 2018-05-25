@@ -1,10 +1,14 @@
+# Avoid warnings when bytecompiling settings.py in /etc
+%global __python %{__python3}
+
 # sitelib for noarch packages, sitearch for others (remove the unneeded one)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py when changing this!
 Version:        0.1.18
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -16,29 +20,27 @@ BuildArch:      noarch
 # Ensure we can create the testcloud group
 Requires(pre):  shadow-utils
 
-# testcloud integrates with libvirt
 Requires:       libvirt
-%if 0%{?fedora} <= 26
-Requires:       libvirt-python
-%else
-Requires:       python2-libvirt
-%endif
-
-# This is used to manipulate images on disk
+Requires:       polkit
 Requires:       libguestfs
 Requires:       libguestfs-tools
 
-# Used to download images from valid URLs
-Requires:       python2-requests
+Requires:       python3-%{name} = %{version}-%{release}
 
-Requires:       polkit
-Requires:       python2-jinja2
-
-%if 0%{?fedora} <= 26
-BuildRequires:  libvirt-python
-%else
-BuildRequires:  python2-libvirt
+# Install python2 interface on stable Fedora Releases
+%if 0%{?fedora} <= 28
+Requires:       python2-%{name} = %{version}-%{release}
 %endif
+
+%description
+testcloud is a relatively simple system which is capable of booting images
+designed for cloud systems on a local system with minimal configuration.
+testcloud is designed to be (and remain) somewhat simple, trading fancy cloud
+system features for ease of use and sanity in development.
+
+%package -n python2-%{name}
+Summary:        Python 2 interface to testcloud
+BuildRequires:  python2-libvirt
 BuildRequires:  python2-devel
 BuildRequires:  python2-jinja2
 BuildRequires:  python2-mock
@@ -46,14 +48,29 @@ BuildRequires:  python2-pytest
 BuildRequires:  python2-pytest-cov
 BuildRequires:  python2-requests
 BuildRequires:  python2-setuptools
+Requires:       python2-requests
+Requires:       python2-libvirt
+Requires:       python2-jinja2
 
-# Provides:       python2-testcloud
+%description -n python2-%{name}
+Python 2 interface to testcloud.
 
-%description
-testcloud is a relatively simple system which is capable of booting images
-designed for cloud systems on a local system with minimal configuration.
-testcloud is designed to be (and remain) somewhat simple, trading fancy cloud
-system features for ease of use and sanity in development.
+%package -n python3-%{name}
+Summary:        Python 3 interface to testcloud
+BuildRequires:  python3-libvirt
+BuildRequires:  python3-devel
+BuildRequires:  python3-jinja2
+BuildRequires:  python3-mock
+BuildRequires:  python3-pytest
+BuildRequires:  python3-pytest-cov
+BuildRequires:  python3-requests
+BuildRequires:  python3-setuptools
+Requires:       python3-requests
+Requires:       python3-libvirt
+Requires:       python3-jinja2
+
+%description -n python3-%{name}
+Python 3 interface to testcloud.
 
 # Create the testcloud group
 %pre
@@ -62,16 +79,13 @@ getent group testcloud >/dev/null || groupadd testcloud
 %prep
 %setup -q -n %{name}-%{version}
 
-%check
-%{__python2} setup.py test
-# Remove compiled .py files from /etc after running unittests
-rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
-
 %build
-%{__python2} setup.py build
+%py2_build
+%py3_build
 
 %install
-%{__python2} setup.py install -O1 --skip-build --root %{buildroot}
+%py2_install
+%py3_install
 
 # configuration files
 mkdir -p %{buildroot}%{_sysconfdir}/testcloud/
@@ -93,11 +107,16 @@ install -d %{buildroot}/%{_sharedstatedir}/testcloud/instances
 mkdir -p %{buildroot}%{_sysconfdir}/polkit-1/rules.d
 install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir}/polkit-1/rules.d/99-testcloud-nonroot-libvirt-access.rules
 
+%check
+%{__python2} setup.py test
+%{__python3} setup.py test
+# Remove compiled .py files from /etc after os_install_post
+rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
+rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
+
 %files
 %doc README.rst
 %license LICENSE
-%{python2_sitelib}/testcloud
-%{python2_sitelib}/*.egg-info
 
 %dir %{_sysconfdir}/testcloud
 %dir %attr(0775, qemu, testcloud) %{_sharedstatedir}/testcloud
@@ -110,7 +129,20 @@ install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir
 %config(noreplace) %{_sysconfdir}/testcloud/settings.py
 %{_bindir}/testcloud
 
+%files -n python2-%{name}
+%{python2_sitelib}/testcloud
+%{python2_sitelib}/*.egg-info
+
+%files -n python3-%{name}
+%{python3_sitelib}/testcloud
+%{python3_sitelib}/*.egg-info
+
 %changelog
+* Fri May 25 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.1.18-2
+- Drop Fedora 26
+- Use Python 3 by default
+- Split testcloud into testcloud, python2-testcloud and python3-testcloud
+
 * Wed May 02 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.1.18-1
 - Host /dev/random passthrough
 

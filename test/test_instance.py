@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright 2015, Red Hat, Inc.
 # License: GPL-2.0+ <http://spdx.org/licenses/GPL-2.0+>
