@@ -15,8 +15,10 @@ conf/settings.py
 /docs/build/
 
 # virtualenv
-/env_*/
+/env*/
 
 # unit testing
 /.coverage
 /.cache
+/.tox/
+/.pytest_cache/

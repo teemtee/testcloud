@@ -17,12 +17,6 @@ Packages:
  - python2-requests
  - python3-requests
 
-Optional (if you plan on running or working on the tests):
- - python2-pytest
- - python3-pytest
- - python2-pytest-cov
- - python3-pytest-cov
-
 All of these packages are in the Fedora repos (and likely other distros as
 well).
 
@@ -117,8 +111,7 @@ There is a small testsuite you can run with:
 
 .. code:: bash
 
-    python2 -m pytest
-    python3 -m pytest
+    tox
 
 This is a good place to contribute if you're looking to help out.
 
