@@ -42,13 +42,13 @@ def _list_instance(args):
     """
     instances = instance.list_instances(args.connection)
 
-    print("{:<16} {:^30}     {:<10}".format("Name", "IP", "State"))
+    print("{!s:<16} {!s:^30}     {!s:<10}".format("Name", "IP", "State"))
     print("-"*60)
     for inst in instances:
         if args.all or inst['state'] == 'running':
-            print("{:<27} {:^22}  {:<10}".format(inst['name'],
-                                                 inst['ip'],
-                                                 inst['state']))
+            print("{!s:<27} {!s:^22}  {!s:<10}".format(inst['name'],
+                                                       inst['ip'],
+                                                       inst['state']))
 
     print("")
 
