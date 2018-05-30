@@ -7,8 +7,8 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py when changing this!
-Version:        0.1.18
-Release:        2%{?dist}
+Version:        0.2.0
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -138,9 +138,10 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
-* Fri May 25 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.1.18-2
+* Wed May 30 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.0-1
 - Drop Fedora 26
 - Use Python 3 by default
+- Remove shebangs from non-executables
 - Split testcloud into testcloud, python2-testcloud and python3-testcloud
 
 * Wed May 02 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.1.18-1
