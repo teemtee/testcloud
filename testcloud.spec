@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py when changing this!
-Version:        0.2.0
+Version:        0.2.1
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -138,6 +138,10 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Fri Jun 29 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.1-1
+- domain-template: use cpu host-passthrough
+- domain-template: use urandom for RNG
+
 * Wed May 30 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.0-1
 - Drop Fedora 26
 - Use Python 3 by default
