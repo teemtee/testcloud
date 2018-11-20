@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py when changing this!
-Version:        0.2.1
+Version:        0.2.2
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -38,6 +38,7 @@ designed for cloud systems on a local system with minimal configuration.
 testcloud is designed to be (and remain) somewhat simple, trading fancy cloud
 system features for ease of use and sanity in development.
 
+%if 0%{?fedora} <= 29
 %package -n python2-%{name}
 Summary:        Python 2 interface to testcloud
 BuildRequires:  python2-libvirt
@@ -54,9 +55,15 @@ Requires:       python2-jinja2
 
 %description -n python2-%{name}
 Python 2 interface to testcloud.
+%endif
 
 %package -n python3-%{name}
 Summary:        Python 3 interface to testcloud
+
+%if 0%{?fedora} >= 30
+Obsoletes:      python2-testcloud <= %{version}-%{release}
+%endif
+
 BuildRequires:  python3-libvirt
 BuildRequires:  python3-devel
 BuildRequires:  python3-jinja2
@@ -80,11 +87,15 @@ getent group testcloud >/dev/null || groupadd testcloud
 %setup -q -n %{name}-%{version}
 
 %build
+%if 0%{?fedora} <= 29
 %py2_build
+%endif
 %py3_build
 
 %install
+%if 0%{?fedora} <= 29
 %py2_install
+%endif
 %py3_install
 
 # configuration files
@@ -108,7 +119,9 @@ mkdir -p %{buildroot}%{_sysconfdir}/polkit-1/rules.d
 install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir}/polkit-1/rules.d/99-testcloud-nonroot-libvirt-access.rules
 
 %check
+%if 0%{?fedora} <= 29
 %{__python2} setup.py test
+%endif
 %{__python3} setup.py test
 # Remove compiled .py files from /etc after os_install_post
 rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
@@ -129,18 +142,33 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %config(noreplace) %{_sysconfdir}/testcloud/settings.py
 %{_bindir}/testcloud
 
+%if 0%{?fedora} <= 29
 %files -n python2-%{name}
 %{python2_sitelib}/testcloud
 %{python2_sitelib}/*.egg-info
+%endif
 
 %files -n python3-%{name}
 %{python3_sitelib}/testcloud
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Tue Nov 20 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.2-1
+- drop and obsolete python2-testcloud on Fedora >= 30
+- Fix setup.py test to also work with Python 3 (pytest-3)
+
+* Sat Jul 14 2018 Fedora Release Engineering <releng@fedoraproject.org> - 0.2.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
+* Mon Jul 02 2018 Miro Hrončok <mhroncok@redhat.com> - 0.2.1-2
+- Rebuilt for Python 3.7
+
 * Fri Jun 29 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.1-1
 - domain-template: use cpu host-passthrough
 - domain-template: use urandom for RNG
+
+* Tue Jun 19 2018 Miro Hrončok <mhroncok@redhat.com> - 0.2.0-2
+- Rebuilt for Python 3.7
 
 * Wed May 30 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.0-1
 - Drop Fedora 26
