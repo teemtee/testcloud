@@ -1,35 +1,70 @@
-#
 # Copyright 2018, Red Hat, Inc.
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
+# License: GPL-2.0+ <http://spdx.org/licenses/GPL-2.0+>
+# See the LICENSE file for more details on Licensing
 
-# general variables
-SRC:=testcloud
+#######################################################################
+#      _____            _        _ _           _   _                  #
+#     / ____|          | |      (_) |         | | (_)                 #
+#    | |     ___  _ __ | |_ _ __ _| |__  _   _| |_ _ _ __   __ _      #
+#    | |    / _ \| '_ \| __| '__| | '_ \| | | | __| | '_ \ / _` |     #
+#    | |___| (_) | | | | |_| |  | | |_) | |_| | |_| | | | | (_| |     #
+#     \_____\___/|_| |_|\__|_|  |_|_.__/ \__,_|\__|_|_| |_|\__, |     #
+#                                                           __/ |     #
+#     If you want to add/fix anything here, please create  |___/      #
+#     PR at qa-make https://pagure.io/fedora-qa/qa-make               #
+#                                                                     #
+#######################################################################
+
+# Allows to print variables, eg. make print-SRC
+print-%  : ; @echo $* = $($*)
+
+# Get variables from Makefile.cfg
+SRC=$(shell grep -s SRC Makefile.cfg | sed 's/SRC=//')
+VENV=$(shell grep -s VENV Makefile.cfg | sed 's/VENV=//')
+MODULENAME=$(shell grep -s MODULENAME Makefile.cfg | sed 's/MODULENAME=//')
+
+# Try to detect SRC in case we didn't find Makefile.cfg
+ifeq ($(SRC),)
+SRC=$(shell rpmspec -q --queryformat="%{NAME}\n" *.spec | head -1)
+SPECNUM=$(shell ls -1 *.spec | wc -l)
+ifneq ($(SPECNUM),1)
+$(error Make sure you have either one spec file in the directory or configure it in Makefile.cfg)
+endif
+endif
 
 # Variables used for packaging
-SPECFILE:=$(SRC).spec
+SPECFILE=$(SRC).spec
 BASEARCH:=$(shell uname -i)
 DIST:=$(shell rpm --eval '%{dist}')
-VERSION:=$(shell rpmspec -q --queryformat="%{VERSION}\n" $(SPECFILE) | uniq)
-RELEASE:=$(subst $(DIST),,$(shell rpmspec -q --queryformat="%{RELEASE}\n" $(SPECFILE) | uniq))
-NVR:=$(SRC)-$(VERSION)-$(RELEASE)
-GITBRANCH:=$(shell git rev-parse --abbrev-ref HEAD)
 TARGETVER:=$(shell lsb_release -r |grep -o '[0-9]*')
 TARGETDIST:=fc$(TARGETVER)
+VERSION:=$(shell rpmspec -q --queryformat="%{VERSION}\n" $(SPECFILE) | head -1)
+RELEASE:=$(shell rpmspec -q --queryformat="%{RELEASE}\n" $(SPECFILE) | head -1 | sed 's/$(DIST)/\.$(TARGETDIST)/g')
+NVR:=$(SRC)-$(VERSION)-$(RELEASE)
+GITBRANCH:=$(shell git rev-parse --abbrev-ref HEAD)
 BUILDTARGET:=fedora-$(TARGETVER)-x86_64
+KOJITARGET:=$(shell echo $(TARGETDIST) | sed 's/c//' | sed 's/el/epel-/')
+
+.PHONY: update-makefile
+update-makefile:
+	curl --fail https://pagure.io/fedora-qa/qa-make/raw/master/f/Makefile -o Makefile.new
+	if ! cmp Makefile Makefile.new ; then mv Makefile.new Makefile ; fi
+
+.PHONY: test
+.ONESHELL: test
+test: $(VENV)
+	set -e
+	source $(VENV)/bin/activate;
+	TEST='true' py.test --cov-report=term-missing --cov $(MODULENAME);
+	deactivate
+
+.PHONY: test-ci
+.ONESHELL: test-ci
+test-ci: $(VENV)
+	set -e
+	source $(VENV)/bin/activate
+	TEST='true' py.test --cov-report=xml --cov $(MODULENAME)
+	deactivate
 
 .PHONY: pylint
 pylint:
@@ -40,11 +75,11 @@ pep8:
 	pep8 $(SRC)/*.py $(SRC)/*/*.py | tee pep8.out
 
 .PHONY: ci
-ci: pylint pep8
+ci: test-ci pylint pep8
 
 .PHONY: docs
 docs:
-	cd docs && $(MAKE) clean && $(MAKE) html
+	sphinx-build  -b html -d docs/_build/doctrees docs/source docs/_build/html
 
 .PHONY: clean
 clean:
@@ -60,19 +95,39 @@ archive: $(SRC)-$(VERSION).tar.gz
 .PHONY: $(SRC)-$(VERSION).tar.gz
 $(SRC)-$(VERSION).tar.gz:
 	git archive $(GITBRANCH) --prefix=$(SRC)-$(VERSION)/ | gzip -c9 > $@
+	mkdir -p build/$(VERSION)-$(RELEASE)
+	mv $(SRC)-$(VERSION).tar.gz build/$(VERSION)-$(RELEASE)/
 
-.PHONY: mocksrpm
-mocksrpm: archive
-	mock -r $(BUILDTARGET) --buildsrpm --spec $(SPECFILE) --sources .
-	cp /var/lib/mock/$(BUILDTARGET)/result/$(NVR).$(TARGETDIST).src.rpm .
+.PHONY: srpm
+srpm: archive
+	mock -r $(BUILDTARGET) --buildsrpm --spec $(SPECFILE) --sources build/$(VERSION)-$(RELEASE)/
+	cp /var/lib/mock/$(BUILDTARGET)/result/$(NVR).src.rpm build/$(VERSION)-$(RELEASE)/
 
-.PHONY: mockbuild
-mockbuild: mocksrpm
-	mock -r $(BUILDTARGET) --no-clean --rebuild $(NVR).$(TARGETDIST).src.rpm
-	cp /var/lib/mock/$(BUILDTARGET)/result/$(NVR).$(TARGETDIST).noarch.rpm .
-	cp /var/lib/mock/$(BUILDTARGET)/result/python2-$(NVR).$(TARGETDIST).noarch.rpm .
-	cp /var/lib/mock/$(BUILDTARGET)/result/python3-$(NVR).$(TARGETDIST).noarch.rpm .
+.PHONY: build
+build: srpm
+	mock -r $(BUILDTARGET) --no-clean --rebuild build/$(VERSION)-$(RELEASE)/$(NVR).src.rpm
+	cp /var/lib/mock/$(BUILDTARGET)/result/*.rpm build/$(VERSION)-$(RELEASE)/
+
+.PHONY: scratch
+scratch: srpm
+	koji build --scratch $(KOJITARGET) build/$(VERSION)-$(RELEASE)/$(NVR).src.rpm
 
 .PHONY: nvr
 nvr:
 	@echo $(NVR)
+
+.PHONY: cleanvenv
+cleanvenv:
+	rm -rf $(VENV)
+
+.PHONY: virtualenv
+virtualenv: $(VENV)
+
+.PHONY: $(VENV)
+.ONESHELL: $(VENV)
+$(VENV):
+	virtualenv --system-site-packages $(VENV)
+	set -e
+	source $(VENV)/bin/activate
+	pip install -r requirements.txt
+	deactivate
