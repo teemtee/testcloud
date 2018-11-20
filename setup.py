@@ -30,7 +30,11 @@ class PyTest(Command):
 
     def run(self):
         import subprocess
-        errno = subprocess.call(['py.test'])
+        import sys
+        if (sys.version_info > (3, 0)):
+                errno = subprocess.call(['pytest-3'])
+        else:
+                errno = subprocess.call(['py.test'])
         raise SystemExit(errno)
 
 
