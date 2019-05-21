@@ -368,7 +368,11 @@ class Instance(object):
                            'memory': self.ram * 1024,  # MiB to KiB
                            'disk': self.local_disk,
                            'seed': self.seed_path,
-                           'mac_address': util.generate_mac_address()}
+                           'mac_address': util.generate_mac_address(),
+                           'uefi_loader': ""}
+
+        if config_data.UEFI:
+            instance_values['uefi_loader'] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
 
         # Write out the final xml file for the domain
         with open(self.xml_path, 'w') as dom_template:
@@ -523,7 +527,7 @@ class Instance(object):
 
         # remove from libvirt, assuming that it's stopped already
         if domain_state is not None:
-            self._get_domain().undefine()
+            self._get_domain().undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
             log.debug("Unregistering instance from libvirt.")
         else:
             log.warn('Instance "{}" not found in libvirt "{}". Was it removed already? Should '

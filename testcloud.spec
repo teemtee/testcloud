@@ -25,6 +25,8 @@ Requires:       polkit
 Requires:       libguestfs
 Requires:       libguestfs-tools
 
+Recommends:     edk2-ovmf
+
 Requires:       python3-%{name} = %{version}-%{release}
 
 # Install python2 interface on stable Fedora Releases

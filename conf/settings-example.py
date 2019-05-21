@@ -62,3 +62,6 @@
 
 # Waiting time between stop retries, in seconds
 #STOP_RETRY_WAIT = 1
+
+# Desired VM type: False = BIOS, True = UEFI
+#UEFI = False

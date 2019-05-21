@@ -143,6 +143,9 @@ runcmd:
     # Waiting time between stop retries, in seconds
     STOP_RETRY_WAIT = 1
 
+    # Desired VM type: False = BIOS, True = UEFI
+    UEFI = False
+
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have
         names containing all upper case letters.
