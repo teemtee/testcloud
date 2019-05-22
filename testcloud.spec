@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py when changing this!
-Version:        0.2.2
+Version:        0.3.0
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -155,6 +155,12 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed May 22 2019 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.0-1
+- Support creating UEFI VMs
+
+* Sun Feb 03 2019 Fedora Release Engineering <releng@fedoraproject.org> - 0.2.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
+
 * Tue Nov 20 2018 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.2.2-1
 - drop and obsolete python2-testcloud on Fedora >= 30
 - Fix setup.py test to also work with Python 3 (pytest-3)
