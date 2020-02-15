@@ -154,7 +154,10 @@ class Image(object):
                         break
 
         except OSError:
-            log.error("Problem writing to {}.".format(config_data.PRISTINE))
+            # note: suppress inside exception warnings
+            raise TestcloudImageError(
+                'Problem writing to {}. Are you in group testcloud?'.format(local_path)
+            ) from None
 
     def _handle_file_url(self, source_path, dest_path, copy=True):
         if not os.path.exists(dest_path):
