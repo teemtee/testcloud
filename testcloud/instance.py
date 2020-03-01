@@ -320,7 +320,7 @@ class Instance(object):
 
         imgcreate_command = ['qemu-img',
                              'create',
-                             '-f',
+                             '-qf',
                              'qcow2',
                              '-b',
                              self.image.local_path,
