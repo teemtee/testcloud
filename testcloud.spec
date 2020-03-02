@@ -6,8 +6,8 @@
 
 
 Name:           testcloud
-# Update also version in testcloud/__init__.py when changing this!
-Version:        0.3.0
+# Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
+Version:        0.3.1
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -114,6 +114,23 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Mon Mar 02 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.1-1
+- Remove Python 2 support
+- Raise TestcloudImageError if failed to open file
+- instance: call qemu-img in quiet mode
+
+* Fri Jan 31 2020 Fedora Release Engineering <releng@fedoraproject.org> - 0.3.0-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
+
+* Thu Oct 03 2019 Miro Hrončok <mhroncok@redhat.com> - 0.3.0-4
+- Rebuilt for Python 3.8.0rc1 (#1748018)
+
+* Mon Aug 19 2019 Miro Hrončok <mhroncok@redhat.com> - 0.3.0-3
+- Rebuilt for Python 3.8
+
+* Sat Jul 27 2019 Fedora Release Engineering <releng@fedoraproject.org> - 0.3.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
+
 * Wed May 22 2019 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.0-1
 - Support creating UEFI VMs
 
