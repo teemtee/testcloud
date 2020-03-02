@@ -29,42 +29,16 @@ Recommends:     edk2-ovmf
 
 Requires:       python3-%{name} = %{version}-%{release}
 
-# Install python2 interface on stable Fedora Releases
-%if 0%{?fedora} <= 28
-Requires:       python2-%{name} = %{version}-%{release}
-%endif
-
 %description
 testcloud is a relatively simple system which is capable of booting images
 designed for cloud systems on a local system with minimal configuration.
 testcloud is designed to be (and remain) somewhat simple, trading fancy cloud
 system features for ease of use and sanity in development.
 
-%if 0%{?fedora} <= 29
-%package -n python2-%{name}
-Summary:        Python 2 interface to testcloud
-BuildRequires:  python2-libvirt
-BuildRequires:  python2-devel
-BuildRequires:  python2-jinja2
-BuildRequires:  python2-mock
-BuildRequires:  python2-pytest
-BuildRequires:  python2-pytest-cov
-BuildRequires:  python2-requests
-BuildRequires:  python2-setuptools
-Requires:       python2-requests
-Requires:       python2-libvirt
-Requires:       python2-jinja2
-
-%description -n python2-%{name}
-Python 2 interface to testcloud.
-%endif
-
 %package -n python3-%{name}
 Summary:        Python 3 interface to testcloud
 
-%if 0%{?fedora} >= 30
 Obsoletes:      python2-testcloud <= %{version}-%{release}
-%endif
 
 BuildRequires:  python3-libvirt
 BuildRequires:  python3-devel
@@ -89,15 +63,9 @@ getent group testcloud >/dev/null || groupadd testcloud
 %setup -q -n %{name}-%{version}
 
 %build
-%if 0%{?fedora} <= 29
-%py2_build
-%endif
 %py3_build
 
 %install
-%if 0%{?fedora} <= 29
-%py2_install
-%endif
 %py3_install
 
 # configuration files
@@ -121,9 +89,6 @@ mkdir -p %{buildroot}%{_sysconfdir}/polkit-1/rules.d
 install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir}/polkit-1/rules.d/99-testcloud-nonroot-libvirt-access.rules
 
 %check
-%if 0%{?fedora} <= 29
-%{__python2} setup.py test
-%endif
 %{__python3} setup.py test
 # Remove compiled .py files from /etc after os_install_post
 rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
@@ -143,12 +108,6 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 
 %config(noreplace) %{_sysconfdir}/testcloud/settings.py
 %{_bindir}/testcloud
-
-%if 0%{?fedora} <= 29
-%files -n python2-%{name}
-%{python2_sitelib}/testcloud
-%{python2_sitelib}/*.egg-info
-%endif
 
 %files -n python3-%{name}
 %{python3_sitelib}/testcloud
