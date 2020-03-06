@@ -100,7 +100,7 @@ class Image(object):
         uri_type = type_match.group(1)
         uri_path = type_match.group(2)
 
-        name_match = re.findall('([\w\.\-]+)', uri)
+        name_match = re.findall(r'([\w\.\-]+)', uri)
 
         if not name_match:
             raise TestcloudImageError('invalid uri: could not find image name: {}'.format(uri))
