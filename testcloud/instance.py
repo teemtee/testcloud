@@ -322,6 +322,8 @@ class Instance(object):
                              'create',
                              '-qf',
                              'qcow2',
+                             '-F',
+                             'qcow2',
                              '-b',
                              self.image.local_path,
                              self.local_disk,
