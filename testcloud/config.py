@@ -131,7 +131,7 @@ runcmd:
     BOOT_TIMEOUT = 30
 
     # ram size, in MiB
-    RAM = 512
+    RAM = 768
 
     # Desired size, in GiB of instance disks. 0 leaves disk capacity
     # identical to source image
