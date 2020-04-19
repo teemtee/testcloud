@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.3.1
+Version:        0.3.2
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -113,6 +113,12 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Sun Apr 19 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.2-1
+- Require only libguestfs-tools-c from libguestfs
+- Bump default RAM size to 768 MB
+- Fix for libvirt >= 6.0
+- Fix DeprecationWarning: invalid escape sequence \w
+
 * Mon Mar 02 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.1-1
 - Remove Python 2 support
 - Raise TestcloudImageError if failed to open file
