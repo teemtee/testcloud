@@ -22,8 +22,7 @@ Requires(pre):  shadow-utils
 
 Requires:       libvirt
 Requires:       polkit
-Requires:       libguestfs
-Requires:       libguestfs-tools
+Requires:       libguestfs-tools-c
 
 Recommends:     edk2-ovmf
 
