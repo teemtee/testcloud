@@ -10,11 +10,9 @@ Requirements
 
 Packages:
  - libvirt
- - python2-libvirt
  - python3-libvirt
  - libguestfs
  - libguestfs-tools
- - python2-requests
  - python3-requests
 
 All of these packages are in the Fedora repos (and likely other distros as

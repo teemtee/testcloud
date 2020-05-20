@@ -20,9 +20,7 @@ BuildArch:      noarch
 # Ensure we can create the testcloud group
 Requires(pre):  shadow-utils
 
-Requires:       libvirt
 Requires:       polkit
-Requires:       libguestfs-tools-c
 
 Recommends:     edk2-ovmf
 
@@ -47,6 +45,9 @@ BuildRequires:  python3-pytest
 BuildRequires:  python3-pytest-cov
 BuildRequires:  python3-requests
 BuildRequires:  python3-setuptools
+
+Requires:       libvirt
+Requires:       libguestfs-tools-c
 Requires:       python3-requests
 Requires:       python3-libvirt
 Requires:       python3-jinja2
