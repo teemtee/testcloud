@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.3.2
+Version:        0.3.3
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -114,6 +114,10 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed May 20 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.3-1
+- Support RHEL 8 hosts (different qemu-kvm path)
+- Move most of the deps into python3-testcloud
+
 * Sun Apr 19 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.2-1
 - Require only libguestfs-tools-c from libguestfs
 - Bump default RAM size to 768 MB
