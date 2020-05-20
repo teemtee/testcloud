@@ -371,10 +371,17 @@ class Instance(object):
                            'disk': self.local_disk,
                            'seed': self.seed_path,
                            'mac_address': util.generate_mac_address(),
-                           'uefi_loader': ""}
+                           'uefi_loader': "",
+                           'emulator_path': "/usr/bin/qemu-kvm"}
 
         if config_data.UEFI:
             instance_values['uefi_loader'] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
+
+        if not os.path.exists("/usr/bin/qemu-kvm"):
+            if os.path.exists("/usr/libexec/qemu-kvm"):
+                instance_values["emulator_path"]: "/usr/libexec/qemu-kvm"
+            else:
+                raise TestcloudInstanceError("Neither '/usr/bin/qemu-kvm' nor '/usr/libexec/qemu-kvm' was found.")
 
         # Write out the final xml file for the domain
         with open(self.xml_path, 'w') as dom_template:
