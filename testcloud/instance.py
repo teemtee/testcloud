@@ -380,7 +380,7 @@ class Instance(object):
         if not os.path.exists("/usr/bin/qemu-kvm"):
             if os.path.exists("/usr/libexec/qemu-kvm"):
                 log.info("'/usr/bin/qemu-kvm' was not found, using '/usr/libexec/qemu-kvm' instead.")
-                instance_values["emulator_path"]: "/usr/libexec/qemu-kvm"
+                instance_values["emulator_path"] = "/usr/libexec/qemu-kvm"
             else:
                 raise TestcloudInstanceError("Neither '/usr/bin/qemu-kvm' nor '/usr/libexec/qemu-kvm' was found.")
 
@@ -397,13 +397,6 @@ class Instance(object):
 
         with open(self.xml_path, 'r') as xml_file:
             domain_xml = ''.join([x for x in xml_file.readlines()])
-
-        if not os.path.exists("/usr/bin/qemu-kvm"):
-            if os.path.exists("/usr/libexec/qemu-kvm"):
-                log.info("'/usr/bin/qemu-kvm' was not found, using '/usr/libexec/qemu-kvm' instead.")
-                domain_xml = domain_xml.replace("<emulator>/usr/bin/qemu-kvm</emulator>", "<emulator>/usr/libexec/qemu-kvm</emulator>")
-            else:
-                raise TestcloudInstanceError("Neither '/usr/bin/qemu-kvm' nor '/usr/libexec/qemu-kvm' was found.")
 
         conn = libvirt.open(self.connection)
         conn.defineXML(domain_xml)
