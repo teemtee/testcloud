@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.3.3
+Version:        0.3.4
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -114,6 +114,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Thu May 21 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.4-1
+- Ugly hotfix for tmt
+
 * Wed May 20 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.3-1
 - Support RHEL 8 hosts (different qemu-kvm path)
 - Move most of the deps into python3-testcloud
