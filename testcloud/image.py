@@ -17,7 +17,7 @@ import logging
 import requests
 
 from . import config
-from .exceptions import TestcloudImageError
+from .exceptions import TestcloudImageError, TestcloudPermissionsError
 
 config_data = config.get_config()
 
@@ -155,7 +155,7 @@ class Image(object):
 
         except OSError:
             # note: suppress inside exception warnings
-            raise TestcloudImageError(
+            raise TestcloudPermissionsError(
                 'Problem writing to {}. Are you in group testcloud?'.format(local_path)
             ) from None
 

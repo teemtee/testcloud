@@ -15,7 +15,7 @@ import libvirt
 from . import config
 from . import image
 from . import instance
-from .exceptions import TestcloudCliError
+from .exceptions import TestcloudCliError, TestcloudPermissionsError
 
 config_data = config.get_config()
 
@@ -63,7 +63,16 @@ def _create_instance(args):
     log.debug("create instance")
 
     tc_image = image.Image(args.url)
-    tc_image.prepare()
+    try:
+        tc_image.prepare()
+    except TestcloudPermissionsError as error:
+        # User might not be part of testcloud group, print user friendly message how to fix this
+        print(error)
+        print("")
+        print("You should be able to fix this by calling following commands:")
+        print("sudo usermod -a -G testcloud $USER")
+        print("su - $USER")
+        sys.exit(1)
 
     existing_instance = instance.find_instance(args.name, image=tc_image,
                                                connection=args.connection)

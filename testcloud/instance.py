@@ -533,7 +533,7 @@ class Instance(object):
             else:
                 raise TestcloudInstanceError(
                     "Cannot remove running instance {}. Please stop the "
-                    "instance before removing.".format(self.name))
+                    "instance before removing or use '-f' parameter.".format(self.name))
 
         # remove from libvirt, assuming that it's stopped already
         if domain_state is not None:
