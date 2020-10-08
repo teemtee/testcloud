@@ -126,6 +126,7 @@ runcmd:
     # Customize as needed :)
 
     CMD_LINE_ARGS = []
+    CMD_LINE_ENVS = {}
 
     # timeout, in seconds for instance boot process
     BOOT_TIMEOUT = 30

@@ -374,6 +374,17 @@ class Instance(object):
                            'uefi_loader': "",
                            'emulator_path': "/usr/bin/qemu-kvm"}
 
+        if config_data.CMD_LINE_ARGS or config_data.CMD_LINE_ENVS:
+            args_envs = "  <qemu:commandline>\n"
+            for qemu_arg in config_data.CMD_LINE_ARGS:
+                args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
+
+            for qemu_env in config_data.CMD_LINE_ENVS:
+                args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS[qemu_env])
+
+            args_envs += "  </qemu:commandline>"
+            instance_values["qemu_args"] = args_envs
+
         if config_data.UEFI:
             instance_values['uefi_loader'] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
 
