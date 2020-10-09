@@ -7,7 +7,7 @@
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.3.5
+Version:        0.3.6
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -114,6 +114,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Fri Oct 09 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.6-1
+- Improve user experience when testcloud fails because of missing group
+
 * Fri May 22 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.5-1
 - Typo fix in RHEL 8 qemu-kvm naming workaround
 
