@@ -1,90 +1,148 @@
-#########
 testcloud
-#########
+##########
 
-testcloud is a small helper script to download and boot cloud images locally.
-Currently only Fedora qcow2 images are tested and supported.
+**testcloud** is a small helper script to download and boot cloud images locally.
+Currently, only Fedora *qcow2* images are tested and supported.
 
-Requirements
-------------
+Installation
+============
 
-Packages:
- - libvirt
- - python3-libvirt
- - libguestfs
- - libguestfs-tools
- - python3-requests
+#. Install required dependencies for ``testcloud``:
 
-All of these packages are in the Fedora repos (and likely other distros as
-well).
+    .. code:: bash
 
-For the moment, the follwing directories need to exist with permissions that
-allow modification by any permitted user::
+        sudo dnf install libvirt python3-libvirt libguestfs libguestfs-tools python3-requests
 
-  /var/lib/testcloud/
-  /var/lib/testcloud/instances
-  /var/lib/testcloud/backingstores
+#. Install the testcloud packages:
 
-This will be automagical in a future version of testcloud and is a side-effect
-of the current refactoring/transition process.
+    .. code:: bash
 
-If you are running testcloud as a non-administrative user (ie. not in wheel) or
-on a system that doesn't have a polkit agent running (custom setups, headless
-systems etc.), you may need to adjust local polkit configuration to allow
-non-admin users to manage VMs with libvirt. Look into
-``conf/99-testcloud-nonroot-libvirt-access.rules`` file.
+        sudo dnf install testcloud
 
-Basic Usage
------------
+#. Add yourself to the ``testcloud group``:
 
-The usage varies slightly between using the git checkout and installing the
-module. To run testcloud straight from the git checkout, use
+    .. code:: bash
 
-.. code:: bash
+        sudo usermod -a -G testcloud <username>
 
-    python run_testCloud.py instance create <instance name> -u <url for qcow2 image>
+#. Restart your user session to update the group privileges, or use the ``newgrp`` command to update them in the current session.
 
-After installing via pip or setup.py, you can run
+    .. code:: bash
+
+        newgrp -
+
+#. Now, you are ready to use **testcloud**.
+
+
+Using testcloud
+===============
+
+
+Creating a new instance
+-----------------------
+
+To create a new instance, you will need to provide the url of some cloud image in the *qcow2* format. If you do not have an image location of your own, you can use the image from the **Fedora Cloud** download pages (https://alt.fedoraproject.org/cloud/).
+
+To create a new instance with the cloud image, run:
 
 .. code:: bash
 
     testcloud instance create <instance name> -u <url for qcow2 image>
 
-This will download the qcow2 and store it in /var/lib/testcloud/backingstores/<qcow2 filename>.
-This will be used as a backing store for your instance under /var/tmp/instances/<instance
-name>. These instances will be viewable within virt-manager. To see your running
-instances run:
+**testcloud** will download the *qcow2* image and save it in the ``/var/lib/testcloud/backingstores/<qcow2-filename>``. It will use this image a backing store for the newly created instance in ``/var/tmp/instances/<instance-name>``. When the image has been already downloaded, **testcloud** will use the previously download image to create the instance.
+
+You will be able to see the instance using the ``list`` command. 
 
 .. code:: bash
 
     testcloud instance list
 
-Instances can be stopped, started and removed as well through this interface. To
-see a list of options, run:
+Note, that the above command will only list the **running** instances. To see all instances, use:
 
 .. code:: bash
 
-    testcloud instance -h
+   testcloud instance list --all 
 
-Options
--------
+Alternatively, the instances can also be viewed and manipulated using the **virt-manager** tool.
 
-There are currently only two options (all optional) you can use when invoking
-this script: '--ram' and '--no-graphic'.
 
-The --ram option takes an int for how much ram you want the guest to have, the
-``--no-graphic option`` is merely a flag to suppress a GUI from appearing.
+Starting, stopping, and removing an instance
+--------------------------------------------
 
-Once the image has booted, you can log in from the GUI or ssh. To log in with
-ssh, run the following command:
+Instances can be started and stopped using the ``instance`` interface of the **testcloud**, too:
+
+#. List all instances to see the correct name of the instance:
+
+    .. code:: bash
+
+        testcloud instance list --all
+
+#. Start the instance:
+
+    .. code:: bash
+
+        testcloud instance start <instance-name>
+
+#. Stop the instance:
+
+    .. code:: bash
+
+        testcloud instance stop <instance-name>
+
+#. Remove the instance:
+
+    .. code:: bash
+
+        testcloud instance remove <instance-name>
+
+Removing the instance only succeeds when the appropriate instance has been **stopped** before. However, you can use the ``-f`` option to force removing the instance. 
+
+Other instance operations
+-------------------------
+
+#. Reboot the instance:
+
+    .. code:: bash
+
+        testcloud instance reboot <instance-name>
+
+#. Remove non-existing libvirt VMs from testcloud:
+
+    .. code:: bash
+        
+        testcloud instance clean
+
+Logging into the instance
+-------------------------
+
+When the instance is created, **testcloud** will return its IP address that you can use to access the running instance via ``ssh``. The *login name* is ``fedora`` and the *password* is ``passw0rd``.
 
 .. code:: bash
 
-    ssh fedora@<ip of instance>
+    ssh fedora@<instance-IP>
 
-The user is 'fedora' and the password is 'passw0rd'
+The IP address of an instance is also shown when you list the instance using the ``testcloud instance list`` command. You can also control the instance using the **virt-manager** tool.
 
-Now you have a working local cloud image to test against.
+Available options to create an instance
+---------------------------------------
+
+There are several options (all optional) that can be used to create a new instance using **testcloud**.
+
+--ram RAM
+    To set the amount of RAM that will be available to the virtual machine (in MiB).
+--no-graphic
+    This turns off the graphical display of the virtual machine.
+--vnc
+    To open a VNC connection at the ``:1`` display of the instance.
+--atomic
+    This flag should be used if the instance is booted from an Atomic Host.
+-u, --url URL
+    The URL from where the qcow2 image should be downloaded. **This option is compulsory.**
+--timeout TIMEOUT
+    A time (in seconds) to wait for boot to complete. Setting to 0 (default) will disable this functionality.
+--disksize DISKSIZE
+    To set the disk size of the virtual machine (in GiB)
+
 
 Configuration
 -------------
