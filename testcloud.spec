@@ -117,6 +117,15 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 * Fri Oct 09 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.6-1
 - Improve user experience when testcloud fails because of missing group
 
+* Thu Aug 27 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.5-4
+- ExclusiveArch to prevent koji from trying to build this on i686
+
+* Wed Jul 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 0.3.5-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
+
+* Tue May 26 2020 Miro Hrončok <mhroncok@redhat.com> - 0.3.5-2
+- Rebuilt for Python 3.9
+
 * Fri May 22 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.5-1
 - Typo fix in RHEL 8 qemu-kvm naming workaround
 
