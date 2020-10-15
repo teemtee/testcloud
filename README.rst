@@ -128,8 +128,6 @@ There are several options (all optional) that can be used to create a new instan
     This turns off the graphical display of the virtual machine.
 --vnc
     To open a VNC connection at the ``:1`` display of the instance.
---atomic
-    This flag should be used if the instance is booted from an Atomic Host.
 -u, --url URL
     The URL from where the qcow2 image should be downloaded. **This option is compulsory.**
 --timeout TIMEOUT
