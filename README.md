@@ -251,9 +251,11 @@ To install **testcloud** for development purposes:
        ```
        $ sudo mkdir -p -m 775 /var/lib/testcloud
        ```
+
        ```
        $ sudo mkdir -p -m 775 /var/lib/testcloud/instances 
        ```
+
        ```
        $ sudo mkdir -p -m 775 /var/lib/testcloud/backingstores
        ```
@@ -264,9 +266,11 @@ To install **testcloud** for development purposes:
        ```
        $ sudo chown qemu:testcloud /var/lib/testcloud
        ```
+
        ```
        $ sudo chown qemu:testcloud /var/lib/testcloud/instances
        ```
+
        ```
        $ sudo chown qemu:testcloud /var/lib/testcloud/backingstores
        ```
