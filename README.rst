@@ -25,11 +25,11 @@ Installation
 
         sudo usermod -a -G testcloud <username>
 
-#. Restart your user session to update the group privileges, or use the ``newgrp`` command to update them in the current session.
+#. Restart your user session to update the group privileges, or use ``su -`` to get a login shell for that particular user where the group settings will be updated.
 
     .. code:: bash
 
-        newgrp -
+        su -i <username>
 
 #. Now, you are ready to use **testcloud**.
 
