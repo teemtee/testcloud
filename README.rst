@@ -157,6 +157,21 @@ Note that in order for those new values to be picked up, the filename must be
 - ``~/.config/testcloud/settings.py``
 - ``/etc/testcloud/settings.py``
 
+For example, if you wanted to set up an ssh accessible root account that uses an ssh key as
+the authentification method, you could provide the following to the ``~/.config/testcloud/settings.py``:
+
+.. code:: python
+
+   USER_DATA = """#cloud-config
+   users:
+       - default
+       - name: root
+         password: %s
+         chpasswd: { expire: False }
+         ssh-authorized-keys:
+         - <my ssh pub key>
+   """
+
 Testcloud Development
 =====================
 
