@@ -7,13 +7,7 @@ Currently, only Fedora *qcow2* images are tested and supported.
 Installation
 ============
 
-#. Install required dependencies for ``testcloud``:
-
-    .. code:: bash
-
-        sudo dnf install libvirt python3-libvirt libguestfs libguestfs-tools python3-requests
-
-#. Install the testcloud packages:
+#. Install the **testcloud**:
 
     .. code:: bash
 
