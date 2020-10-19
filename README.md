@@ -21,7 +21,7 @@ To use **testcloud** on a production system:
 2. Add yourself to the `testcloud group`.
    
       ```
-      $ sudo usermod -a -G testcloud <username>
+      $ sudo usermod -a -G testcloud $USER
       ```
 
 3. Restart your user session to update the group privileges, or use
@@ -29,7 +29,7 @@ To use **testcloud** on a production system:
    settings will be updated.
    
       ```
-      $ su -i <username>
+      $ su -i $USER
       ```
 
 4. Now, you are ready to use **testcloud**.
@@ -227,7 +227,7 @@ To install **testcloud** for development purposes:
 4. Add a user into the `testcloud` group.
    
        ```
-       $ sudo usermod -a -G testcloud <username>
+       $ sudo usermod -a -G testcloud $USER
        ```
 
 5. Log out of the system and log in again to update the group
@@ -235,7 +235,7 @@ To install **testcloud** for development purposes:
    terminal.
    
        ```
-       $ su - <username>
+       $ su - $USER
        ```
 
 ### Installation
