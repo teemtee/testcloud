@@ -95,7 +95,7 @@ rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
 rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 
 %files
-%doc README.rst
+%doc README.md
 %license LICENSE
 
 %dir %{_sysconfdir}/testcloud
