@@ -15,7 +15,7 @@ import libvirt
 from . import config
 from . import image
 from . import instance
-from .exceptions import TestcloudCliError, TestcloudPermissionsError
+from .exceptions import TestcloudPermissionsError, TestcloudInstanceError
 
 config_data = config.get_config()
 
@@ -79,12 +79,11 @@ def _create_instance(args):
 
     # can't create existing instances
     if existing_instance is not None:
-        raise TestcloudCliError("A testcloud instance named {} already "
-                                "exists at {}. Use 'testcloud instance start "
-                                "{}' to start the instance or remove it before"
-                                " re-creating ".format(args.name,
-                                                       existing_instance.path,
-                                                       args.name))
+        log.error("A testcloud instance named {} already exists at {}. Use 'testcloud instance start "
+                "{}' to start the instance or remove it before re-creating.".format(
+                    args.name,existing_instance.path, args.name)
+             )
+        sys.exit(1)
 
     else:
         tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
@@ -123,8 +122,8 @@ def _start_instance(args):
     tc_instance = instance.find_instance(args.name, connection=args.connection)
 
     if tc_instance is None:
-        raise TestcloudCliError("Cannot start instance {} because it does "
-                                "not exist".format(args.name))
+        log.error("Cannot start instance {} because it does not exist".format(args.name))
+        sys.exit(1)
 
     tc_instance.start(args.timeout)
     with open(os.path.join(config_data.DATA_DIR, 'instances', args.name, 'ip'), 'r') as ip_file:
@@ -143,8 +142,8 @@ def _stop_instance(args):
     tc_instance = instance.find_instance(args.name, connection=args.connection)
 
     if tc_instance is None:
-        raise TestcloudCliError("Cannot stop instance {} because it does "
-                                "not exist".format(args.name))
+        log.error("Cannot stop instance {} because it does not exist".format(args.name))
+        sys.exit(1)
 
     tc_instance.stop()
 
@@ -160,10 +159,15 @@ def _remove_instance(args):
     tc_instance = instance.find_instance(args.name, connection=args.connection)
 
     if tc_instance is None:
-        raise TestcloudCliError("Cannot remove instance {} because it does "
-                                "not exist".format(args.name))
+        log.error("Cannot remove instance {} because it does not exist".format(args.name))
+        sys.exit(1)
 
-    tc_instance.remove(autostop=args.force)
+    try:
+        tc_instance.remove(autostop=args.force)
+    except TestcloudInstanceError as e:
+        log.error(e)
+        sys.exit(1)
+
 
 def _clean_instances(args):
     """Handler for 'instance clean' command. Expects the following elements in args:
