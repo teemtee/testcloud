@@ -4,6 +4,7 @@
 # sitelib for noarch packages, sitearch for others (remove the unneeded one)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
+ExclusiveArch: %{kernel_arches} noarch
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
