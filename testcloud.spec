@@ -46,6 +46,7 @@ BuildRequires:  python3-pytest
 BuildRequires:  python3-pytest-cov
 BuildRequires:  python3-requests
 BuildRequires:  python3-setuptools
+BuildRequires:  python3-sphinx
 
 Requires:       libvirt
 Requires:       libguestfs-tools-c
@@ -68,6 +69,13 @@ getent group testcloud >/dev/null || groupadd testcloud
 
 %install
 %py3_install
+
+# Docs
+pushd docs
+make %{?_smp_mflags} man
+install -d %{buildroot}%{_mandir}/man1
+install -p -m 0644 build/man/testcloud.1 %{buildroot}%{_mandir}/man1
+popd
 
 # configuration files
 mkdir -p %{buildroot}%{_sysconfdir}/testcloud/
@@ -97,6 +105,7 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 
 %files
 %doc README.md
+%{_mandir}/man1/testcloud.1*
 %license LICENSE
 
 %dir %{_sysconfdir}/testcloud
