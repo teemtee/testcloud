@@ -1,0 +1,127 @@
+.\" This is the manual page for testcloud.
+.\" Contact lruzicka@redhat.com if you find an errors or a typo.
+.TH TESTCLOUD 1 "11 Nov 2020" "1.0" "testcloud man page"
+.SH NAME
+testcloud \- download \fIqcow2\fR cloud images and boot them locally.
+.SH SYNOPSIS
+\fBtestcloud\fR [-h, --help] [COMMAND]... [OPTION]... [SUBCOMMAND]... [OPTION]...
+.SH DESCRIPTION
+.LP
+\fBtestcloud\fR is a small helper script to download and boot cloud images on your machine locally. 
+Currently, only Fedora \fBqcow2\fR images are supported.
+.PP
+To run \fBtestcloud\fR, you need to provide the \fBURL\fR of a cloud image to the script which
+will be used for booting. If you do not have an image location of your own, you can use one
+of the images from the \fBFedora Cloud\fR download pages at \fIhttps://alt.fedoraproject.org/cloud/\fR.
+.PP
+Then, \fBtestcloud\fR will download the image and save it in the \fI/var/lib/testcloud/backingstores/\fR.
+It will use this image to create a backing store for a newly created instance which will be placed in
+\fI/var/tmp/instances/\fR. When the same image has been previously downloaded, \fBtestcloud\fR will NOT
+download it again and it will use the current image to create the instance.
+.PP
+When the new instance is created, \fBtestcloud\fR will show its IP address that you can use to
+access the running instance via \fIssh\fR. The login name is \fBfedora\fR and the password is 
+\fBpassw0rd\fR. The IP address of an instance is shown when you list the instance (see COMMANDS).
+.PP
+The instance can also be manipulated and controlled with \fBvirt-manager\fR.
+.SH CONFIGURATION
+The default configuration should work for many people. However, if you need to override the
+default settings, you can do it in the \fIsettings.py\fR file. The example file in
+\fIconf/settings-example.py\fR shows the available configuration values which you can
+alter to suit your needs.
+.PP
+The configuration file must be placed in one of the following locations in order to be
+recognized.
+.IP 
+\fIconf/settings.py\fR in the git checkout
+.IP 
+\fI~/.config/testcloud/settings.py\fR
+.IP
+\fI/etc/testcloud/settings.py\fR
+.SH COMMANDS
+\fBinstance\fR
+        Control and manipulate the instances (see OPTIONS) for more details.
+
+\fBimage\fR
+        Control and manipulate the images (see OPTIONS) for more details.
+.SH OPTIONS
+\fB-h, --help\fR
+        Shows the help message and exits.
+
+\fB-c CONNECTION, --connection CONNECTION\fR
+        Provide the URL of a remote libvirt instance to be used instead of the local one. This option can be used with the \fBinstance\fR command only.
+
+.SH SUBCOMMANDS
+\fBcreate\fR
+        Create a new instance. See the INSTANCE CREATE OPTIONS section for more details.
+
+\fBlist\fR
+        List available running instances and images. Use the \fB--all\fR options to list all instances.
+
+\fBstart\fR
+        Start an existing instance.
+ 
+\fBstop\fR
+        Stop a running instance.
+
+\fBreboot\fR
+        Force the instance to reboot.
+
+\fBremove\fR
+        Remove an instance or image. If an instance is running, it cannot be removed without the \fB-f\fR option.
+
+\fBdestroy\fR
+        Remove an instance or image. Deprecated, do not use.
+ 
+\fBclean\fR
+        Remove non-existing or unsynced libvirt VMs from testcloud.
+
+.SH INSTANCE CREATE OPTIONS
+\fB-u, --url URL\fR
+        Specify the URL from where testcloud should download the instance qcow2 image. \fBThis option is compulsory\fR.
+
+\fB--ram RAM\fR
+        Set the amount of RAM that will be available to the instance's VM (in MiB).
+
+\fB--disksize DISKSIZE\fR
+        Set the disk size of the instance VM (in GiB).
+
+\fB--vnc\fR
+        Open a VNC connection to the \fB:1\fR display of the instance VM.
+
+\fB--no-graphic\fR
+        Turn off the instance VM's graphical display.
+
+\fB--timeout TIMEOUT\fR
+        Specify the time (in seconds) to wait for the instance boot to complete. To disable waiting time (default behaviour) set to \fB0\fR.
+
+.SH EXAMPLES
+.PP
+Create a new instance:
+.IP
+\fBtestcloud instance create <instance_name> -u <URL>\fR
+.PP
+List all available instances:
+.IP
+\fBtestcloud instance list --all\fR
+.PP
+Start an existing instance:
+.IP
+\fBtestcloud instance start <instance_name>\fR
+.PP
+Stop an existing instance:
+.IP
+\fBtestcloud instance stop <instance_name>\fR
+.PP
+Remove a running instance:
+.IP
+\fBtestcloud instance remove -f <instance_name>\fR
+
+.SH SEE ALSO
+
+\fBtestcloud's help\fR and the Project's \fBREADME.md\fR file
+
+.SH BUGS
+No known bugs. If you have found a bug, please report it at \fIhttps://bugzilla.redhat.com\fR.
+.SH AUTHOR
+Mike Ruckman (roshi@fedoraproject.org)
