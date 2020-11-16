@@ -8,7 +8,7 @@ ExclusiveArch: %{kernel_arches} noarch
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.3.6
+Version:        0.3.7
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -120,6 +120,13 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Mon Nov 16 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.7-1
+- Do not throw out ugly tracebacks if user uses cli (#1887815)
+- Parse CMD_LINE_ARGS and add CMD_LINE_ENVS (https://pagure.io/testcloud/issue/49)
+- Add try/except check to instance.prepare() as permissions error can occur there too
+- Update documentation
+- Add manpage
+
 * Fri Oct 09 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.6-1
 - Improve user experience when testcloud fails because of missing group
 
