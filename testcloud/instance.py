@@ -21,7 +21,7 @@ import jinja2
 
 from . import config
 from . import util
-from .exceptions import TestcloudInstanceError
+from .exceptions import TestcloudInstanceError, TestcloudPermissionsError
 
 config_data = config.get_config()
 
@@ -206,7 +206,10 @@ class Instance(object):
         """Create local directories and metadata needed to spawn the instance
         """
         # create the dirs needed for this instance
-        self._create_dirs()
+        try:
+            self._create_dirs()
+        except PermissionError:
+            raise TestcloudPermissionsError
 
         # generate metadata
         self._create_user_data(config_data.PASSWORD)

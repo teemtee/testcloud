@@ -34,6 +34,15 @@ simply boot images designed for cloud systems."""
 # instance handling functions
 ################################################################################
 
+def _handle_permissions_error_cli(error):
+    # User might not be part of testcloud group, print user friendly message how to fix this
+    print(error)
+    print("")
+    print("You should be able to fix this by calling following commands:")
+    print("sudo usermod -a -G testcloud $USER")
+    print("su - $USER")
+    sys.exit(1)
+
 def _list_instance(args):
     """Handler for 'list' command. Expects the following elements in args:
         * name(str)
@@ -67,12 +76,7 @@ def _create_instance(args):
         tc_image.prepare()
     except TestcloudPermissionsError as error:
         # User might not be part of testcloud group, print user friendly message how to fix this
-        print(error)
-        print("")
-        print("You should be able to fix this by calling following commands:")
-        print("sudo usermod -a -G testcloud $USER")
-        print("su - $USER")
-        sys.exit(1)
+        _handle_permissions_error_cli(error)
 
     existing_instance = instance.find_instance(args.name, image=tc_image,
                                                connection=args.connection)
@@ -95,7 +99,10 @@ def _create_instance(args):
         tc_instance.disk_size = args.disksize
 
         # prepare instance
-        tc_instance.prepare()
+        try:
+            tc_instance.prepare()
+        except TestcloudPermissionsError as error:
+            _handle_permissions_error_cli(error)
 
         # create instance domain
         tc_instance.spawn_vm()
