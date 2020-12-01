@@ -13,13 +13,13 @@ section below.
 To use **testcloud** on a production system:
 
 1. Install the **testcloud**.
-   
+
        ```
        $ sudo dnf install testcloud
        ```
 
 2. Add yourself to the `testcloud group`.
-   
+
       ```
       $ sudo usermod -a -G testcloud $USER
       ```
@@ -27,7 +27,7 @@ To use **testcloud** on a production system:
 3. Restart your user session to update the group privileges, or use
    `su -` to get a login shell for that particular user where the group
    settings will be updated.
-   
+
       ```
       $ su -i $USER
       ```
@@ -46,7 +46,7 @@ your own, you can use the image from the **Fedora Cloud** download pages
 To create a new instance with the cloud image, run:
 
 ```
-$ testcloud instance create <instance name> -u <url for qcow2 image>
+$ testcloud instance create <instance name> -u <url for qcow2 image> or <fedora:XX>
 ```
 
 **testcloud** will download the *qcow2* image and save it in the
@@ -66,7 +66,7 @@ Note, that the above command will only list the **running** instances.
 To see all instances, use:
 
 ```
-$ testcloud instance list --all 
+$ testcloud instance list --all
 ```
 
 Alternatively, the instances can also be viewed and manipulated using
@@ -78,25 +78,25 @@ Instances can be started and stopped using the `instance` interface of
 the **testcloud**, too:
 
 1. List all instances to see the correct name of the instance:
-   
+
        ```
        $ testcloud instance list --all
        ```
 
 2. Start the instance:
-   
+
        ```
        $ testcloud instance start <instance-name>
        ```
 
 3. Stop the instance:
-   
+
        ```
        $ testcloud instance stop <instance-name>
        ```
 
 4. Remove the instance:
-   
+
        ```
        $ testcloud instance remove <instance-name>
        ```
@@ -108,13 +108,13 @@ removing the instance.
 ### Other instance operations
 
 1. Reboot the instance:
-   
+
        ```
        $ testcloud instance reboot <instance-name>
        ```
 
 2. Remove non-existing libvirt VMs from testcloud:
-   
+
        ```
        $ testcloud instance clean
        ```
@@ -185,15 +185,15 @@ uses an ssh key as the authentification method, you could provide the
 following to the `~/.config/testcloud/settings.py`:
 
 ```yaml
-USER_DATA = """#cloud-config 
-users: 
-    - default 
-    - name: root 
-      password: %s 
-      chpasswd: { expire: False } 
-      ssh-authorized-keys: 
-      - <my ssh pub key> 
-""" 
+USER_DATA = """#cloud-config
+users:
+    - default
+    - name: root
+      password: %s
+      chpasswd: { expire: False }
+      ssh-authorized-keys:
+      - <my ssh pub key>
+"""
 ```
 
 ## Testcloud Development
@@ -207,25 +207,25 @@ To install **testcloud** for development purposes:
 ### Prerequisites
 
 1. Install the dependencies for **testcloud**.
-   
+
        ```
        $ sudo dnf install libvirt python3-libvirt libguestfs libguestfs-tools python3-requests python3-jinja2
        ```
 
 2. Start **libvirtd**.
-   
+
        ```
        $ sudo systemctl start libvirtd
        ```
 
 3. Add the `testcloud` group to the system.
-   
+
        ```
        $ sudo groupadd testcloud
        ```
 
 4. Add a user into the `testcloud` group.
-   
+
        ```
        $ sudo usermod -a -G testcloud $USER
        ```
@@ -233,7 +233,7 @@ To install **testcloud** for development purposes:
 5. Log out of the system and log in again to update the group
    information on your user or use a login shell on a different
    terminal.
-   
+
        ```
        $ su - $USER
        ```
@@ -241,28 +241,28 @@ To install **testcloud** for development purposes:
 ### Installation
 
 1. Clone the **testcloud** repository.
-   
+
        ```
        $ git clone https://pagure.io/testcloud.git
        ```
 
 2. Create the application directories.
-   
+
        ```
        $ sudo mkdir -p -m 775 /var/lib/testcloud
        ```
 
        ```
-       $ sudo mkdir -p -m 775 /var/lib/testcloud/instances 
+       $ sudo mkdir -p -m 775 /var/lib/testcloud/instances
        ```
 
        ```
        $ sudo mkdir -p -m 775 /var/lib/testcloud/backingstores
        ```
-    
+
 3. Change ownership on these directories to enable their use with
    **testcloud**.
-   
+
        ```
        $ sudo chown qemu:testcloud /var/lib/testcloud
        ```
@@ -274,9 +274,9 @@ To install **testcloud** for development purposes:
        ```
        $ sudo chown qemu:testcloud /var/lib/testcloud/backingstores
        ```
-    
+
 4. Copy the `.rules` file to the **polkit** rules.
-   
+
        ```
        $ sudo cp conf/99-testcloud-nonroot-libvirt-access.rules /etc/polkit-1/rules.d/
        ```
@@ -284,21 +284,21 @@ To install **testcloud** for development purposes:
 ### Running testcloud
 
 1. Navigate to your **testcloud** git repository.
-   
+
        ```
        $ cd testcloud
        ```
 
 2. Execute the `run_testcloud.py` script to run the **testcloud**. You
    can use any options as with the regular installation, for example:
-       
+
        ```
            $ ./run_testcloud.py instance create ...
        ```
-    
+
 3. Alternatively, you can use **pip** to install **testcloud** onto the
    system and then use it like it has been installed normally.
-   
+
        ```
        $ pip3 install -e . --user
        ```

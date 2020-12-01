@@ -12,10 +12,13 @@ import logging
 import os
 import sys
 import libvirt
+import requests
+import re
 from . import config
 from . import image
 from . import instance
 from .exceptions import TestcloudPermissionsError, TestcloudInstanceError
+from json import JSONDecodeError
 
 config_data = config.get_config()
 
@@ -61,6 +64,33 @@ def _list_instance(args):
 
     print("")
 
+def __get_image_url(release_string):
+    version = release_string.groups()[0]
+
+    if version == "latest":
+        try:
+            latest_release = requests.get('https://packager.fedorainfracloud.org:5000/api/v1/releases').json()
+        except (JSONDecodeError, ConnectionError):
+            print("Couldn't fetch the latest Fedora release...")
+            print("Expected format is 'fedora:XX' where XX is version number or 'latest'.")
+            return None
+        version = str(latest_release["fedora"]["stable"])
+
+    try:
+        releases = requests.get('https://getfedora.org/releases.json').json()
+    except (JSONDecodeError, ConnectionError):
+        print("Couldn't fetch releases list...")
+        return None
+
+    url = None
+    for release in releases:
+        if release["version"] == version and release["variant"] == "Cloud" and release["link"].endswith(".qcow2"):
+            # Currently, we support just the x86_64
+            if release["arch"] == "x86_64":
+                url = release["link"]
+                break
+
+    return url
 
 def _create_instance(args):
     """Handler for 'instance create' command. Expects the following elements in args:
@@ -71,7 +101,15 @@ def _create_instance(args):
 
     log.debug("create instance")
 
-    tc_image = image.Image(args.url)
+    image_by_name = re.match(r'fedora:(.*)', args.url)
+    if image_by_name and "http" not in args.url and "file" not in args.url:
+        url = __get_image_url(image_by_name)
+        if not url:
+            print("Couldn't find the desired image...")
+            sys.exit(1)
+        tc_image = image.Image(url)
+    else:
+        tc_image = image.Image(args.url)
     try:
         tc_image.prepare()
     except TestcloudPermissionsError as error:
@@ -322,7 +360,7 @@ def get_argparser():
     # this might work better as a second, required positional arg
     instarg_create.add_argument("-u",
                                 "--url",
-                                help="URL to qcow2 image is required.",
+                                help="URL to qcow2 image or fedora:XX string is required.",
                                 type=str)
     instarg_create.add_argument("--timeout",
                                 help="Time (in seconds) to wait for boot to "
