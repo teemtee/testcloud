@@ -10,8 +10,9 @@ testcloud \- download \fIqcow2\fR cloud images and boot them locally.
 \fBtestcloud\fR is a small helper script to download and boot cloud images on your machine locally.
 Currently, only Fedora \fBqcow2\fR images are supported.
 .PP
-To run \fBtestcloud\fR, you need to provide the \fBURL\fR of a cloud image or string in fedora:XX format
-(where XX is desired Fedora version or 'latest') to the script which will be used for booting.
+To run \fBtestcloud\fR, you need to provide the \fBURL\fR of a cloud image or string in \fBfedora:XX\fR format
+to the script which will be used for booting.
+
 If you do not have an image location of your own, you can use one
 of the images from the \fBFedora Cloud\fR download pages at \fIhttps://alt.fedoraproject.org/cloud/\fR.
 .PP
@@ -79,7 +80,11 @@ recognized.
 
 .SH INSTANCE CREATE OPTIONS
 \fB-u, --url URL\fR
-        Specify the URL from where testcloud should download the instance qcow2 image. \fBThis option is compulsory\fR.
+        Specify the URL from where testcloud should download the instance qcow2 image of fedora:XX. \fBThis option is compulsory\fR.
+        Where XX is:
+        - desired Fedora version or
+        - 'latest' - the latest Fedora GA image or
+        - 'qa_matrix' - image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test
 
 \fB--ram RAM\fR
         Set the amount of RAM that will be available to the instance's VM (in MiB).
