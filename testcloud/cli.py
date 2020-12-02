@@ -10,9 +10,11 @@ This is the primary user entry point for testcloud
 import argparse
 import logging
 import os
+import subprocess
 import sys
 import libvirt
 import requests
+import time
 import re
 from . import config
 from . import image
@@ -64,6 +66,87 @@ def _list_instance(args):
 
     print("")
 
+
+def _get_used_images(args):
+    """
+    Gets the list of images currently in use by any other instance
+    """
+    instances = instance.list_instances(args.connection)
+
+    # get images in use by any instance
+    images_in_use = set()
+    for inst in instances:
+        path = os.path.join(config_data.DATA_DIR, "instances", inst["name"], inst["name"] + "-local.qcow2")
+        command = "qemu-img info %s | grep 'backing file: '" % path
+        image_name = subprocess.check_output(command , shell=True).decode().strip().replace("backing file: ", "")
+        if image_name.endswith(".qcow2"):
+            images_in_use.add(image_name)
+        else:
+            # If we failed to obtain lock for image, bail out and do not remove anything later on
+            raise subprocess.CalledProcessError
+
+    return images_in_use
+
+
+def _clean_backingstore(args):
+    """
+    Removes oldest files from config_data.STORE_DIR if the directory ocupies more than BACKINGSTORE_SIZE
+    """
+    max_size = int(config_data.BACKINGSTORE_SIZE) * 1024 * 1024 * 1024
+
+    # Don't delete anything by default
+    if max_size == 0:
+        return
+
+    try:
+        images_in_use = _get_used_images(args)
+    except subprocess.CalledProcessError:
+        # Rather not clean anything if we can't be sure it's not used...
+        print("Not proceeding with backingstore cleanup due to errors... Are all testcloud instances stopped?")
+        return
+
+    # create a list of all files in the `store_dir`
+    files_by_mtime = []
+    for file in os.listdir(config_data.STORE_DIR):
+        fpath = os.path.join(config_data.STORE_DIR, file)
+        ftime = os.path.getmtime(fpath)
+        # Don't touch files created in the last 24 hours,
+        if ftime >= (time.time() - 86400):
+            continue
+        # Don't touch images in use by any instance
+        if file in images_in_use:
+            continue
+        # Touch only .qcow2 and .qcow2.part files
+        if os.path.splitext(fpath)[1] not in ("qcow2", ".qcow2.part"):
+            continue
+        files_by_mtime.append((ftime, os.path.getsize(fpath), fpath))
+
+    # sort descending by mtime
+    files_by_mtime.sort(reverse=True)
+
+    # remove files from the list before either:
+    #  1) the sum of the removed files' sizes is larger than the BACKINGSTORE_SIZE
+    #  2) you remove all the files from the list
+    while True:
+        try:
+            _, size, _ = files_by_mtime[0]
+        except IndexError:
+            break
+
+        # remove the current file's size from the allocated lot
+        max_size -= size
+
+        # if we just ran out of space, break free
+        if max_size < 0:
+            break
+
+        # keep the file off of the 'remove me later on' list
+        files_by_mtime.pop(0)
+
+    # the files left in the list are to be deleted
+    for _, _, fpath in files_by_mtime:
+        os.remove(fpath)
+
 def _get_image_url(release_string):
     """
     Accepts re object with match in fedora:XX format (where XX can be number or 'latest' or 'qa_matrix')
@@ -111,6 +194,12 @@ def _create_instance(args):
     :param args: args from argparser
     """
 
+    try:
+        _clean_backingstore(args)
+    except (ValueError, PermissionError):
+        # Cleanup errors aren't critical
+        pass
+
     log.debug("create instance")
 
     image_by_name = re.match(r'fedora:(.*)', args.url)
@@ -139,33 +228,33 @@ def _create_instance(args):
              )
         sys.exit(1)
 
-    else:
-        tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
 
-        # set ram size
-        tc_instance.ram = args.ram
+    tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
 
-        # set disk size
-        tc_instance.disk_size = args.disksize
+    # set ram size
+    tc_instance.ram = args.ram
 
-        # prepare instance
-        try:
-            tc_instance.prepare()
-        except TestcloudPermissionsError as error:
-            _handle_permissions_error_cli(error)
+    # set disk size
+    tc_instance.disk_size = args.disksize
 
-        # create instance domain
-        tc_instance.spawn_vm()
+    # prepare instance
+    try:
+        tc_instance.prepare()
+    except TestcloudPermissionsError as error:
+        _handle_permissions_error_cli(error)
 
-        # start created domain
-        tc_instance.start(args.timeout)
+    # create instance domain
+    tc_instance.spawn_vm()
 
-        # find vm ip
-        vm_ip = tc_instance.get_ip()
+    # start created domain
+    tc_instance.start(args.timeout)
 
-        # Write ip to file
-        tc_instance.create_ip_file(vm_ip)
-        print("The IP of vm {}:  {}".format(args.name, vm_ip))
+    # find vm ip
+    vm_ip = tc_instance.get_ip()
+
+    # Write ip to file
+    tc_instance.create_ip_file(vm_ip)
+    print("The IP of vm {}:  {}".format(args.name, vm_ip))
 
 
 def _start_instance(args):

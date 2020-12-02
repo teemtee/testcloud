@@ -131,6 +131,12 @@ runcmd:
     # timeout, in seconds for instance boot process
     BOOT_TIMEOUT = 30
 
+    # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
+    # Once the limit is reached, testcloud will attempt to remove oldest files
+    # before creating a new instance
+    # 0 = unlimited
+    BACKINGSTORE_SIZE = 0
+
     # ram size, in MiB
     RAM = 768
 
