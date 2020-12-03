@@ -4,7 +4,7 @@
 # See the LICENSE file for more details on Licensing
 
 import os
-import imp
+import types
 
 import testcloud
 
@@ -72,7 +72,7 @@ def _load_config(conf_filename):
     :return: object containing configuration values
     '''
 
-    new_conf = imp.new_module('config')
+    new_conf = types.ModuleType('config')
     new_conf.__file__ = conf_filename
     try:
         with open(conf_filename, 'r') as conf_file:
