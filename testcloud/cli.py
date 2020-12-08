@@ -44,6 +44,30 @@ simply boot images designed for cloud systems."""
 # instance handling functions
 ################################################################################
 
+def _handle_connection_tip(instance, ip):
+    """
+    Prints hint how to connect to the vm
+    Prints detailed help for default config_data.USER_DATA and just the basic one for altered configurations
+    """
+    config_altered = False
+
+    if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
+        config_altered = True
+    if "fedora" in instance.backing_store.lower():
+        kind = "Fedora"
+    elif "centos" in instance.backing_store.lower():
+        kind = "CentOS"
+    else:
+        return
+    print("-"*60)
+    if config_altered:
+        print("To connect to the VM, use the following command:")
+        print("ssh %s" % ip)
+    else:
+        print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
+        print("ssh %s@%s" % (kind.lower(), ip))
+    print("-"*60)
+
 def _handle_permissions_error_cli(error):
     # User might not be part of testcloud group, print user friendly message how to fix this
     print(error)
@@ -277,6 +301,7 @@ def _create_instance(args):
     # Write ip to file
     tc_instance.create_ip_file(vm_ip)
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
+    _handle_connection_tip(tc_instance, vm_ip)
 
 
 def _start_instance(args):
@@ -297,6 +322,7 @@ def _start_instance(args):
     with open(os.path.join(config_data.DATA_DIR, 'instances', args.name, 'ip'), 'r') as ip_file:
         vm_ip = ip_file.read()
         print("The IP of vm {}:  {}".format(args.name, vm_ip))
+        _handle_connection_tip(tc_instance, vm_ip)
 
 
 def _stop_instance(args):
