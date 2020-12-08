@@ -154,17 +154,17 @@ def _clean_backingstore(args):
 
 def _get_image_url(release_string):
     """
-    Accepts re object with match in fedora:XX format (where XX can be number or 'latest' or 'qa_matrix')
+    Accepts re object with match in fedora:XX format (where XX can be number or 'latest' or 'qa-matrix')
     Returns url to Fedora Cloud qcow2
     """
     version = release_string.groups()[0]
 
-    if version == "qa_matrix":
+    if version == "qa-matrix":
         try:
             nominated_response = requests.get("https://fedoraproject.org/wiki/Test_Results:Current_Installation_Test")
             return re.findall(r'href=\"(.*.x86_64.qcow2)\"', nominated_response.text)[0]
         except (ConnectionError, IndexError):
-            print("Couldn't fetch the current image from qa_matrix ..")
+            print("Couldn't fetch the current image from qa-matrix ..")
             return None
 
     if version == "latest":
@@ -172,7 +172,7 @@ def _get_image_url(release_string):
             latest_release = requests.get('https://packager.fedorainfracloud.org:5000/api/v1/releases').json()
         except (JSONDecodeError, ConnectionError):
             print("Couldn't fetch the latest Fedora release...")
-            print("Expected format is 'fedora:XX' where XX is version number or 'latest' or 'qa_matrix'.")
+            print("Expected format is 'fedora:XX' where XX is version number or 'latest' or 'qa-matrix'.")
             return None
         version = str(latest_release["fedora"]["stable"])
 
@@ -475,7 +475,7 @@ def get_argparser():
                                 "--url",
                                 help="URL to qcow2 image or fedora:XX string is required. "
                                      "eg. fedora:33, fedora:latest (latest Fedora GA image) or "
-                                     "fedora:qa_matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test ) "
+                                     "fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test ) "
                                      "are allowed values.",
                                 type=str)
     instarg_create.add_argument("--timeout",
