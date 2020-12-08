@@ -16,11 +16,16 @@ import libvirt
 import requests
 import time
 import re
+
 from . import config
 from . import image
 from . import instance
 from .exceptions import TestcloudPermissionsError, TestcloudInstanceError
-from json import JSONDecodeError
+
+try:
+    from simplejson.errors import JSONDecodeError
+except ImportError:
+    from json import JSONDecodeError
 
 config_data = config.get_config()
 
