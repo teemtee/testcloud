@@ -1,6 +1,6 @@
 .. testcloud documentation master file, created by
    sphinx-quickstart on Wed May 20 14:59:21 2015.
-   
+
 .. Last updated on Fri Nov 13 13:56:10 2020.
 
 .. This work is licensed under the Creative Commons Attribution 4.0
@@ -11,7 +11,7 @@
 Testcloud User's Guide
 ======================
 
-**testcloud** is a simple system which is capable of downloading images designed 
+**testcloud** is a simple system which is capable of downloading images designed
 for cloud systems and booting them locally with minimial configuration needed.
 **testcloud** is designed to be simple and lean, trading fancy cloud
 system features for ease of use and sanity in development.
@@ -28,7 +28,7 @@ To install **testcloud** on a production system:
     #. Install the testcloud package.
 
         .. code-block:: bash
-        
+
             $ sudo dnf install testcloud
 
     #. Add yourself to the testcloud group.
@@ -99,12 +99,6 @@ Instances can be manipulated using the ``instance`` command and specifying a sin
 
             $ testcloud instance list
 
-    #. To list all available instances:
-
-        .. code-block:: bash
-
-            $ testcloud instance list --all
-
     #. To start the instance:
 
         .. code-block:: bash
@@ -171,15 +165,15 @@ For example, if you wanted to set up an **ssh** accessible root account that use
 
 .. code-block:: python
 
-    USER_DATA = """#cloud-config 
-    users: 
-        - default 
-        - name: root 
-              password: %s 
-              chpasswd: { expire: False } 
-              ssh-authorized-keys: 
-        - <my ssh pub key> 
-    """ 
+    USER_DATA = """#cloud-config
+    users:
+        - default
+        - name: root
+              password: %s
+              chpasswd: { expire: False }
+              ssh-authorized-keys:
+        - <my ssh pub key>
+    """
 
 Getting Help
 ============

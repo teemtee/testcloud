@@ -61,13 +61,23 @@ def _list_instance(args):
     """
     instances = instance.list_instances(args.connection)
 
+    if args.all:
+        log.warning("(DEPRECATED) --all is now the default behavior")
+
     print("{!s:<16} {!s:^30}     {!s:<10}".format("Name", "IP", "State"))
     print("-"*60)
     for inst in instances:
-        if args.all or inst['state'] == 'running':
+        # Running first
+        if inst['state'] == 'running':
             print("{!s:<27} {!s:^22}  {!s:<10}".format(inst['name'],
                                                        inst['ip'],
                                                        inst['state']))
+    # And everything else
+    for inst in instances:
+        if inst['state'] != 'running':
+            print("{!s:<27} {!s:^22}  {!s:<10}".format(inst['name'],
+                                                        inst['ip'],
+                                                        inst['state']))
 
     print("")
 
@@ -395,10 +405,10 @@ def get_argparser():
                                           help="<command> help")
 
     # instance list
-    instarg_list = instarg_subp.add_parser("list", help="list instances")
+    instarg_list = instarg_subp.add_parser("list", help="list all instances")
     instarg_list.set_defaults(func=_list_instance)
     instarg_list.add_argument("--all",
-                              help="list all instances, running and stopped",
+                              help="(DEPRECATED) --all is now the default behavior",
                               action="store_true")
 
     # instance start

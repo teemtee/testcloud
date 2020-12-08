@@ -62,13 +62,6 @@ You will be able to see the instance using the `list` command.
 $ testcloud instance list
 ```
 
-Note, that the above command will only list the **running** instances.
-To see all instances, use:
-
-```
-$ testcloud instance list --all
-```
-
 Alternatively, the instances can also be viewed and manipulated using
 the **virt-manager** tool.
 
@@ -80,7 +73,7 @@ the **testcloud**, too:
 1. List all instances to see the correct name of the instance:
 
        ```
-       $ testcloud instance list --all
+       $ testcloud instance list
        ```
 
 2. Start the instance:
