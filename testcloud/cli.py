@@ -249,7 +249,14 @@ def _create_instance(args):
         _handle_permissions_error_cli(error)
 
     # create instance domain
-    tc_instance.spawn_vm()
+    try:
+        tc_instance.spawn_vm()
+    except libvirt.libvirtError:
+        log.error("An instance named {} already exists in libvirt. This might be broken testcloud instance or something else."
+                "Fix the issues or use 'testcloud instance remove {}' to remove the instance and try again.".format(
+                    args.name, args.name)
+             )
+        sys.exit(1)
 
     # start created domain
     tc_instance.start(args.timeout)
