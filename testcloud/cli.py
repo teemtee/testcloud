@@ -137,6 +137,21 @@ def _clean_backingstore(args):
     if max_size == 0:
         return
 
+    # Bail erly if there are any running instances
+    instances = instance.list_instances(args.connection)
+    running_instances = set()
+    for inst in instances:
+        if inst['state'] == "running":
+            running_instances.add(inst["name"])
+    if len(running_instances) > 0:
+        print("")
+        log.warn("Not proceeding with backingstore cleanup because there are some testcloud instances running.")
+        print("You can fix this by following command(s):")
+        for inst in running_instances:
+            print("testcloud instance stop %s" % inst)
+        print("")
+        return
+
     try:
         images_in_use = _get_used_images(args)
     except subprocess.CalledProcessError:
