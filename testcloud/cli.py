@@ -296,11 +296,18 @@ def _create_instance(args):
         tc_instance.prepare()
     except TestcloudPermissionsError as error:
         _handle_permissions_error_cli(error)
+    except TestcloudInstanceError as error:
+        if args.keep:
+            raise error
+        else:
+            tc_instance._remove_from_disk()
 
     # create instance domain
     try:
         tc_instance.spawn_vm()
     except libvirt.libvirtError:
+        if not args.keep:
+            tc_instance._remove_from_disk()
         log.error("An instance named {} already exists in libvirt. This might be broken testcloud instance or something else."
                 "Fix the issues or use 'testcloud instance remove {}' to remove the instance and try again.".format(
                     args.name, args.name)
@@ -308,7 +315,16 @@ def _create_instance(args):
         sys.exit(1)
 
     # start created domain
-    tc_instance.start(args.timeout)
+    try:
+        tc_instance.start(args.timeout)
+    except libvirt.libvirtError as error:
+        # libvirt doesn't directly raise errors on boot failure
+        # thus this happened before boot started
+        if not args.keep:
+            tc_instance._remove_from_disk()
+            tc_instance._remove_from_libvirt()
+        print("Failed when starting the virtual machine with:")
+        raise error
 
     # find vm ip
     vm_ip = tc_instance.get_ip()
@@ -539,6 +555,9 @@ def get_argparser():
                                 help="Desired instance disk size, in GB",
                                 type=int,
                                 default=config_data.DISK_SIZE)
+    instarg_create.add_argument("--keep",
+                                help="Don't remove instance from disk when something fails, useful for debugging",
+                                action="store_true")
 
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",

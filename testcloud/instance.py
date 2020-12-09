@@ -527,6 +527,20 @@ class Instance(object):
 
         raise TestcloudInstanceError("Unable to stop instance {}.".format(self.name))
 
+    def _remove_from_disk(self):
+        log.debug("removing instance {} from disk".format(self.path))
+        shutil.rmtree(self.path)
+
+    def _remove_from_libvirt(self):
+        # remove from libvirt, assuming that it's stopped already
+        domain_state = _find_domain(self.name, self.connection)
+        if domain_state is not None:
+            log.debug("Unregistering instance from libvirt.")
+            self._get_domain().undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
+        else:
+            log.warn('Instance "{}" not found in libvirt "{}". Was it removed already? Should '
+                     'you have used a different connection?'.format(self.name, self.connection))
+
     def remove(self, autostop=True):
         """Remove an already stopped instance
 
@@ -549,18 +563,8 @@ class Instance(object):
                     "Cannot remove running instance {}. Please stop the "
                     "instance before removing or use '-f' parameter.".format(self.name))
 
-        # remove from libvirt, assuming that it's stopped already
-        if domain_state is not None:
-            self._get_domain().undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
-            log.debug("Unregistering instance from libvirt.")
-        else:
-            log.warn('Instance "{}" not found in libvirt "{}". Was it removed already? Should '
-                     'you have used a different connection?'.format(self.name, self.connection))
-
-        log.debug("removing instance {} from disk".format(self.path))
-
-        # remove from disk
-        shutil.rmtree(self.path)
+        self._remove_from_libvirt()
+        self._remove_from_disk()
 
     def destroy(self):
         '''A deprecated method. Please call :meth:`remove` instead.'''
