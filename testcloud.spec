@@ -8,7 +8,7 @@ ExclusiveArch: %{kernel_arches} noarch
 
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.3.7
+Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -120,6 +120,16 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed Dec 16 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.4.0-1
+- Support creating instances by fedora:XX, fedora:latest and fedora:qa-matrix strings
+- Implement auto cleaning of backingstore
+- Make testcloud compatible with future Python 3.10
+- Adapt to requests defaulting to simplejson if present
+- Don't throw out exception when trying to create instance already existing in libvirt
+- --all is now the default in testcloud instance list
+- Show some hints to the users on instance create/start
+- cleanup the instance bits when instance create fails
+
 * Mon Nov 16 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.3.7-1
 - Do not throw out ugly tracebacks if user uses cli (#1887815)
 - Parse CMD_LINE_ARGS and add CMD_LINE_ENVS (https://pagure.io/testcloud/issue/49)
