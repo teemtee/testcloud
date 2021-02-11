@@ -18,6 +18,7 @@ import libvirt
 import shutil
 import uuid
 import jinja2
+import socket
 
 from . import config
 from . import util
@@ -57,6 +58,13 @@ def _list_instances():
 
         except IOError:
             instance_details['ip'] = None
+
+        try:
+            with open("{}/instances/{}/port".format(config_data.DATA_DIR, dir), 'r') as inst:
+                instance_details['port'] = inst.readline().strip()
+
+        except IOError:
+            instance_details['port'] = 22
 
         instance_list.append(instance_details)
 
@@ -353,6 +361,70 @@ class Instance(object):
                                               self.name), 'w') as ip_file:
             ip_file.write(ip)
 
+    def create_port_file(self, port):
+        """Write the port address found before instance creation to a file
+           for easier management later. This is likely going to break
+           and need a better solution."""
+
+        with open("{}/instances/{}/port".format(config_data.DATA_DIR,
+                                              self.name), 'w') as port_file:
+            port_file.write(str(port))
+
+    def get_instance_port(self):
+        """
+        Returns port of an instance
+        """
+        if self.connection == "qemu:///system":
+            return 22 # Default SSH Port
+        with open("{}/instances/{}/port".format(config_data.DATA_DIR,
+                                self.name), 'r') as port_file:
+            return int(port_file.readline())
+
+    def check_port_available(self, port):
+        """
+        Checks is a port is available for use
+        Returns True/False
+        """
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', port))
+        if result != 0:
+            return True
+        return False
+
+    def find_next_usable_port(self):
+        """
+        Returns next usable port for user session vm, starting with SSH_USER_PORT_BASE
+        Tries to recycle freed ports from currently used interval
+        """
+        used_ports = []
+        for dir in os.listdir("{}/instances/".format(config_data.DATA_DIR)):
+            try:
+                with open("{}/instances/{}/port".format(config_data.DATA_DIR,
+                                                dir), 'r') as port_file:
+                    used_ports.append(int(port_file.readline()))
+            except FileNotFoundError:
+                continue
+
+        if len(used_ports) == 0:
+            used_ports.append(config_data.SSH_USER_PORT_BASE)
+        available_in_interval = [i for i in range(config_data.SSH_USER_PORT_BASE,max(used_ports))]
+        if len(available_in_interval) > 0:
+            i = 0
+            recycleable_ports = [item for item in available_in_interval if item not in used_ports]
+            if len(recycleable_ports) > 0:
+                next_port = recycleable_ports[0]
+                while not self.check_port_available(recycleable_ports[i]):
+                    i = i + 1
+                    next_port = recycleable_ports[i]
+                return next_port
+
+        next_port = max(used_ports) + 1
+        while not self.check_port_available(next_port):
+            next_port = next_port + 1
+
+        return next_port
+
+
     def write_domain_xml(self):
         """Load the default xml template, and populate it with the following:
          - name
@@ -375,7 +447,25 @@ class Instance(object):
                            'seed': self.seed_path,
                            'mac_address': util.generate_mac_address(),
                            'uefi_loader': "",
-                           'emulator_path': "/usr/bin/qemu-kvm"}
+                           'emulator_path': "/usr/bin/qemu-kvm",
+                           'network_type': "network",
+                           'network_source': "<source network='default'/>",
+                           "ip_setup": ""}
+
+        # We need to shuffle things around network setup a bit if we're running in qemu:///session instead of qemu:///system
+        if self.connection == "qemu:///session":
+            instance_values["network_type"] = "user"
+            instance_values["network_source"] = ""
+            instance_values["ip_setup"] = "<ip family='ipv4' address='172.17.2.0' prefix='24'/>"
+            log.info("Adding another network device for ssh from host...")
+            port = self.find_next_usable_port()
+            # We might already have this when called from tmt, so, check it first
+            if "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port) not in config_data.CMD_LINE_ARGS:
+                config_data.CMD_LINE_ARGS.extend(
+                    ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
+                    "-device", "e1000,netdev=testcloud_net.{}".format(port)])
+            self.create_port_file(port)
+
 
         if config_data.CMD_LINE_ARGS or config_data.CMD_LINE_ENVS:
             args_envs = "  <qemu:commandline>\n"
@@ -389,7 +479,7 @@ class Instance(object):
             instance_values["qemu_args"] = args_envs
 
         if config_data.UEFI:
-            instance_values['uefi_loader'] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
+            instance_values["uefi_loader"] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
 
         if not os.path.exists("/usr/bin/qemu-kvm"):
             if os.path.exists("/usr/libexec/qemu-kvm"):
@@ -469,13 +559,23 @@ class Instance(object):
         poll_tick = 0.5
         timeout_ticks = timeout / poll_tick
         count = 0
+        port_open = 1
 
         # poll libvirt for domain interfaces, returning when an interface is
         # found, indicating that the boot process is post-cloud-init
         while count <= timeout_ticks:
-            domif = dom.interfaceAddresses(0)
+            if self.connection == "qemu:///system":
+                domif = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+            elif self.connection == "qemu:///session":
+                domif = {}
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                port_open = sock.connect_ex(('127.0.0.1',self.get_instance_port()))
+            else:
+                # We dont know what to do with other connection types yet! TODO: Find out, refactor
+                raise TestcloudInstanceError("We currently don't support connections other than"
+                                             "qemu:///system and qemu:///session")
 
-            if len(domif) > 0 or timeout_ticks == 0:
+            if len(domif) > 0 or timeout_ticks == 0 or port_open == 0:
                 log.info("Successfully booted instance {}".format(self.name))
                 return
 
@@ -581,7 +681,7 @@ class Instance(object):
         :param libvirt.domain domain: the domain object to use, instead of
             using the domain associated with this instance. This is for
             backwards compatibility only and will be removed in the future.
-        :return: IP address of the instance
+        :return: IP address of the instance (or IP:port)
         :rtype: str
         :raises TestcloudInstanceError: when time runs out and no IP is
             assigned
@@ -593,8 +693,12 @@ class Instance(object):
 
         while counter <= timeout:
             try:
-                output = domain.interfaceAddresses(
-                    libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+                if self.connection == "qemu:///system":
+                    output = domain.interfaceAddresses(
+                        libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+                else:
+                    # Return early for qemu user session
+                    return "127.0.0.1"
                 # example output:
                 # {'vnet0': {'addrs': [{'addr': '192.168.11.33', 'prefix': 24, 'type': 0}],
                 #  'hwaddr': '52:54:00:54:4b:b4'}}

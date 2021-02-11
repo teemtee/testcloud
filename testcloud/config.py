@@ -153,6 +153,9 @@ runcmd:
     # Desired VM type: False = BIOS, True = UEFI
     UEFI = False
 
+    # Port base for userspace sessions for SSH forward
+    SSH_USER_PORT_BASE = 10022
+
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have
         names containing all upper case letters.

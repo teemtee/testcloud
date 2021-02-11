@@ -72,3 +72,6 @@ BACKINGSTORE_SIZE = 2
 
 # Desired VM type: False = BIOS, True = UEFI
 #UEFI = False
+
+# Port base for userspace sessions for SSH forward
+#SSH_USER_PORT_BASE = 10022

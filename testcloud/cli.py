@@ -46,13 +46,12 @@ simply boot images designed for cloud systems."""
 # instance handling functions
 ################################################################################
 
-def _handle_connection_tip(instance, ip):
+def _handle_connection_tip(instance, ip, port):
     """
     Prints hint how to connect to the vm
     Prints detailed help for default config_data.USER_DATA and just the basic one for altered configurations
     """
     config_altered = False
-
     if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
         config_altered = True
 
@@ -64,14 +63,21 @@ def _handle_connection_tip(instance, ip):
     elif "centos" in instance.backing_store.lower():
         kind = "CentOS"
     else:
-        return
+        # Let's use config_altered to indicate we don't detect an OS
+        config_altered = True
     print("-"*60)
     if config_altered:
         print("To connect to the VM, use the following command:")
-        print("ssh %s" % ip)
+        if port == 22:
+            print("ssh %s" % ip)
+        else:
+            print("ssh %s -p %d" % (ip, port))
     else:
         print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
-        print("ssh %s@%s" % (kind.lower(), ip))
+        if port == 22:
+            print("ssh %s@%s" % (kind.lower(), ip))
+        else:
+            print("ssh %s@%s -p %d" % (kind.lower(), ip, port))
     print("-"*60)
 
 def _handle_permissions_error_cli(error):
@@ -94,19 +100,21 @@ def _list_instance(args):
     if args.all:
         log.warning("(DEPRECATED) --all is now the default behavior")
 
-    print("{!s:<16} {!s:^30}     {!s:<10}".format("Name", "IP", "State"))
-    print("-"*60)
+    print("{!s:<16} {!s:^30} {!s:<10}    {!s:<10}".format("Name", "IP", "SSH Port", "State"))
+    print("-"*80)
     for inst in instances:
         # Running first
         if inst['state'] == 'running':
-            print("{!s:<27} {!s:^22}  {!s:<10}".format(inst['name'],
+            print("{!s:<27} {!s:^16} {!s:^12}  {!s:^14}".format(inst['name'],
                                                        inst['ip'],
+                                                       inst['port'],
                                                        inst['state']))
     # And everything else
     for inst in instances:
         if inst['state'] != 'running':
-            print("{!s:<27} {!s:^22}  {!s:<10}".format(inst['name'],
+            print("{!s:<27} {!s:^16} {!s:^12}  {!s:^14}".format(inst['name'],
                                                         inst['ip'],
+                                                        inst['port'],
                                                         inst['state']))
 
     print("")
@@ -399,11 +407,16 @@ def _create_instance(args):
 
     # find vm ip
     vm_ip = tc_instance.get_ip()
+    # find vm port
+    vm_port = tc_instance.get_instance_port()
 
     # Write ip to file
     tc_instance.create_ip_file(vm_ip)
+
+    # List connection details
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
-    _handle_connection_tip(tc_instance, vm_ip)
+    print("The SSH port of vm {}:  {}".format(args.name, vm_port))
+    _handle_connection_tip(tc_instance, vm_ip, vm_port)
 
 
 def _start_instance(args):
@@ -421,10 +434,11 @@ def _start_instance(args):
         sys.exit(1)
 
     tc_instance.start(args.timeout)
-    with open(os.path.join(config_data.DATA_DIR, 'instances', args.name, 'ip'), 'r') as ip_file:
-        vm_ip = ip_file.read()
-        print("The IP of vm {}:  {}".format(args.name, vm_ip))
-        _handle_connection_tip(tc_instance, vm_ip)
+    vm_ip = tc_instance.get_ip()
+    vm_port = tc_instance.get_instance_port()
+    print("The IP of vm {}:  {}".format(args.name, vm_ip))
+    print("The SSH port of vm {}:  {}".format(args.name, vm_port))
+    _handle_connection_tip(tc_instance, vm_ip, vm_port)
 
 
 def _stop_instance(args):
