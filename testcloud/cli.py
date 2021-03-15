@@ -53,6 +53,10 @@ def _handle_connection_tip(instance, ip):
 
     if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
         config_altered = True
+
+    if not instance.backing_store:
+        return
+
     if "fedora" in instance.backing_store.lower():
         kind = "Fedora"
     elif "centos" in instance.backing_store.lower():
