@@ -8,14 +8,16 @@ This is the primary user entry point for testcloud
 """
 
 import argparse
+import libvirt
 import logging
 import os
+import random
+import re
+import requests
+import string
 import subprocess
 import sys
-import libvirt
-import requests
 import time
-import re
 
 from . import config
 from . import image
@@ -245,6 +247,63 @@ def _get_image_url(release_string):
 
     return url
 
+def _generate_name():
+    """
+    Returns a random human-readable name
+    """
+
+    used_names = [inst["name"] for inst in instance._list_instances()]
+
+    # Taken from https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go
+    left = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful",
+            "blissful", "bold", "boring", "brave", "busy", "charming", "clever", "cool", "compassionate",
+            "competent", "condescending", "confident", "cranky", "crazy", "dazzling", "determined", "distracted",
+            "dreamy", "eager", "ecstatic", "elastic", "elated", "elegant", "eloquent", "epic", "exciting",
+            "fervent", "festive", "flamboyant", "focused", "friendly", "frosty", "funny", "gallant", "gifted",
+            "goofy", "gracious", "great", "happy", "hardcore", "heuristic", "hopeful", "hungry", "infallible",
+            "inspiring", "interesting", "intelligent", "jolly", "jovial", "keen", "kind", "laughing", "loving",
+            "lucid", "magical", "mystifying", "modest", "musing", "naughty", "nervous", "nice", "nifty",
+            "nostalgic", "objective", "optimistic", "peaceful", "pedantic", "pensive", "practical", "priceless",
+            "quirky", "quizzical", "recursing", "relaxed", "reverent", "romantic", "sad", "serene", "sharp",
+            "silly", "sleepy", "stoic", "strange", "stupefied", "suspicious", "sweet", "tender", "thirsty",
+            "trusting", "unruffled", "upbeat", "vibrant", "vigilant", "vigorous", "wizardly", "wonderful",
+            "xenodochial", "youthful", "zealous", "zen"]
+    right = ["albattani", "allen", "almeida", "antonelli", "agnesi", "archimedes", "ardinghelli",
+            "aryabhata", "austin", "babbage", "banach", "banzai", "bardeen", "bartik", "bassi",
+            "beaver", "bell", "benz", "bhabha", "bhaskara", "black", "blackburn", "blackwell", "bohr",
+            "booth", "borg", "bose", "bouman", "boyd", "brahmagupta", "brattain", "brown", "buck",
+            "burnell", "cannon", "carson", "cartwright", "carver", "cerf", "chandrasekhar", "chaplygin",
+            "chatelet", "chatterjee", "chebyshev", "cohen", "chaum", "clarke", "colden", "cori", "cray",
+            "curran", "curie", "darwin", "davinci", "dewdney", "dhawan", "diffie", "dijkstra", "dirac",
+            "driscoll", "dubinsky", "easley", "edison", "einstein", "elbakyan", "elgamal", "elion", "ellis",
+            "engelbart", "euclid", "euler", "faraday", "feistel", "fermat", "fermi", "feynman", "franklin",
+            "gagarin", "galileo", "galois", "ganguly", "gates", "gauss", "germain", "goldberg", "goldstine",
+            "goldwasser", "golick", "goodall", "gould", "greider", "grothendieck", "haibt", "hamilton",
+            "haslett", "hawking", "hellman", "heisenberg", "hermann", "herschel", "hertz", "heyrovsky",
+            "hodgkin", "hofstadter", "hoover", "hopper", "hugle", "hypatia", "ishizaka", "jackson", "jang",
+            "jemison", "jennings", "jepsen", "johnson", "joliot", "jones", "kalam", "kapitsa", "kare",
+            "keldysh", "keller", "kepler", "khayyam", "khorana", "kilby", "kirch", "knuth", "kowalevski",
+            "lalande", "lamarr", "lamport", "leakey", "leavitt", "lederberg", "lehmann", "lewin", "lichterman",
+            "liskov", "lovelace", "lumiere", "mahavira", "margulis", "matsumoto", "maxwell", "mayer", "mccarthy",
+            "mcclintock", "mclaren", "mclean", "mcnulty", "mendel", "mendeleev", "meitner", "meninsky", "merkle",
+            "mestorf", "mirzakhani", "moore", "morse", "murdock", "moser", "napier", "nash", "neumann", "newton",
+            "nightingale", "nobel", "noether", "northcutt", "noyce", "panini", "pare", "pascal", "pasteur",
+            "payne", "perlman", "pike", "poincare", "poitras", "proskuriakova", "ptolemy", "raman", "ramanujan",
+            "ride", "montalcini", "ritchie", "rhodes", "robinson", "roentgen", "rosalind", "rubin", "saha",
+            "sammet", "sanderson", "satoshi", "shamir", "shannon", "shaw", "shirley", "shockley", "shtern",
+            "sinoussi", "snyder", "solomon", "spence", "stonebraker", "sutherland", "swanson", "swartz",
+            "swirles", "taussig", "tereshkova", "tesla", "tharp", "thompson", "torvalds", "tu", "turing",
+            "varahamihira", "vaughan", "visvesvaraya", "volhard", "villani", "wescoff", "wilbur", "wiles",
+            "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"]
+
+    name = "%s_%s" % (random.choice(left), random.choice(right))
+
+    while name in used_names:
+        name = "%s_%s" % (random.choice(left), random.choice(right))
+
+    return name
+
+
 def _create_instance(args):
     """Handler for 'instance create' command. Expects the following elements in args:
         * name(str)
@@ -260,11 +319,19 @@ def _create_instance(args):
 
     log.debug("create instance")
 
+    if not args.name:
+        args.name = _generate_name()
+
+    if not args.url:
+        log.error("testcloud instance create: error: argument -u/--url: expected is required with one argument.")
+        print("Expected format is 'fedora:XX' where XX is version number or 'latest' or 'qa-matrix' or url to a qcow2.")
+        sys.exit(1)
+
     image_by_name = re.match(r'fedora:(.*)', args.url)
     if image_by_name and "http" not in args.url and "file" not in args.url:
         url = _get_image_url(image_by_name)
         if not url:
-            print("Couldn't find the desired image...")
+            log.error("Couldn't find the desired image...")
             sys.exit(1)
         tc_image = image.Image(url)
     else:
@@ -527,7 +594,10 @@ def get_argparser():
     instarg_create = instarg_subp.add_parser("create", help="create instance")
     instarg_create.set_defaults(func=_create_instance)
     instarg_create.add_argument("name",
-                                help="name of instance to create")
+                                help="name of instance to create",
+                                nargs='?',
+                                type=str,
+                                default=None)
     instarg_create.add_argument("--ram",
                                 help="Specify the amount of ram in MiB for the VM.",
                                 type=int,
