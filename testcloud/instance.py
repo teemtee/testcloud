@@ -187,54 +187,64 @@ class Instance(object):
 
     def __init__(self, name, image=None, connection='qemu:///system', hostname=None):
         self.name = name
+        self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
         self.image = image
         self.connection = connection
-        self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
-        self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
-        self.meta_path = "{}/meta".format(self.path)
         self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
         self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
-
         self.ram = config_data.RAM
         # desired size of disk, in GiB
         self.disk_size = config_data.DISK_SIZE
         self.vnc = False
         self.graphics = False
         self.atomic = False
+        self.hostname = hostname if hostname else config_data.HOSTNAME
+
+        self.image_path = os.path.join(config_data.DATA_DIR, "instances", self.name, self.name + "-local.qcow2")
+        self.backing_store = image.local_path if image else None
+        # params for cloud instance
+        self.meta_path = "{}/meta".format(self.path)
+        self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
         self.seed = None
         self.kernel = None
         self.initrd = None
-        self.hostname = hostname if hostname else config_data.HOSTNAME
-
-        # get rid of
-        self.backing_store = image.local_path if image else None
-        self.image_path = os.path.join(config_data.DATA_DIR, "instances", self.name, self.name + "-local.qcow2")
+        # params for coreos instance
+        self.config_path = "{}/{}.ign".format(self.path, self.name)
+        self.fcc_path = "{}/{}.fcc".format(self.path, self.name)
+        self.ssh_path = None
+        self.fcc_file = None
+        self.ign_file = None
+        self.coreos = False
 
     def prepare(self):
-        """Create local directories and metadata needed to spawn the instance
+
+        """Create local directories needed to spawn the instance
         """
         # create the dirs needed for this instance
         try:
             self._create_dirs()
         except PermissionError:
             raise TestcloudPermissionsError
+        if not self.coreos:
+            self._create_user_data(config_data.PASSWORD)
+            self._create_meta_data(self.hostname)
 
-        # generate metadata
-        self._create_user_data(config_data.PASSWORD)
-        self._create_meta_data(self.hostname)
-
-        # generate seed image
-        self._generate_seed_image()
+            # generate seed image
+            self._generate_seed_image()
+        else:
+            if self.ign_file:
+                shutil.copy(self.ign_file, self.config_path)
+            else:
+                self._generate_config_file()
+            chcon_command = subprocess.call("chcon -t svirt_home_t %s"%self.config_path, shell=True)
+            if chcon_command == 0:
+                log.info("chcon command succeed ")
+            else:
+                log.error("chcon command failed")
+                raise TestcloudInstanceError("Failure during change file SELinux security context")
 
         # deal with backing store
         self._create_local_disk()
-
-    def _create_dirs(self):
-        if not os.path.isdir(self.path):
-
-            log.debug("Creating instance directories")
-            os.makedirs(self.path)
-            os.makedirs(self.meta_path)
 
     def _create_user_data(self, password, overwrite=False, atomic=False):
         """Save the right  password to the 'user-data' file needed to
@@ -320,31 +330,37 @@ class Instance(object):
                              "download?")
             sys.exit(1)
 
-    def _create_local_disk(self):
-        """Create a instance using the backing store provided by Image."""
+    def _generate_config_file(self):
 
-        if self.image is None:
-            raise TestcloudInstanceError("attempted to access image "
-                                         "information for instance {} but "
-                                         "that information was not supplied "
-                                         "at creation time".format(self.name))
+        if self.fcc_file:
+            shutil.copy(self.fcc_file, self.fcc_path)
+        else:
+            with open(self.ssh_path, 'r') as inst:
+                key_content = inst.readline().strip()
+            fcc_data = config_data.COREOS_DATA % key_content
+            with open(self.fcc_path, 'w') as user_file:
+                user_file.write(fcc_data)
 
-        imgcreate_command = ['qemu-img',
-                             'create',
-                             '-qf',
-                             'qcow2',
-                             '-F',
-                             'qcow2',
-                             '-b',
-                             self.image.local_path,
-                             self.local_disk,
-                             ]
+        log.debug("creating config file {}".format(self.config_path))
+        if not os.path.exists('/usr/bin/fcct'):
+            log.error("fcct package is necessary to operate with CoreOS images")
+            raise TestcloudInstanceError("fcct missing")
+        create_config = subprocess.call("fcct --pretty --strict < %s > %s"%(self.fcc_path, self.config_path), shell=True)
 
-        # make sure to expand the resultant disk if the size is set
-        if self.disk_size > 0:
-            imgcreate_command.append("{}G".format(self.disk_size))
+        # Check the subprocess.call return value for success
+        if create_config == 0:
+            log.info("config file created successfully")
+        else:
+            log.error("config file generation failed. Exiting")
+            raise TestcloudInstanceError("Failure during create config file generation")
 
-        subprocess.call(imgcreate_command)
+    def _create_dirs(self):
+        if not os.path.isdir(self.path):
+
+            log.debug("Creating instance directories")
+            os.makedirs(self.path)
+            if not self.coreos:
+                os.makedirs(self.meta_path)
 
     def _get_domain(self):
         """Create the connection to libvirt to control instance lifecycle.
@@ -425,6 +441,33 @@ class Instance(object):
         return next_port
 
 
+    def _create_local_disk(self):
+        """Create a instance using the backing store provided by Image."""
+
+        if self.image is None:
+            raise TestcloudInstanceError("attempted to access image "
+                                         "information for instance {} but "
+                                         "that information was not supplied "
+                                         "at creation time".format(self.name))
+
+        imgcreate_command = ['qemu-img',
+                             'create',
+                             '-qf',
+                             'qcow2',
+                             '-F',
+                             'qcow2',
+                             '-b',
+                             self.image.local_path,
+                             self.local_disk,
+                             ]
+
+        # make sure to expand the resultant disk if the size is set
+        if self.disk_size > 0:
+            imgcreate_command.append("{}G".format(self.disk_size))
+
+        subprocess.call(imgcreate_command)
+
+
     def write_domain_xml(self):
         """Load the default xml template, and populate it with the following:
          - name
@@ -437,26 +480,13 @@ class Instance(object):
         jinjaLoader = jinja2.FileSystemLoader(searchpath=[config.DEFAULT_CONF_DIR,
                                                           config_data.DATA_DIR])
         jinjaEnv = jinja2.Environment(loader=jinjaLoader)
-        xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE)
 
-        # Stuff our values in a dict
-        instance_values = {'domain_name': self.name,
-                           'uuid': uuid.uuid4(),
-                           'memory': self.ram * 1024,  # MiB to KiB
-                           'disk': self.local_disk,
-                           'seed': self.seed_path,
-                           'mac_address': util.generate_mac_address(),
-                           'uefi_loader': "",
-                           'emulator_path': "/usr/bin/qemu-kvm",
-                           'network_type': "network",
-                           'network_source': "<source network='default'/>",
-                           "ip_setup": ""}
 
         # We need to shuffle things around network setup a bit if we're running in qemu:///session instead of qemu:///system
         if self.connection == "qemu:///session":
-            instance_values["network_type"] = "user"
-            instance_values["network_source"] = ""
-            instance_values["ip_setup"] = "<ip family='ipv4' address='172.17.2.0' prefix='24'/>"
+            network_type = "user"
+            network_source = ""
+            ip_setup = "<ip family='ipv4' address='172.17.2.0' prefix='24'/>"
             log.info("Adding another network device for ssh from host...")
             port = self.find_next_usable_port()
             # We might already have this when called from tmt, so, check it first
@@ -465,19 +495,45 @@ class Instance(object):
                     ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
                     "-device", "e1000,netdev=testcloud_net.{}".format(port)])
             self.create_port_file(port)
+        else:
+            network_type = "network"
+            network_source = "<source network='default'/>"
+            ip_setup = ""
 
+        # Stuff our values in a dict
+        args_envs = ""
+        instance_values = {'domain_name': self.name,
+                           'uuid': uuid.uuid4(),
+                           'memory': self.ram * 1024,  # MiB to KiB
+                           'disk': self.local_disk,
+                           'mac_address': util.generate_mac_address(),
+                           'uefi_loader': "",
+                           'emulator_path': "/usr/bin/qemu-kvm",
+                           'network_type': network_type,
+                           'network_source': network_source,
+                           "ip_setup": ip_setup}
+        if not self.coreos:
+            xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE)
+            instance_values['seed'] = self.seed_path
+        else:
+            xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE_COREOS)
+            instance_values['vcpus'] = self.vcpus
+            if config_data.CMD_LINE_ARGS_COREOS or config_data.CMD_LINE_ENVS_COREOS:
+                cmdline_args = config_data.CMD_LINE_ARGS_COREOS + ['name=opt/com.coreos/config,file=%s'%self.config_path, ]
+                for qemu_arg in cmdline_args:
+                    args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
+
+                for qemu_env in config_data.CMD_LINE_ENVS_COREOS:
+                    args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS_COREOS[qemu_env])
 
         if config_data.CMD_LINE_ARGS or config_data.CMD_LINE_ENVS:
-            args_envs = "  <qemu:commandline>\n"
             for qemu_arg in config_data.CMD_LINE_ARGS:
                 args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
 
             for qemu_env in config_data.CMD_LINE_ENVS:
                 args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS[qemu_env])
-
-            args_envs += "  </qemu:commandline>"
-            instance_values["qemu_args"] = args_envs
-
+        args_envs = "  <qemu:commandline>\n" + args_envs + " </qemu:commandline>"
+        instance_values["qemu_args"] = args_envs
         if config_data.UEFI:
             instance_values["uefi_loader"] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
 
@@ -501,7 +557,6 @@ class Instance(object):
 
         with open(self.xml_path, 'r') as xml_file:
             domain_xml = ''.join([x for x in xml_file.readlines()])
-
         conn = libvirt.open(self.connection)
         conn.defineXML(domain_xml)
 
@@ -517,10 +572,6 @@ class Instance(object):
 
         log.info("Resized image for Atomic testing...")
         return
-
-    def set_seed(self, path):
-        """Set the seed image for the instance."""
-        self.seed = path
 
     def boot(self, timeout=config_data.BOOT_TIMEOUT):
         """Deprecated alias for :py:meth:`start`"""
@@ -721,3 +772,7 @@ class Instance(object):
               timeout)
         log.warn(msg)
         raise TestcloudInstanceError(msg)
+
+    def set_seed(self, path):
+        """Set the seed image for the instance."""
+        self.seed = path

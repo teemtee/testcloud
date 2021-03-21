@@ -39,6 +39,14 @@
 #  - [ sh, -c, 'echo -e "ROOT_SIZE=4G\nDATA_SIZE=10G" > /etc/sysconfig/docker-storage-setup']
 #"""
 
+#COREOS_DATA = """variant: fcos
+#version: 3.2.0
+#passwd:
+#  users:
+#    - name: coreos
+#      ssh_authorized_keys:
+#        - %s
+#    """
 
 ## Extra cmdline args for the qemu invocation ##
 ## Customize as needed :)
@@ -46,10 +54,15 @@
 #CMD_LINE_ARGS = []
 #CMD_LINE_ENVS = {}
 
+# Extra coreos cmdline args for the qemu invocation.
+# Customize as needed :)
+#CMD_LINE_ARGS_COREOS = ['-fw_cfg' ,]
+#CMD_LINE_ENVS_COREOS = {}
+
 # The timeout, in seconds, to wait for an instance to boot before
 # failing the boot process. Setting this to 0 disables waiting and
 # returns immediately after starting the boot process.
-#BOOT_TIMEOUT = 30
+#BOOT_TIMEOUT = 45
 
 # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
 # Once the limit is reached, testcloud will attempt to remove oldest files
@@ -59,10 +72,12 @@ BACKINGSTORE_SIZE = 2
 
 # ram size, in MiB
 #RAM = 768
+#RAM_COREOS = 2048
 
 # Desired size, in GiB of instance disks. 0 leaves disk capacity
 # identical to source image
 #DISK_SIZE = 0
+#DISK_SIZE_COREOS = 10
 
 # Number of retries when stopping of instance fails (host is busy)
 #STOP_RETRIES = 3
@@ -72,6 +87,17 @@ BACKINGSTORE_SIZE = 2
 
 # Desired VM type: False = BIOS, True = UEFI
 #UEFI = False
+#stream of Coreos repo
+#STREAM = 'testing'
+
+#stream list of Coreos repo
+#STREAM_LIST = ['testing', 'stable', 'next']
+
+#version of fedora repo
+#VERSION = 'latest'
+
+#number of vcpu
+#VCPUS = 2
 
 # Port base for userspace sessions for SSH forward
 #SSH_USER_PORT_BASE = 10022

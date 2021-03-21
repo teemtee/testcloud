@@ -100,6 +100,7 @@ class ConfigData(object):
     # libvirt domain XML Template
     # This lives either in the DEFAULT_CONF_DIR or DATA_DIR
     XML_TEMPLATE = "domain-template.jinja"
+    XML_TEMPLATE_COREOS = "domain-coreos-template.jinja"
 
     # Data for cloud-init
 
@@ -121,15 +122,26 @@ ssh_pwauth: True
 runcmd:
   - [ sh, -c, 'echo -e "ROOT_SIZE=4G\nDATA_SIZE=10G" > /etc/sysconfig/docker-storage-setup']
     """
+    COREOS_DATA = """variant: fcos
+version: 1.3.0
+passwd:
+  users:
+    - name: coreos
+      ssh_authorized_keys:
+        - %s
+    """
 
     # Extra cmdline args for the qemu invocation.
     # Customize as needed :)
-
     CMD_LINE_ARGS = []
     CMD_LINE_ENVS = {}
 
+    # Extra coreos cmdline args for the qemu invocation.
+    # Customize as needed :)
+    CMD_LINE_ARGS_COREOS = ['-fw_cfg' ,]
+    CMD_LINE_ENVS_COREOS = {}
     # timeout, in seconds for instance boot process
-    BOOT_TIMEOUT = 30
+    BOOT_TIMEOUT = 45
 
     # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
     # Once the limit is reached, testcloud will attempt to remove oldest files
@@ -139,10 +151,12 @@ runcmd:
 
     # ram size, in MiB
     RAM = 768
+    RAM_COREOS = 2048
 
     # Desired size, in GiB of instance disks. 0 leaves disk capacity
     # identical to source image
     DISK_SIZE = 0
+    DISK_SIZE_COREOS = 10
 
     # Number of retries when stopping of instance fails (host is busy)
     STOP_RETRIES = 3
@@ -153,6 +167,17 @@ runcmd:
     # Desired VM type: False = BIOS, True = UEFI
     UEFI = False
 
+    #stream of Coreos repo
+    STREAM = 'testing'
+
+    #stream list of Coreos repo
+    STREAM_LIST = ['testing', 'stable', 'next']
+
+    #version of fedora repo
+    VERSION = 'latest'
+
+    #number of vcpu
+    VCPUS = 2
     # Port base for userspace sessions for SSH forward
     SSH_USER_PORT_BASE = 10022
 

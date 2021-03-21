@@ -1,6 +1,6 @@
 # testcloud
 
-**testcloud** is a small helper script to download and boot cloud images
+**testcloud** is a small helper script to download and boot cloud/coreos images
 locally. Currently, only Fedora *qcow2* images are tested and supported.
 
 ## Installation
@@ -55,6 +55,21 @@ image a backing store for the newly created instance in
 `/var/tmp/instances/<instance-name>`. When the image has been already
 downloaded, **testcloud** will use the previously download image to
 create the instance.
+
+To create a new instance with the coreos image, run:
+
+```
+$ testcloud instance create <instance name> -u fedora-coreos:<stream> --ssh_path < path of ssh pub key>
+
+or
+
+$ testcloud instance create <instance name> -u fedora-coreos:<stream> --fcc_file < path of fcc file>
+
+or
+
+$ testcloud instance create <instance name> -u fedora-coreos:<stream> --ign_file < path of ign file>
+```
+Only --ssh_path/--fcc_file/--ign_file is required
 
 You will be able to see the instance using the `list` command.
 
@@ -114,12 +129,19 @@ removing the instance.
 
 ### Logging into the instance
 
-When the instance is created, **testcloud** will return its IP address
+When the cloud instance is created, **testcloud** will return its IP address
 that you can use to access the running instance via `ssh`. The *login
 name* is `fedora` and the *password* is `passw0rd`.
 
 ```
 ssh fedora@<instance-IP>
+```
+When the coreos instance is created, **testcloud** will return its IP address
+that you can use to access the running instance via `ssh`. The *login
+name* is `coreos`.
+
+```
+ssh coreos@<instance-IP>
 ```
 
 The IP address of an instance is also shown when you list the instance
@@ -156,6 +178,28 @@ new instance using **testcloud**.
 \--disksize DISKSIZE
 
 : To set the disk size of the virtual machine (in GiB)
+
+There are several additional options that can be used to create a
+new Coreos instance using **testcloud**.
+
+\--vcpus VCPUS
+
+: To set the amount of VCPUS that will be available to the virtual
+    machine.
+
+\--fcc_file FCC_FILE
+
+: To provide a fcc_file you want to use
+
+\--ign_file IGN_FILE
+
+: To provide an ign_file you want to use
+
+\--ssh_path
+
+: To provide ssh pubkey path
+
+Please note --ssh_path ,--ign_file or --fcc_file  must be passed
 
 ### Configuration
 

@@ -60,14 +60,13 @@ class Image(object):
     from mounted local filesystems.
     """
 
-    def __init__(self, uri):
+    def __init__(self, uri=None):
         """Create a new Image object for Testcloud
 
         :param uri: URI for the image to be represented. this URI must be of a
             supported type (http, https, file)
         :raises TestcloudImageError: if the URI is not of a supported type or cannot be parsed
         """
-
         self.uri = uri
 
         uri_data = self._process_uri(uri)
@@ -106,6 +105,7 @@ class Image(object):
             raise TestcloudImageError('invalid uri: could not find image name: {}'.format(uri))
 
         image_name = name_match[-1]
+        image_name = image_name.strip('\.xz')
         return {'type': uri_type, 'name': image_name, 'path': uri_path}
 
     def _download_remote_image(self, remote_url, local_path):
@@ -121,6 +121,8 @@ class Image(object):
         if u.status_code == 404:
             raise TestcloudImageError('Image not found at the given URL: {}'.format(self.uri))
 
+        if remote_url.endswith('xz'):
+            local_path = local_path + '.xz'
         try:
             with open(local_path + ".part", 'wb') as f:
                 file_size = int(u.headers['content-length'])
@@ -159,12 +161,20 @@ class Image(object):
                 'Problem writing to {}. Are you in group testcloud?'.format(local_path)
             ) from None
 
+        if remote_url.endswith('xz'):
+            subprocess.call("unxz %s"%local_path, shell=True)
+
     def _handle_file_url(self, source_path, dest_path, copy=True):
         if not os.path.exists(dest_path):
+            if source_path.endswith('xz'):
+                dest_path = dest_path + '.xz'
             if copy:
                 shutil.copy(source_path, dest_path)
             else:
                 subprocess.check_call(['ln', '-s', '-f', source_path, dest_path])
+            if source_path.endswith('xz'):
+                subprocess.call("unxz %s"%dest_path, shell=True)
+
 
     def _adjust_image_selinux(self, image_path):
         """If SElinux is enabled on the system, change the context of that image
@@ -191,6 +201,7 @@ class Image(object):
         else:
             log.error('Error while changing SELinux context on '
                       'image {}'.format(image_path))
+
 
     def prepare(self, copy=True):
         """Prepare the image for local use by either downloading the image from

@@ -58,7 +58,9 @@ def _handle_connection_tip(instance, ip, port):
     if not instance.backing_store:
         return
 
-    if "fedora" in instance.backing_store.lower():
+    if "coreos" in instance.backing_store.lower():
+        kind = "CoreOs"
+    elif "fedora" in instance.backing_store.lower():
         kind = "Fedora"
     elif "centos" in instance.backing_store.lower():
         kind = "CentOS"
@@ -73,7 +75,10 @@ def _handle_connection_tip(instance, ip, port):
         else:
             print("ssh %s -p %d" % (ip, port))
     else:
-        print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
+        if kind == "Fedora":
+            print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
+        elif kind == "CoreOs":
+            print("To connect to the VM, use the following command :")
         if port == 22:
             print("ssh %s@%s" % (kind.lower(), ip))
         else:
@@ -215,13 +220,21 @@ def _clean_backingstore(args):
     for _, _, fpath in files_by_mtime:
         os.remove(fpath)
 
-def _get_image_url(release_string):
+def _get_image_url(version):
     """
     Accepts re object with match in fedora:XX format (where XX can be number or 'latest' or 'qa-matrix')
     Returns url to Fedora Cloud qcow2
     """
-    version = release_string.groups()[0]
+    # get coreos url
+    if version in config_data.STREAM_LIST:
+        try:
+            result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
+        except (ConnectionError, IndexError):
+              print("Failed to fetch the image.")
+        url = result['architectures']['x86_64']['artifacts']['qemu']['formats']['qcow2.xz']['disk']['location']
 
+        return url
+    #get testcloud url
     if version == "qa-matrix":
         try:
             nominated_response = requests.get("https://fedoraproject.org/wiki/Test_Results:Current_Installation_Test")
@@ -325,25 +338,40 @@ def _create_instance(args):
         # Cleanup errors aren't critical
         pass
 
-    log.debug("create instance")
 
     if not args.name:
         args.name = _generate_name()
 
-    if not args.url:
-        log.error("testcloud instance create: error: argument -u/--url: expected is required with one argument.")
-        print("Expected format is 'fedora:XX' where XX is version number or 'latest' or 'qa-matrix' or url to a qcow2.")
+    if args.url and 'coreos' in args.url and not (args.ssh_path or args.ign_file or args.fcc_file):
+        log.error("Missing --ssh_path/--ign_file/--fcc_file argument that's necessary for CoreOS.")
         sys.exit(1)
 
-    image_by_name = re.match(r'fedora:(.*)', args.url)
-    if image_by_name and "http" not in args.url and "file" not in args.url:
-        url = _get_image_url(image_by_name)
-        if not url:
-            log.error("Couldn't find the desired image...")
-            sys.exit(1)
-        tc_image = image.Image(url)
+    no_url_coreos = False
+    if not args.url:
+        if not (args.ssh_path or args.ign_file or args.fcc_file):
+            url = _get_image_url(config_data.VERSION)
+        else:
+            url = _get_image_url(config_data.STREAM)
+            no_url_coreos = True
+    elif "http" not in args.url and "file" not in args.url:
+        image_by_name = re.match(r'fedora:(.*)', args.url)
+        stream_name_raw = re.match(r'fedora-coreos:(.*)', args.url)
+        if image_by_name:
+            version = image_by_name.groups()[0]
+            url = _get_image_url(version)
+        elif stream_name_raw:
+            version = stream_name_raw.groups()[0]
+            if version not in config_data.STREAM_LIST:
+                log.error("fedora-coreos currently only have 'testing', 'stable', 'next' stream")
+                sys.exit(1)
+            else:
+                url = _get_image_url(version)
     else:
-        tc_image = image.Image(args.url)
+        url = args.url
+    if not url:
+        log.error("Couldn't find the desired image...")
+        sys.exit(1)
+    tc_image = image.Image(url)
     try:
         tc_image.prepare()
     except TestcloudPermissionsError as error:
@@ -361,14 +389,35 @@ def _create_instance(args):
              )
         sys.exit(1)
 
+    if (not args.url and no_url_coreos) or (args.url and 'coreos' in args.url):
+        log.debug("create coreos instance")
+        tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
+        # set ram size
+        if not args.ram:
+            tc_instance.ram = config_data.RAM_COREOS
 
-    tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
+        # set disk size
+        if not args.disksize:
+            tc_instance.disk_size = config_data.DISK_SIZE_COREOS
 
-    # set ram size
-    tc_instance.ram = args.ram
+        tc_instance.ssh_path = args.ssh_path
+        tc_instance.vcpus = args.vcpus
+        tc_instance.fcc_file = args.fcc_file
+        tc_instance.ign_file = args.ign_file
+        tc_instance.coreos = True
 
-    # set disk size
-    tc_instance.disk_size = args.disksize
+    else:
+        log.debug("create cloud instance")
+        tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
+        tc_instance.coreos = False
+
+        # set ram size
+        if not args.ram:
+            tc_instance.ram = config_data.RAM
+
+        # set disk size
+        if not args.disksize:
+            tc_instance.disk_size = config_data.DISK_SIZE
 
     # prepare instance
     try:
@@ -646,6 +695,18 @@ def get_argparser():
     instarg_create.add_argument("--keep",
                                 help="Don't remove instance from disk when something fails, useful for debugging",
                                 action="store_true")
+    instarg_create.add_argument("--ssh_path",
+                                help="specify your ssh pubkey path",
+                                type=str)
+    instarg_create.add_argument("--fcc_file",
+                                help="specify your fcc file path",
+                                type=str)
+    instarg_create.add_argument("--ign_file",
+                                help="specify your ign file path",
+                                type=str)
+    instarg_create.add_argument("--vcpus",
+                                help="vcpu number",
+                                default=config_data.VCPUS)
 
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",
