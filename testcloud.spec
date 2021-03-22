@@ -1,14 +1,6 @@
-# Avoid warnings when bytecompiling settings.py in /etc
-%global __python %{__python3}
-
-# sitelib for noarch packages, sitearch for others (remove the unneeded one)
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-
-ExclusiveArch: %{kernel_arches} noarch
-
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.4.0
+Version:        0.5.0
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -16,6 +8,7 @@ License:        GPLv2+
 URL:            https://pagure.io/testcloud
 Source0:        https://releases.pagure.org/testcloud/%{name}-%{version}.tar.gz
 
+ExclusiveArch: %{kernel_arches} noarch
 BuildArch:      noarch
 
 # Ensure we can create the testcloud group
@@ -120,6 +113,12 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Mon Mar 22 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.5.0-1
+- Fix crash in _handle_connection_tip
+- Allow to create an instance without specifying a name
+- Fix instance.image_path
+- Make network working in qemu:///session
+
 * Wed Dec 16 2020 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.4.0-1
 - Support creating instances by fedora:XX, fedora:latest and fedora:qa-matrix strings
 - Implement auto cleaning of backingstore
