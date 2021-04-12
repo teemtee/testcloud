@@ -100,7 +100,7 @@ def _list_instance(args):
 
     :param args: args from argparser
     """
-    instances = instance.list_instances(args.connection)
+    instances = instance.list_instances()
 
     if args.all:
         log.warning("(DEPRECATED) --all is now the default behavior")
@@ -129,7 +129,7 @@ def _get_used_images(args):
     """
     Gets the list of images currently in use by any other instance
     """
-    instances = instance.list_instances(args.connection)
+    instances = instance.list_instances()
 
     # get images in use by any instance
     images_in_use = set()
@@ -157,7 +157,7 @@ def _clean_backingstore(args):
         return
 
     # Bail erly if there are any running instances
-    instances = instance.list_instances(args.connection)
+    instances = instance.list_instances()
     running_instances = set()
     for inst in instances:
         if inst['state'] == "running":

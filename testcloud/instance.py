@@ -117,6 +117,20 @@ def _find_domain(name, connection):
         else:
             raise e
 
+def _prepare_domain_list(connection=None):
+    """
+    Returns list of testcloud domains known to libvirt
+    """
+    if not connection or connection in ["qemu:///system", "qemu:///session"]:
+        domains_system = _list_domains("qemu:///system")
+        domains_user = _list_domains("qemu:///session")
+        return {**domains_system, **domains_user}
+    else:
+        try:
+            return _list_domains(connection)
+        except libvirt.libvirtError:
+            log.error("Connection to QEMU failed, check the connection url you've specified.")
+            sys.exit(1)
 
 def find_instance(name, image=None, connection='qemu:///system'):
     """Find an instance using a given name and image, if it exists.
@@ -138,13 +152,14 @@ def find_instance(name, image=None, connection='qemu:///system'):
     return None
 
 
-def list_instances(connection='qemu:///system'):
+def list_instances(connection=None):
     """List instances known by testcloud and the state of each instance
 
     :param connection: libvirt compatible connection to use when listing domains
     :returns: dictionary of instance_name to domain_state mapping
     """
-    domains = _list_domains(connection)
+
+    domains = _prepare_domain_list(connection)
     all_instances = _list_instances()
 
     instances = []
@@ -165,11 +180,11 @@ def list_instances(connection='qemu:///system'):
 
     return instances
 
-def clean_instances(connection='qemu:///system'):
+def clean_instances(connection=None):
     """
     Removes all instances in 'de-sync' state.
     """
-    domains = _list_domains(connection)
+    domains = _prepare_domain_list(connection)
     all_instances = _list_instances()
 
     for instance in all_instances:
