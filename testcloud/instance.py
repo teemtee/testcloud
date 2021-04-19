@@ -442,12 +442,13 @@ class Instance(object):
         if len(available_in_interval) > 0:
             i = 0
             recycleable_ports = [item for item in available_in_interval if item not in used_ports]
-            if len(recycleable_ports) > 0:
-                next_port = recycleable_ports[0]
-                while not self.check_port_available(recycleable_ports[i]):
-                    i = i + 1
-                    next_port = recycleable_ports[i]
-                return next_port
+            length = len(recycleable_ports)
+            if length > 0:
+                while i < length:
+                    if self.check_port_available(recycleable_ports[i]):
+                        return recycleable_ports[i]
+                    else:
+                        i = i + 1
 
         next_port = max(used_ports) + 1
         while not self.check_port_available(next_port):
