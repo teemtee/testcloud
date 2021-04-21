@@ -346,6 +346,17 @@ def _create_instance(args):
         log.error("Missing --ssh_path/--ign_file/--fcc_file argument that's necessary for CoreOS.")
         sys.exit(1)
 
+    existing_instance = instance.find_instance(args.name, image=None,
+                                               connection=args.connection)
+
+    # can't create existing instances
+    if existing_instance is not None:
+        log.error("A testcloud instance named {} already exists at {}. Use 'testcloud instance start "
+                "{}' to start the instance or remove it before re-creating.".format(
+                    args.name,existing_instance.path, args.name)
+             )
+        sys.exit(1)
+
     no_url_coreos = False
     if not args.url:
         if not (args.ssh_path or args.ign_file or args.fcc_file):
@@ -377,17 +388,6 @@ def _create_instance(args):
     except TestcloudPermissionsError as error:
         # User might not be part of testcloud group, print user friendly message how to fix this
         _handle_permissions_error_cli(error)
-
-    existing_instance = instance.find_instance(args.name, image=tc_image,
-                                               connection=args.connection)
-
-    # can't create existing instances
-    if existing_instance is not None:
-        log.error("A testcloud instance named {} already exists at {}. Use 'testcloud instance start "
-                "{}' to start the instance or remove it before re-creating.".format(
-                    args.name,existing_instance.path, args.name)
-             )
-        sys.exit(1)
 
     if (not args.url and no_url_coreos) or (args.url and 'coreos' in args.url):
         log.debug("create coreos instance")
