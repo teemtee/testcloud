@@ -68,7 +68,7 @@
 # Once the limit is reached, testcloud will attempt to remove oldest files
 # before creating a new instance
 # 0 = unlimited
-BACKINGSTORE_SIZE = 2
+BACKINGSTORE_SIZE = 4
 
 # ram size, in MiB
 #RAM = 768
@@ -101,3 +101,8 @@ BACKINGSTORE_SIZE = 2
 
 # Port base for userspace sessions for SSH forward
 #SSH_USER_PORT_BASE = 10022
+
+# Data for CentOS Vagrant
+#COS_VAG_USER = "root"
+#COS_VAG_PASS = "vagrant"
+#VAGRANT_USER_SESSION_WAIT = 45 # How long testcloud will wait before typing into the vms's console

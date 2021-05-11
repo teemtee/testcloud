@@ -46,7 +46,7 @@ simply boot images designed for cloud systems."""
 # instance handling functions
 ################################################################################
 
-def _handle_connection_tip(instance, ip, port):
+def _handle_connection_tip(instance, ip, port, vagrant=False):
     """
     Prints hint how to connect to the vm
     Prints detailed help for default config_data.USER_DATA and just the basic one for altered configurations
@@ -63,7 +63,10 @@ def _handle_connection_tip(instance, ip, port):
     elif "fedora" in instance.backing_store.lower():
         kind = "Fedora"
     elif "centos" in instance.backing_store.lower():
-        kind = "CentOS"
+        if not vagrant:
+            kind = "CentOS"
+        else:
+            kind = "cloud-user"
     else:
         # Let's use config_altered to indicate we don't detect an OS
         config_altered = True
@@ -83,6 +86,8 @@ def _handle_connection_tip(instance, ip, port):
             print("ssh %s@%s" % (kind.lower(), ip))
         else:
             print("ssh %s@%s -p %d" % (kind.lower(), ip, port))
+    if kind == "cloud-user":
+        print("Due to limited support for Vagrant boxes, it may take up to 2 minutes for connection to be ready...")
     print("-"*60)
 
 def _handle_permissions_error_cli(error):
@@ -465,7 +470,12 @@ def _create_instance(args):
     # List connection details
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
     print("The SSH port of vm {}:  {}".format(args.name, vm_port))
-    _handle_connection_tip(tc_instance, vm_ip, vm_port)
+
+    if args.url.endswith(".box"):
+        tc_instance.prepare_vagrant_init()
+        _handle_connection_tip(tc_instance, vm_ip, vm_port, True)
+    else:
+        _handle_connection_tip(tc_instance, vm_ip, vm_port, False)
 
 
 def _start_instance(args):

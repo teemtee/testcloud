@@ -181,6 +181,11 @@ passwd:
     # Port base for userspace sessions for SSH forward
     SSH_USER_PORT_BASE = 10022
 
+    # Data for CentOS Vagrant
+    COS_VAG_USER = "root"
+    COS_VAG_PASS = "vagrant"
+    VAGRANT_USER_SESSION_WAIT = 45 # How long testcloud will wait before typing into the vms's console
+
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have
         names containing all upper case letters.
