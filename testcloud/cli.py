@@ -225,7 +225,19 @@ def _clean_backingstore(args):
     for _, _, fpath in files_by_mtime:
         os.remove(fpath)
 
-def _get_image_url(version):
+def _get_centos_image_url(version, stream=False):
+    if stream:
+        versions = config_data.CENTOS_STREAM_VERSIONS
+    else:
+        versions = config_data.CENTOS_VERSIONS
+
+    if version in versions:
+        return versions[version]
+    else:
+        print("Don't know requested CentOS version, allowed values are: %s" % str(versions.keys()))
+        return None
+
+def _get_fedora_image_url(version):
     """
     Accepts re object with match in fedora:XX format (where XX can be number or 'latest' or 'qa-matrix')
     Returns url to Fedora Cloud qcow2
@@ -365,25 +377,34 @@ def _create_instance(args):
     no_url_coreos = False
     if not args.url:
         if not (args.ssh_path or args.ign_file or args.fcc_file):
-            url = _get_image_url(config_data.VERSION)
+            url = _get_fedora_image_url(config_data.VERSION)
         else:
-            url = _get_image_url(config_data.STREAM)
+            url = _get_fedora_image_url(config_data.STREAM)
             no_url_coreos = True
-    elif "http" not in args.url and "file" not in args.url:
+    elif "http" in args.url or "file" in args.url:
+        url = args.url
+    elif "fedora" in args.url:
         image_by_name = re.match(r'fedora:(.*)', args.url)
         stream_name_raw = re.match(r'fedora-coreos:(.*)', args.url)
         if image_by_name:
             version = image_by_name.groups()[0]
-            url = _get_image_url(version)
+            url = _get_fedora_image_url(version)
         elif stream_name_raw:
             version = stream_name_raw.groups()[0]
             if version not in config_data.STREAM_LIST:
                 log.error("fedora-coreos currently only have 'testing', 'stable', 'next' stream")
                 sys.exit(1)
             else:
-                url = _get_image_url(version)
-    else:
-        url = args.url
+                url = _get_fedora_image_url(version)
+    elif "centos-stream" in args.url:
+        image_by_name = re.match(r'centos-stream:(.*)', args.url)
+        version = image_by_name.groups()[0]
+        url = _get_centos_image_url(version, True)
+    elif "centos" in args.url:
+        image_by_name = re.match(r'centos:(.*)', args.url)
+        version = image_by_name.groups()[0]
+        url = _get_centos_image_url(version, False)
+
     if not url:
         log.error("Couldn't find the desired image...")
         sys.exit(1)
@@ -467,15 +488,22 @@ def _create_instance(args):
     # Write ip to file
     tc_instance.create_ip_file(vm_ip)
 
-    # List connection details
-    print("The IP of vm {}:  {}".format(args.name, vm_ip))
-    print("The SSH port of vm {}:  {}".format(args.name, vm_port))
-
     if args.url.endswith(".box"):
         tc_instance.prepare_vagrant_init()
-        _handle_connection_tip(tc_instance, vm_ip, vm_port, True)
+
+    # To workaround some ssh weirdness with CentOS/CentOS Stream, wait a while and reboot
+    if "centos" in args.url or "centos-stream" in args.url:
+        print("Waiting for instance to boot up to perform reboot for reliable SSH (%s seconds)..." % config_data.CENTOS_WAIT_REBOOT)
+        time.sleep(config_data.CENTOS_WAIT_REBOOT)
+        _stop_instance(args)
+        _start_instance(args)
+
+    # List connection details (for CentOS, we're doing the listing above in _start_instance)
     else:
-        _handle_connection_tip(tc_instance, vm_ip, vm_port, False)
+        print("The IP of vm {}:  {}".format(args.name, vm_ip))
+        print("The SSH port of vm {}:  {}".format(args.name, vm_port))
+        _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url.endswith(".box"))
+
 
 
 def _start_instance(args):

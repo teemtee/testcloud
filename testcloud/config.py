@@ -185,6 +185,19 @@ passwd:
     COS_VAG_USER = "root"
     COS_VAG_PASS = "vagrant"
     VAGRANT_USER_SESSION_WAIT = 45 # How long testcloud will wait before typing into the vms's console
+    CENTOS_WAIT_REBOOT = 45 # How long testcloud will wait before rebooting a new CentOS vm to workaround ssh issues
+
+    # There currently isn't an api way to fetch the current CentOS Releases
+    CENTOS_VERSIONS = {
+        "7":      "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-2009.qcow2",
+        "8":      "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2",
+        "latest": "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2"
+    }
+
+    CENTOS_STREAM_VERSIONS = {
+        "8":      "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2",
+        "latest": "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2"
+    }
 
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have
