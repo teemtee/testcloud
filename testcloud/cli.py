@@ -248,6 +248,7 @@ def _get_fedora_image_url(version):
             result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
         except (ConnectionError, IndexError):
               print("Failed to fetch the image.")
+              return None
         url = result['architectures']['x86_64']['artifacts']['qemu']['formats']['qcow2.xz']['disk']['location']
 
         return url
@@ -260,12 +261,26 @@ def _get_fedora_image_url(version):
             print("Couldn't fetch the current image from qa-matrix ..")
             return None
 
+    if version == "rawhide":
+        stamp = 0
+        try:
+            releases = requests.get('https://openqa.fedoraproject.org/nightlies.json').json()
+        except (ConnectionError, IndexError):
+            print("Failed to fetch the image.")
+            return None
+        for release in releases:
+            if release["arch"] == "x86_64" and release["subvariant"] == "Cloud_Base" and release["type"] == "qcow2":
+                if release["mtime"] > stamp:
+                    url = release["url"]
+                    stamp = release["mtime"]
+        return url
+
     if version == "latest":
         try:
             latest_release = requests.get('https://packager.fedorainfracloud.org:5000/api/v1/releases').json()
         except (JSONDecodeError, ConnectionError):
             print("Couldn't fetch the latest Fedora release...")
-            print("Expected format is 'fedora:XX' where XX is version number or 'latest' or 'qa-matrix'.")
+            print("Expected format is 'fedora:XX' where XX is version number or 'latest', 'rawhide' or 'qa-matrix'.")
             return None
         version = str(latest_release["fedora"]["stable"])
 
@@ -716,7 +731,7 @@ def get_argparser():
     instarg_create.add_argument("-u",
                                 "--url",
                                 help="URL to qcow2 image or fedora:XX string is required. "
-                                     "eg. fedora:33, fedora:latest (latest Fedora GA image) or "
+                                     "eg. fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image) or "
                                      "fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test ) "
                                      "are allowed values.",
                                 type=str)
