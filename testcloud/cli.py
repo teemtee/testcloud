@@ -22,7 +22,7 @@ import time
 from . import config
 from . import image
 from . import instance
-from .exceptions import TestcloudPermissionsError, TestcloudInstanceError
+from .exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
 
 try:
     from simplejson.errors import JSONDecodeError
@@ -429,6 +429,9 @@ def _create_instance(args):
     except TestcloudPermissionsError as error:
         # User might not be part of testcloud group, print user friendly message how to fix this
         _handle_permissions_error_cli(error)
+    except TestcloudImageError:
+        log.error("Couldn't download the desired image (%s)..." % url)
+        sys.exit(1)
 
     if (not args.url and no_url_coreos) or (args.url and 'coreos' in args.url):
         log.debug("create coreos instance")
@@ -517,7 +520,8 @@ def _create_instance(args):
     else:
         print("The IP of vm {}:  {}".format(args.name, vm_ip))
         print("The SSH port of vm {}:  {}".format(args.name, vm_port))
-        _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url.endswith(".box"))
+
+    _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url.endswith(".box"))
 
 
 
