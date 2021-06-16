@@ -523,7 +523,28 @@ def _create_instance(args):
 
     _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url.endswith(".box"))
 
+def _domain_tip(args, action):
+    connection = args.connection
+    domains = {
+        "qemu:///system": instance._prepare_domain_list(connection = "qemu:///system"),
+        "qemu:///session": instance._prepare_domain_list(connection = "qemu:///session")
+    }
+    # We do the following check only for standard domains, not to break any (probaly not working anyway) wild deployments
+    if args.name not in domains[connection].keys() and connection in domains.keys():
+        del domains[connection]
+        other_connection = list(domains.keys())[0]
+        if args.name in domains[other_connection]:
+            log.error("You have tried to %s a %s instance from a %s domain, "
+                      "but it exists in %s domain." % (action, args.name, connection, other_connection))
+            log.error("You can specify '-c %s' to %s this instance." % (other_connection, action))
 
+            if action == "remove":
+                if not "force" in args or args.force == False:
+                    log.error("If your instances are in a broken state, use the -f parameter to try to proceed. Use this with caution!")
+                    sys.exit(1)
+            else:
+                # We can't do the force arg in anything else than remove action, so exit unconditionally
+                sys.exit(1)
 
 def _start_instance(args):
     """Handler for 'instance start' command. Expects the following elements in args:
@@ -532,6 +553,7 @@ def _start_instance(args):
     :param args: args from argparser
     """
     log.debug("start instance: {}".format(args.name))
+    _domain_tip(args, "start")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
 
@@ -554,6 +576,7 @@ def _stop_instance(args):
     :param args: args from argparser
     """
     log.debug("stop instance: {}".format(args.name))
+    _domain_tip(args, "stop")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
 
@@ -571,6 +594,7 @@ def _remove_instance(args):
     :param args: args from argparser
     """
     log.debug("remove instance: {}".format(args.name))
+    _domain_tip(args, "remove")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
 

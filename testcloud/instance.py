@@ -121,7 +121,7 @@ def _prepare_domain_list(connection=None):
     """
     Returns list of testcloud domains known to libvirt
     """
-    if not connection or connection in ["qemu:///system", "qemu:///session"]:
+    if not connection or connection not in ["qemu:///system", "qemu:///session"]:
         domains_system = _list_domains("qemu:///system")
         domains_user = _list_domains("qemu:///session")
         return {**domains_system, **domains_user}
