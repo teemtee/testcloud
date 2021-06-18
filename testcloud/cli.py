@@ -52,6 +52,7 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
     Prints detailed help for default config_data.USER_DATA and just the basic one for altered configurations
     """
     config_altered = False
+    kind = ""
     if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
         config_altered = True
 
