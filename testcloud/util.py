@@ -88,7 +88,7 @@ def get_fedora_image_url(version, arch="x86_64"):
 
     if version == "latest":
         try:
-            latest_release = requests.get('https://packager.fedorainfracloud.org:5000/api/v1/releases').json()
+            latest_release = requests.get('https://packager-dashboard.fedoraproject.org/api/v1/releases').json()
         except (JSONDecodeError, ConnectionError):
             log.error("Couldn't fetch the latest Fedora release...")
             log.error("Expected format is 'fedora:XX' where XX is version number or 'latest', 'rawhide' or 'qa-matrix'.")
