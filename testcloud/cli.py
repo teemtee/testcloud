@@ -79,7 +79,7 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
         else:
             print("ssh %s -p %d" % (ip, port))
     else:
-        if kind == "Fedora":
+        if kind == "Fedora" or kind == "CentOS":
             print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
         elif kind == "CoreOs":
             print("To connect to the VM, use the following command :")
@@ -226,7 +226,7 @@ def _clean_backingstore(args):
     for _, _, fpath in files_by_mtime:
         os.remove(fpath)
 
-def _get_centos_image_url(version, stream=False):
+def get_centos_image_url(version, stream=False):
     if stream:
         versions = config_data.CENTOS_STREAM_VERSIONS
     else:
@@ -238,9 +238,13 @@ def _get_centos_image_url(version, stream=False):
         print("Don't know requested CentOS version, allowed values are: %s" % str(versions.keys()))
         return None
 
-def _get_fedora_image_url(version):
+def get_fedora_image_url(version, arch="x86_64"):
     """
-    Accepts re object with match in fedora:XX format (where XX can be number or 'latest' or 'qa-matrix')
+    Accepts string specifying desired fedora version, pssible values are:
+        - latest (translates to the latest Fedora GA) or XX (where XX is fedora release number)
+        - rawhide (the latest successful nightly compose)
+        - qa-matrix (nominated compose for testing, can result it either some rawhide nigthly or branched nightly)
+        - one of STREAM_LIST (by default one of CoreOS stream names: 'testing', 'stable', 'next')
     Returns url to Fedora Cloud qcow2
     """
     # get coreos url
@@ -250,14 +254,14 @@ def _get_fedora_image_url(version):
         except (ConnectionError, IndexError):
               print("Failed to fetch the image.")
               return None
-        url = result['architectures']['x86_64']['artifacts']['qemu']['formats']['qcow2.xz']['disk']['location']
+        url = result['architectures'][arch]['artifacts']['qemu']['formats']['qcow2.xz']['disk']['location']
 
         return url
     #get testcloud url
     if version == "qa-matrix":
         try:
             nominated_response = requests.get("https://fedoraproject.org/wiki/Test_Results:Current_Installation_Test")
-            return re.findall(r'href=\"(.*.x86_64.qcow2)\"', nominated_response.text)[0]
+            return re.findall(r'href=\"(.*.%s.qcow2)\"' % arch, nominated_response.text)[0]
         except (ConnectionError, IndexError):
             print("Couldn't fetch the current image from qa-matrix ..")
             return None
@@ -270,7 +274,7 @@ def _get_fedora_image_url(version):
             print("Failed to fetch the image.")
             return None
         for release in releases:
-            if release["arch"] == "x86_64" and release["subvariant"] == "Cloud_Base" and release["type"] == "qcow2":
+            if release["arch"] == arch and release["subvariant"] == "Cloud_Base" and release["type"] == "qcow2":
                 if release["mtime"] > stamp:
                     url = release["url"]
                     stamp = release["mtime"]
@@ -295,7 +299,7 @@ def _get_fedora_image_url(version):
     for release in releases:
         if release["version"] == version and release["variant"] == "Cloud" and release["link"].endswith(".qcow2"):
             # Currently, we support just the x86_64
-            if release["arch"] == "x86_64":
+            if release["arch"] == arch:
                 url = release["link"]
                 break
 
@@ -391,11 +395,13 @@ def _create_instance(args):
         sys.exit(1)
 
     no_url_coreos = False
+    url = None
+
     if not args.url:
         if not (args.ssh_path or args.ign_file or args.fcc_file):
-            url = _get_fedora_image_url(config_data.VERSION)
+            url = get_fedora_image_url(config_data.VERSION)
         else:
-            url = _get_fedora_image_url(config_data.STREAM)
+            url = get_fedora_image_url(config_data.STREAM)
             no_url_coreos = True
     elif "http" in args.url or "file" in args.url:
         url = args.url
@@ -404,22 +410,22 @@ def _create_instance(args):
         stream_name_raw = re.match(r'fedora-coreos:(.*)', args.url)
         if image_by_name:
             version = image_by_name.groups()[0]
-            url = _get_fedora_image_url(version)
+            url = get_fedora_image_url(version)
         elif stream_name_raw:
             version = stream_name_raw.groups()[0]
             if version not in config_data.STREAM_LIST:
                 log.error("fedora-coreos currently only have 'testing', 'stable', 'next' stream")
                 sys.exit(1)
             else:
-                url = _get_fedora_image_url(version)
+                url = get_fedora_image_url(version)
     elif "centos-stream" in args.url:
         image_by_name = re.match(r'centos-stream:(.*)', args.url)
         version = image_by_name.groups()[0]
-        url = _get_centos_image_url(version, True)
+        url = get_centos_image_url(version, True)
     elif "centos" in args.url:
         image_by_name = re.match(r'centos:(.*)', args.url)
         version = image_by_name.groups()[0]
-        url = _get_centos_image_url(version, False)
+        url = get_centos_image_url(version, False)
 
     if not url:
         log.error("Couldn't find the desired image...")
