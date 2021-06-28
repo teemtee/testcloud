@@ -104,9 +104,52 @@ def get_fedora_image_url(version, arch="x86_64"):
     url = None
     for release in releases:
         if release["version"] == version and release["variant"] == "Cloud" and release["link"].endswith(".qcow2"):
-            # Currently, we support just the x86_64
             if release["arch"] == arch:
                 url = release["link"]
                 break
 
     return url
+
+def get_ubuntu_releases():
+    try:
+        releases_resp = requests.get(config_data.UBUNTU_RELEASES_API).json()
+    except (ConnectionError, IndexError):
+        log.error("Failed to fetch Ubuntu releases list.")
+        return {}
+
+    return {
+        "latest":  [entry["name"] for entry in releases_resp["entries"] if entry["active"] and "Dev" not in entry["status"]][0],
+        "entries": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and float(entry["version"]) >= 20]
+    }
+
+
+def get_ubuntu_image_url(version, arch="x86_64"):
+    arch_map = {"x86_64": "amd64", "aarch64": "arm64"}
+
+    releases = get_ubuntu_releases()
+    if len(releases) == 0:
+        return None
+
+    if version == "latest":
+        return config_data.UBUNTU_IMG_URL % (releases["latest"], releases["latest"], arch_map[arch])
+    elif version in releases["entries"]:
+        return config_data.UBUNTU_IMG_URL % (version, version, arch_map[arch])
+    else:
+        log.error("Unknown Ubuntu release, valid releases are: latest, %s" % ', '.join(releases["entries"]))
+        return None
+
+def get_debian_image_url(version, arch="x86_64"):
+    arch_map = {"x86_64": "amd64", "aarch64": "arm64"}
+    inverted_releases = {v: k for k, v in config_data.DEBIAN_RELEASE_MAP.items()}
+
+    if version == "latest":
+        return config_data.DEBIAN_IMG_URL % (config_data.DEBIAN_RELEASE_MAP[config_data.DEBIAN_LATEST], config_data.DEBIAN_LATEST, arch_map[arch])
+    elif version == "sid":
+        return config_data.DEBIAN_IMG_URL % (version, version, arch_map[arch])
+    elif version in config_data.DEBIAN_RELEASE_MAP:
+        return config_data.DEBIAN_IMG_URL % (config_data.DEBIAN_RELEASE_MAP[version], version, arch_map[arch])
+    elif version in config_data.DEBIAN_RELEASE_MAP.values():
+        return config_data.DEBIAN_IMG_URL % (version, inverted_releases[version], arch_map[arch])
+    else:
+        log.error("Unknown Debian release, valid releases are: "
+        "latest, %s, %s" % (', '.join(config_data.DEBIAN_RELEASE_MAP), ', '.join(inverted_releases)))

@@ -20,7 +20,7 @@ import time
 from . import config
 from . import image
 from . import instance
-from .util import get_centos_image_url, get_fedora_image_url
+from .util import get_centos_image_url, get_fedora_image_url, get_ubuntu_image_url, get_ubuntu_releases, get_debian_image_url
 from .exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
 
 
@@ -48,14 +48,26 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
     """
     config_altered = False
     kind = ""
-    if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
-        config_altered = True
 
     if not instance.backing_store:
         return
 
+    if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
+        config_altered = True
+
+    # get_ubuntu_releases() is too slow to be called on any distro, so call it only when we know it's not something else we know
+    # Ubuntu images don't have 'ubuntu' keyword in their filename
+    if not any(entry in instance.backing_store.lower() for entry in ["coreos", "fedora", "centos", "rhel", "debian"]) and not config_altered:
+        ubuntu_release_names = get_ubuntu_releases()
+        if "entries" in ubuntu_release_names:
+            ubuntu_release_names = ubuntu_release_names["entries"]
+        else:
+            ubuntu_release_names = []
+    else:
+        ubuntu_release_names = []
+
     if "coreos" in instance.backing_store.lower():
-        kind = "CoreOs"
+        kind = "CoreOS"
     elif "fedora" in instance.backing_store.lower():
         kind = "Fedora"
     elif "centos" in instance.backing_store.lower():
@@ -63,6 +75,10 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
             kind = "CentOS"
         else:
             kind = "cloud-user"
+    elif any(ubuntu_release in instance.backing_store for ubuntu_release in ubuntu_release_names):
+        kind = "Ubuntu"
+    elif "debian" in instance.backing_store.lower():
+        kind = "Debian"
     else:
         # Let's use config_altered to indicate we don't detect an OS
         config_altered = True
@@ -74,9 +90,9 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
         else:
             print("ssh %s -p %d" % (ip, port))
     else:
-        if kind == "Fedora" or kind == "CentOS":
+        if kind in ["Fedora", "CentOS", "Ubuntu", "Debian"]:
             print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
-        elif kind == "CoreOs":
+        elif kind == "CoreOS":
             print("To connect to the VM, use the following command :")
         if port == 22:
             print("ssh %s@%s" % (kind.lower(), ip))
@@ -343,6 +359,14 @@ def _create_instance(args):
         image_by_name = re.match(r'centos:(.*)', args.url)
         version = image_by_name.groups()[0]
         url = get_centos_image_url(version, False)
+    elif "ubuntu" in args.url:
+        image_by_name = re.match(r'ubuntu:(.*)', args.url)
+        version = image_by_name.groups()[0]
+        url = get_ubuntu_image_url(version)
+    elif "debian" in args.url:
+        image_by_name = re.match(r'debian:(.*)', args.url)
+        version = image_by_name.groups()[0]
+        url = get_debian_image_url(version)
 
     if not url:
         log.error("Couldn't find the desired image...")
@@ -682,9 +706,13 @@ def get_argparser():
     # this might work better as a second, required positional arg
     instarg_create.add_argument("-u",
                                 "--url",
-                                help="URL to qcow2 image or fedora:XX string is required. "
+                                help="URL to qcow2 image or distro:release string is required. "
                                      "eg. fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image) or "
-                                     "fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test ) "
+                                     "fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test ) or "
+                                     "centos:XX (eg. centos:8, centos:latest) or "
+                                     "centos-stream:XX (eg. centos-stream:8, centos-stream:latest) or "
+                                     "ubuntu:release_name (eg. ubuntu:focal, ubuntu:latest) or "
+                                     "debian:release_name/release_number (eg. debian:11, debian:sid, debian:latest) "
                                      "are allowed values.",
                                 type=str)
     instarg_create.add_argument("--timeout",

@@ -199,6 +199,12 @@ passwd:
         "latest": "https://cloud.centos.org/centos/8-stream/%s/images/CentOS-Stream-GenericCloud-8-20210603.0.%s.qcow2"
     }
 
+    DEBIAN_RELEASE_MAP = {"10": "buster","11": "bullseye"}
+    DEBIAN_LATEST = "11"
+    DEBIAN_IMG_URL = "https://cloud.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2"
+    UBUNTU_RELEASES_API = "https://api.launchpad.net/devel/ubuntu/series"
+    UBUNTU_IMG_URL = "https://cloud-images.ubuntu.com/%s/current/%s-server-cloudimg-%s-disk-kvm.img"
+
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have
         names containing all upper case letters.
