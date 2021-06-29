@@ -39,7 +39,7 @@ def get_centos_image_url(version, stream=False, arch="x86_64"):
         versions = config_data.CENTOS_VERSIONS
 
     if version in versions:
-        return versions[version] % (arch, arch)
+        return versions[version].format(arch)
     else:
         log.error("Don't know the requested CentOS version, allowed values are: %s" % str(versions.keys()))
         return None

@@ -189,14 +189,14 @@ passwd:
 
     # There currently isn't an api way to fetch the current CentOS Releases
     CENTOS_VERSIONS = {
-        "7":      "https://cloud.centos.org/centos/7/images/CentOS-7-%s-GenericCloud-2009.qcow2",
-        "8":      "https://cloud.centos.org/centos/8/%s/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.%s.qcow2",
-        "latest": "https://cloud.centos.org/centos/8/%s/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.%s.qcow2"
+        "7":      "https://cloud.centos.org/centos/7/images/CentOS-7-{0}-GenericCloud-2009.qcow2",
+        "8":      "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2",
+        "latest": "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2"
     }
 
     CENTOS_STREAM_VERSIONS = {
-        "8":      "https://cloud.centos.org/centos/8-stream/%s/images/CentOS-Stream-GenericCloud-8-20210603.0.%s.qcow2",
-        "latest": "https://cloud.centos.org/centos/8-stream/%s/images/CentOS-Stream-GenericCloud-8-20210603.0.%s.qcow2"
+        "8":      "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20210603.0.{0}.qcow2",
+        "latest": "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20210603.0.{0}.qcow2"
     }
 
     DEBIAN_RELEASE_MAP = {"10": "buster","11": "bullseye"}
