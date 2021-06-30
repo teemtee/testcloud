@@ -497,6 +497,8 @@ class Instance(object):
                                                           config_data.DATA_DIR])
         jinjaEnv = jinja2.Environment(loader=jinjaLoader)
 
+        # Make a copy of qemu args from config_object so we don't get to a shitty state when creating a bunch of vms
+        qemu_args = config_data.CMD_LINE_ARGS.copy()
 
         # We need to shuffle things around network setup a bit if we're running in qemu:///session instead of qemu:///system
         if self.connection == "qemu:///session":
@@ -505,11 +507,9 @@ class Instance(object):
             ip_setup = "<ip family='ipv4' address='172.17.2.0' prefix='24'/>"
             log.info("Adding another network device for ssh from host...")
             port = self.find_next_usable_port()
-            # We might already have this when called from tmt, so, check it first
-            if "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port) not in config_data.CMD_LINE_ARGS:
-                config_data.CMD_LINE_ARGS.extend(
-                    ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
-                    "-device", "e1000,netdev=testcloud_net.{}".format(port)])
+            network_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
+                            "-device", "e1000,netdev=testcloud_net.{}".format(port)]
+            qemu_args.extend(network_args)
             self.create_port_file(port)
         else:
             network_type = "network"
@@ -542,8 +542,8 @@ class Instance(object):
                 for qemu_env in config_data.CMD_LINE_ENVS_COREOS:
                     args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS_COREOS[qemu_env])
 
-        if config_data.CMD_LINE_ARGS or config_data.CMD_LINE_ENVS:
-            for qemu_arg in config_data.CMD_LINE_ARGS:
+        if qemu_args or config_data.CMD_LINE_ENVS:
+            for qemu_arg in qemu_args:
                 args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
 
             for qemu_env in config_data.CMD_LINE_ENVS:
