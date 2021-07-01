@@ -20,6 +20,11 @@ import uuid
 import jinja2
 import socket
 
+try:
+    import guestfs
+except ImportError:
+    pass # We'll lose guest detection ( https://bugzilla.redhat.com/show_bug.cgi?id=1075594 )
+
 from . import config
 from . import util
 from .exceptions import TestcloudInstanceError, TestcloudPermissionsError
@@ -456,6 +461,34 @@ class Instance(object):
 
         return next_port
 
+    def _needs_legacy_net(self):
+        """
+        Returns True when the use of e1000 pci network adapter is required
+        Returns False when condition to use the legacy net is not met
+        Returns None when detection failed
+        Otherwise, usage of virtio-net-pci is a preferred choice
+        """
+        try:
+            guestfs
+        except NameError:
+            log.warning("Python libguestfs bindings are missing, guest detection won't work properly!")
+            return None
+        g = guestfs.GuestFS(python_return_dict=True)
+        g.add_drive_opts(self.local_disk, readonly=1)
+
+        try:
+            g.launch()
+            roots = g.inspect_os()
+        except RuntimeError:
+            return None
+
+        if not roots:
+            return None
+
+        if g.inspect_get_distro(roots[0]) in ["rhel", "centos"] and g.inspect_get_major_version(roots[0]) == 7:
+            return True
+
+        return False
 
     def _create_local_disk(self):
         """Create a instance using the backing store provided by Image."""
@@ -510,8 +543,9 @@ class Instance(object):
             with lock:
                 port = self.find_next_usable_port()
                 self.create_port_file(port)
+            device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
             network_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
-                            "-device", "e1000,netdev=testcloud_net.{}".format(port)]
+                            "-device", "{},netdev=testcloud_net.{}".format(device_type, port)]
             qemu_args.extend(network_args)
         else:
             network_type = "network"

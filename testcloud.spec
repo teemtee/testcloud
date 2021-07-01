@@ -45,6 +45,7 @@ Requires:       libguestfs-tools-c
 Requires:       python3-requests
 Requires:       python3-libvirt
 Requires:       python3-jinja2
+Requires:       python3-libguestfs
 Recommends:       fcct
 
 %description -n python3-%{name}
