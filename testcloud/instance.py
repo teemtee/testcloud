@@ -506,11 +506,13 @@ class Instance(object):
             network_source = ""
             ip_setup = "<ip family='ipv4' address='172.17.2.0' prefix='24'/>"
             log.info("Adding another network device for ssh from host...")
-            port = self.find_next_usable_port()
+            lock = util.Filelock()
+            with lock:
+                port = self.find_next_usable_port()
+                self.create_port_file(port)
             network_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
                             "-device", "e1000,netdev=testcloud_net.{}".format(port)]
             qemu_args.extend(network_args)
-            self.create_port_file(port)
         else:
             network_type = "network"
             network_source = "<source network='default'/>"

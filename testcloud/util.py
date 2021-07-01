@@ -11,6 +11,10 @@ import logging
 import random
 import requests
 import re
+import time
+import os
+import fcntl
+import errno
 
 from . import config
 
@@ -153,3 +157,36 @@ def get_debian_image_url(version, arch="x86_64"):
     else:
         log.error("Unknown Debian release, valid releases are: "
         "latest, %s, %s" % (', '.join(config_data.DEBIAN_RELEASE_MAP), ', '.join(inverted_releases)))
+
+
+class Filelock(object):
+    def __init__(self, lock_path=os.path.join(config_data.DATA_DIR, 'testcloud.lock'), timeout=25, wait_time=0.5):
+        self.fd = open(lock_path, 'w+')
+        self.timeout = timeout
+        self.wait_time = wait_time
+
+    def __enter__(self):
+        start_time = time.time()
+        while 1:
+            try:
+                fcntl.lockf(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                log.debug("Lock acquired")
+                break
+            except (OSError, IOError) as ex:
+                if ex.errno == errno.EAGAIN:
+                    log.debug("Waiting for lock")
+                    time.sleep(self.wait_time)
+                else:
+                    raise ex
+
+            if (start_time + self.timeout) <= time.time():
+                log.debug("Lock timeout reached")
+                break
+
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        fcntl.lockf(self.fd, fcntl.LOCK_UN)
+        log.debug("Lock lifted")
+
+    def __del__(self):
+        self.fd.close()
