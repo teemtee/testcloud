@@ -689,8 +689,9 @@ class Instance(object):
         raise TestcloudInstanceError("Instance {} has failed to boot in {} "
                                      "seconds".format(self.name, timeout))
 
-    def stop(self):
+    def stop(self, soft=False):
         """Stop the instance
+        Uses graceful shutdown when soft is True, destroys the vm otherwise
 
         :raises TestcloudInstanceError: if the instance does not exist or
                                         if unable to stop the instance (host is busy)
@@ -712,7 +713,17 @@ class Instance(object):
         while retries > 0:
             try:
                 # stop (destroy) the vm
-                self._get_domain().destroy()
+                if not soft:
+                    self._get_domain().destroy()
+                else:
+                    while _find_domain(self.name, self.connection) != "shutoff" and retries > 0:
+                        retries -= 1
+                        log.debug("Shutting down the domain (%d retries left)" % (retries))
+                        self._get_domain().shutdown()
+                        time.sleep(5)
+                    if _find_domain(self.name, self.connection) != "shutoff":
+                        raise TestcloudInstanceError('Failed to shutdown the guest gracfully after {} attempts.'
+                                                    .format(config_data.STOP_RETRIES))
                 return
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR:

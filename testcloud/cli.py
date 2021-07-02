@@ -518,7 +518,7 @@ def _start_instance(args):
 
 
 def _stop_instance(args):
-    """Handler for 'instance stop' command. Expects the following elements in args:
+    """Handler for 'instance stop' and 'instance force-off' command. Expects the following elements in args:
         * name(str)
 
     :param args: args from argparser
@@ -532,7 +532,30 @@ def _stop_instance(args):
         log.error("Cannot stop instance {} because it does not exist".format(args.name))
         sys.exit(1)
 
-    tc_instance.stop()
+    tc_instance.stop(soft=False)
+
+def _shutdown_instance(args, raise_e=False):
+    """Handler for 'instance shutdown' command. Expects the following elements in args:
+        * name(str)
+
+    :param args: args from argparser
+    :param raise_e: raises TestcloudInstanceError if True, catches it if False
+    """
+    log.debug("shutdown instance: {}".format(args.name))
+    _domain_tip(args, "shutdown")
+
+    tc_instance = instance.find_instance(args.name, connection=args.connection)
+
+    if tc_instance is None:
+        log.error("Cannot shutdown instance {} because it does not exist".format(args.name))
+        sys.exit(1)
+
+    try:
+        tc_instance.stop(soft=True)
+    except TestcloudInstanceError as e:
+        log.error("Graceful shutdown failed, you might want to consider using 'instance force-off' command.")
+        if raise_e:
+            raise e
 
 
 def _remove_instance(args):
@@ -569,6 +592,19 @@ def _clean_instances(args):
 
 def _reboot_instance(args):
     """Handler for 'instance reboot' command. Expects the following elements in args:
+        * name(str)
+
+    :param args: args from argparser
+    """
+    try:
+        _shutdown_instance(args, raise_e=True)
+    except TestcloudInstanceError:
+        log.error("Graceful reboot failed, you might want to consider using 'instance reset' command.")
+        sys.exit(1)
+    _start_instance(args)
+
+def _reset_instance(args):
+    """Handler for 'instance reset' command. Expects the following elements in args:
         * name(str)
 
     :param args: args from argparser
@@ -644,10 +680,20 @@ def get_argparser():
     instarg_start.set_defaults(func=_start_instance)
 
     # instance stop
-    instarg_stop = instarg_subp.add_parser("stop", help="stop instance")
+    instarg_stop = instarg_subp.add_parser("stop", help="stop instance (forced poweroff, same as 'instance force-off')")
     instarg_stop.add_argument("name",
                               help="name of instance to stop")
     instarg_stop.set_defaults(func=_stop_instance)
+    # instance force-off
+    instarg_foff = instarg_subp.add_parser("force-off", help="force-off instance (forced poweroff, same as 'instance stop')")
+    instarg_foff.add_argument("name",
+                              help="name of instance to force-off")
+    instarg_foff.set_defaults(func=_stop_instance)
+    # instance shutdown
+    instarg_shutdown = instarg_subp.add_parser("shutdown", help="shutdown instance (graceful poweroff)")
+    instarg_shutdown.add_argument("name",
+                              help="name of instance to shutdown")
+    instarg_shutdown.set_defaults(func=_shutdown_instance)
     # instance remove
     instarg_remove = instarg_subp.add_parser("remove", help="remove instance")
     instarg_remove.add_argument("name",
@@ -672,7 +718,7 @@ def get_argparser():
     instarg_clean.set_defaults(func=_clean_instances)
 
     # instance reboot
-    instarg_reboot = instarg_subp.add_parser("reboot", help="reboot instance")
+    instarg_reboot = instarg_subp.add_parser("reboot", help="reboot instance (graceful reboot)")
     instarg_reboot.add_argument("name",
                                 help="name of instance to reboot")
     instarg_reboot.add_argument("--timeout",
@@ -682,6 +728,17 @@ def get_argparser():
                                 type=int,
                                 default=config_data.BOOT_TIMEOUT)
     instarg_reboot.set_defaults(func=_reboot_instance)
+    # instance reset
+    instarg_reset = instarg_subp.add_parser("reset", help="reset instance (forced reboot)")
+    instarg_reset.add_argument("name",
+                                help="name of instance to reset")
+    instarg_reset.add_argument("--timeout",
+                                help="Time (in seconds) to wait for boot to "
+                                "complete before completion, setting to 0"
+                                " disables all waiting.",
+                                type=int,
+                                default=config_data.BOOT_TIMEOUT)
+    instarg_reset.set_defaults(func=_reset_instance)
     # instance create
     instarg_create = instarg_subp.add_parser("create", help="create instance")
     instarg_create.set_defaults(func=_create_instance)
