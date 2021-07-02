@@ -779,9 +779,9 @@ def main():
 
     _configure_logging()
 
-    try:
+    if hasattr(args, "func"):
         args.func(args)
-    except AttributeError:
+    else:
         # If no cmdline args were provided, func is missing
         # https://bugs.python.org/issue16308
         parser.print_help()
