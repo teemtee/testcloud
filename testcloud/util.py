@@ -157,6 +157,7 @@ def get_debian_image_url(version, arch="x86_64"):
     else:
         log.error("Unknown Debian release, valid releases are: "
         "latest, %s, %s" % (', '.join(config_data.DEBIAN_RELEASE_MAP), ', '.join(inverted_releases)))
+        return None
 
 
 class Filelock(object):
