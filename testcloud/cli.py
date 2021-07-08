@@ -312,6 +312,12 @@ def _create_instance(args):
     if not args.name:
         args.name = _generate_name()
 
+    if args.url_legacy:
+        log.error("This style of testcloud invocation was REMOVED.")
+        log.error("Instead of 'testcloud instance create -u <url>', do 'testcloud instance create <url>'.")
+        log.error("You can specify instance name parameter with -n/--name argument.")
+        sys.exit(1)
+
     if args.url and 'coreos' in args.url and not (args.ssh_path or args.ign_file or args.fcc_file):
         log.error("Missing --ssh_path/--ign_file/--fcc_file argument that's necessary for CoreOS.")
         sys.exit(1)
@@ -369,7 +375,7 @@ def _create_instance(args):
         url = get_debian_image_url(version)
 
     if not url:
-        log.error("Couldn't find the desired image...")
+        log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
     tc_image = image.Image(url)
     try:
@@ -454,11 +460,11 @@ def _create_instance(args):
     # Write ip to file
     tc_instance.create_ip_file(vm_ip)
 
-    if args.url.endswith(".box"):
+    if args.url and args.url.endswith(".box"):
         tc_instance.prepare_vagrant_init()
 
     # To workaround some ssh weirdness with CentOS/CentOS Stream, wait a while and reboot
-    if "centos" in args.url or "centos-stream" in args.url:
+    if args.url and ("centos" in args.url or "centos-stream" in args.url):
         print("Waiting for instance to boot up to perform reboot for reliable SSH (%s seconds)..." % config_data.CENTOS_WAIT_REBOOT)
         time.sleep(config_data.CENTOS_WAIT_REBOOT)
         _stop_instance(args)
@@ -469,7 +475,7 @@ def _create_instance(args):
         print("The IP of vm {}:  {}".format(args.name, vm_ip))
         print("The SSH port of vm {}:  {}".format(args.name, vm_port))
 
-    _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url.endswith(".box"))
+    _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url and args.url.endswith(".box"))
 
 def _domain_tip(args, action):
     connection = args.connection
@@ -740,11 +746,30 @@ def get_argparser():
                                 default=config_data.BOOT_TIMEOUT)
     instarg_reset.set_defaults(func=_reset_instance)
     # instance create
-    instarg_create = instarg_subp.add_parser("create", help="create instance")
+    create_help = '''
+    URL to qcow2 image or distro:release string is required.
+    Examples of some known distro:release pairs:
+    - fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image)
+    - fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test )
+    - centos:XX (eg. centos:8, centos:latest)
+    - centos-stream:XX (eg. centos-stream:8, centos-stream:latest)
+    - ubuntu:release_name (eg. ubuntu:focal, ubuntu:latest)
+    - debian:release_name/release_number (eg. debian:11, debian:sid, debian:latest)
+    '''
+    instarg_create = instarg_subp.add_parser("create", help="create instance", formatter_class=argparse.RawTextHelpFormatter)
     instarg_create.set_defaults(func=_create_instance)
-    instarg_create.add_argument("name",
+    instarg_create.add_argument("url",
+                                help=create_help,
+                                type=str,
+                                nargs='?')
+    instarg_create.add_argument("-u",
+                                "--url",
+                                help="REMOVED parameter, URL is now the first positional argument to testcloud instance create.",
+                                type=str,
+                                dest="url_legacy")
+    instarg_create.add_argument("-n",
+                                "--name",
                                 help="name of instance to create",
-                                nargs='?',
                                 type=str,
                                 default=None)
     instarg_create.add_argument("--ram",
@@ -761,17 +786,6 @@ def get_argparser():
                                 help="Use this flag if you're booting an Atomic Host.",
                                 action="store_true")
     # this might work better as a second, required positional arg
-    instarg_create.add_argument("-u",
-                                "--url",
-                                help="URL to qcow2 image or distro:release string is required. "
-                                     "eg. fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image) or "
-                                     "fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test ) or "
-                                     "centos:XX (eg. centos:8, centos:latest) or "
-                                     "centos-stream:XX (eg. centos-stream:8, centos-stream:latest) or "
-                                     "ubuntu:release_name (eg. ubuntu:focal, ubuntu:latest) or "
-                                     "debian:release_name/release_number (eg. debian:11, debian:sid, debian:latest) "
-                                     "are allowed values.",
-                                type=str)
     instarg_create.add_argument("--timeout",
                                 help="Time (in seconds) to wait for boot to "
                                      "complete before completion, setting to 0"

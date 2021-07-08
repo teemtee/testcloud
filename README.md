@@ -38,7 +38,7 @@ To use **testcloud** on a production system:
 
 ### Creating a new instance
 
-To create a new instance, you will need to provide the url of some cloud
+To create a new instance, you will need to provide distribution and version you wish to use or the url of some cloud
 image in the *qcow2* format. If you do not have an image location of
 your own, you can use the image from the **Fedora Cloud** download pages
 (<https://alt.fedoraproject.org/cloud/>).
@@ -46,8 +46,34 @@ your own, you can use the image from the **Fedora Cloud** download pages
 To create a new instance with the cloud image, run:
 
 ```
-$ testcloud instance create <instance name> -u <url for qcow2 image> or <fedora:XX>
+$ testcloud instance create <url for qcow2 image> or <distro:version>
 ```
+
+Some examples how to create an instance with distribution:version shortcut:
+
+```
+# Latest Fedora
+$ testcloud instance create fedora:latest
+```
+
+```
+# Latest Fedora Rawhide
+$ testcloud instance create fedora:rawhide
+```
+
+```
+# CentOS Stream 8
+$ testcloud instance create centos-stream:8
+```
+
+```
+# Latest Ubuntu Release
+$ testcloud instance create ubuntu:latest
+```
+
+Supported distributions with shortcuts are: Fedora, CentOS, CentOS Stream, Ubuntu and Debian. For other distributions, you can provide link to basically any qcow2 image which has the cloud-init package included.
+
+Testcloud supports also Vagrant .box files, in a limited manner and currently only for CentOS.
 
 **testcloud** will download the *qcow2* image and save it in the
 `/var/lib/testcloud/backingstores/<qcow2-filename>`. It will use this
@@ -59,15 +85,15 @@ create the instance.
 To create a new instance with the coreos image, run:
 
 ```
-$ testcloud instance create <instance name> -u fedora-coreos:<stream> --ssh_path < path of ssh pub key>
+$ testcloud instance create fedora-coreos:<stream> --ssh_path < path of ssh pub key>
 
 or
 
-$ testcloud instance create <instance name> -u fedora-coreos:<stream> --fcc_file < path of fcc file>
+$ testcloud instance create fedora-coreos:<stream> --fcc_file < path of fcc file>
 
 or
 
-$ testcloud instance create <instance name> -u fedora-coreos:<stream> --ign_file < path of ign file>
+$ testcloud instance create fedora-coreos:<stream> --ign_file < path of ign file>
 ```
 Only --ssh_path/--fcc_file/--ign_file is required
 
@@ -130,8 +156,8 @@ removing the instance.
 ### Logging into the instance
 
 When the cloud instance is created, **testcloud** will return its IP address
-that you can use to access the running instance via `ssh`. The *login
-name* is `fedora` and the *password* is `passw0rd`.
+that you can use to access the running instance via `ssh`. The default *login
+name* is `fedora` and the *password* is `passw0rd` for Fedora instances. Testcloud will output info how you can connect to any of the Supported Distributions.
 
 ```
 ssh fedora@<instance-IP>
@@ -146,12 +172,16 @@ ssh coreos@<instance-IP>
 
 The IP address of an instance is also shown when you list the instance
 using the `testcloud instance list` command. You can also control the
-instance using the **virt-manager** tool.
+instance using the **virt-manager** , **GNOME Boxes** or any other tool to manage libvirt VMs.
 
 ### Available options to create an instance
 
 There are several options (all optional) that can be used to create a
 new instance using **testcloud**.
+
+-c, \--connection QEMU_URI
+
+: You can specify uri to qemu you wish to use. For limited environments, you might wish to use *qemu:///session*. Remote connections other than *qemu:///session* and *qemu:///system* (like qemu+ssh,...) are known to be problematic.
 
 \--ram RAM
 
@@ -166,9 +196,9 @@ new instance using **testcloud**.
 
 : To open a VNC connection at the `:1` display of the instance.
 
--u, \--url URL
+-n, \--name NAME
 
-: The URL from where the qcow2 image should be downloaded. **This option is compulsory.**
+: To specify a custom name for you instance.
 
 \--timeout TIMEOUT
 
@@ -199,7 +229,7 @@ new Coreos instance using **testcloud**.
 
 : To provide ssh pubkey path
 
-Please note --ssh_path ,--ign_file or --fcc_file  must be passed
+Please note --ssh_path ,--ign_file or --fcc_file  must be passed for Fedora CoreOS instances.
 
 ### Configuration
 

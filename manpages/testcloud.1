@@ -79,12 +79,18 @@ recognized.
         Remove non-existing or unsynced libvirt VMs from testcloud.
 
 .SH INSTANCE CREATE OPTIONS
-\fB-u, --url URL\fR
-        Specify the URL from where testcloud should download the instance qcow2 image of fedora:XX. \fBThis option is compulsory\fR.
-        Where XX is:
-        - desired Fedora version or
-        - 'latest' - the latest Fedora GA image or
-        - 'qa-matrix' - image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test
+\fBURL\fR
+        Specify the URL from where testcloud should download the instance qcow2 image or distro:version handle. \fBThis option is compulsory\fR.
+        Some examples of supported short urls:
+        - fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image)
+        - fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test )
+        - centos:XX (eg. centos:8, centos:latest)
+        - centos-stream:XX (eg. centos-stream:8, centos-stream:latest)
+        - ubuntu:release_name (eg. ubuntu:focal, ubuntu:latest)
+        - debian:release_name/release_number (eg. debian:11, debian:sid, debian:latest)
+
+\fB-n, --name NAME\fR
+        Set desired instance name. A nice and memorable name will be generated for you if not specified.
 
 \fB--ram RAM\fR
         Set the amount of RAM that will be available to the instance's VM (in MiB).
@@ -105,7 +111,7 @@ recognized.
 .PP
 Create a new instance:
 .IP
-\fBtestcloud instance create <instance_name> -u <URL>\fR
+\fBtestcloud instance create <URL>\fR
 .PP
 List all available instances:
 .IP
