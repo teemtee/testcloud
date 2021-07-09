@@ -98,9 +98,14 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
             print("ssh %s@%s" % (kind.lower(), ip))
         else:
             print("ssh %s@%s -p %d" % (kind.lower(), ip, port))
+
+    print("-"*60)
+
+    if port != 22:
+        print("Due to limitations of tescloud's user session VMs and bugs in some systems (mainly RHEL 8 like),"
+              " the ssh connection may not be available immediately...")
     if kind == "cloud-user":
         print("Due to limited support for Vagrant boxes, it may take up to 2 minutes for connection to be ready...")
-    print("-"*60)
 
 def _handle_permissions_error_cli(error):
     # User might not be part of testcloud group, print user friendly message how to fix this
@@ -475,17 +480,9 @@ def _create_instance(args):
     if args.url and args.url.endswith(".box"):
         tc_instance.prepare_vagrant_init()
 
-    # To workaround some ssh weirdness with CentOS/CentOS Stream, wait a while and reboot
-    if args.url and ("centos" in args.url or "centos-stream" in args.url):
-        print("Waiting for instance to boot up to perform reboot for reliable SSH (%s seconds)..." % config_data.CENTOS_WAIT_REBOOT)
-        time.sleep(config_data.CENTOS_WAIT_REBOOT)
-        _stop_instance(args)
-        _start_instance(args)
-
     # List connection details (for CentOS, we're doing the listing above in _start_instance)
-    else:
-        print("The IP of vm {}:  {}".format(args.name, vm_ip))
-        print("The SSH port of vm {}:  {}".format(args.name, vm_port))
+    print("The IP of vm {}:  {}".format(args.name, vm_ip))
+    print("The SSH port of vm {}:  {}".format(args.name, vm_port))
 
     _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url and args.url.endswith(".box"))
 

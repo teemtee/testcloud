@@ -185,7 +185,6 @@ passwd:
     COS_VAG_USER = "root"
     COS_VAG_PASS = "vagrant"
     VAGRANT_USER_SESSION_WAIT = 45 # How long testcloud will wait before typing into the vms's console
-    CENTOS_WAIT_REBOOT = 45 # How long testcloud will wait before rebooting a new CentOS vm to workaround ssh issues
 
     # There currently isn't an api way to fetch the current CentOS Releases
     CENTOS_VERSIONS = {
