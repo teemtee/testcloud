@@ -7,10 +7,14 @@ testcloud \- download \fIqcow2\fR cloud images and boot them locally.
 \fBtestcloud\fR [-h, --help] [COMMAND]... [OPTION]... [SUBCOMMAND]... [OPTION]...
 .SH DESCRIPTION
 .LP
-\fBtestcloud\fR is a small helper script to download and boot cloud images on your machine locally.
-Currently, only Fedora \fBqcow2\fR images are supported.
+\fBtestcloud\fR is a small helper script to download and boot cloud/coreos images
+locally. Testcloud supports wide range of distributions, namely Fedora, Fedora CoreOS,
+CentOS, CentOS Stream, Red Hat Enterprise Linux, Debian and Ubuntu.
+
+\fBtestcloud\fR can run either in system mode or in constrained user session mode,
+which is usefull for running it eg. in unprivileged containers.
 .PP
-To run \fBtestcloud\fR, you need to provide the \fBURL\fR of a cloud image or string in \fBfedora:XX\fR format
+To run \fBtestcloud\fR, you need to provide the \fBURL\fR of a cloud image or string in \fBdistribution:version\fR format
 to the script which will be used for booting.
 
 If you do not have an image location of your own, you can use one

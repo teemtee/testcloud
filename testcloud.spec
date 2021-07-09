@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.5.0
-Release:        2%{?dist}
+Version:        0.6.0
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -119,6 +119,39 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Fri Jul 09 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.0-1
+- SPEC: Use pytest macro
+- Merge downstream spec changes
+- README: Let's believe in testcloud a bit more 😎
+- Simplify cli warning wording a bit
+- Remove forced reboot from cli for CentOS user sessions
+- API: Allow to specify pci network device
+- README: improve a tiny bit
+- Make url mandatory, cleanup cli instance create a bit
+- Allow to specify number of CPU cores to be assigned
+- Change cli layout for instance create a bit (A LOT 😱 )
+- get_debian_image_url: return None on fail
+- Add a way to shutdown vms in a graceful way
+- use if hasattr insteadd of try/except AttributeError
+- Use virtio-net-pci instead of e1000 for hostfwd in qemu user sessions
+- implement synchronization using file lock for user sessions
+- Don't directly alter config_object, use a copy of it
+- Fixup CentOS short handle
+- Support Ubuntu and Debian images
+- Update url for oraculum
+- Bunch of code shuffling
+- Bunch of improvements for get_fedora_image_url
+- Fixup traceback for unknown distributions on un-defined variable
+- Fixups around system x session instances handling
+- Dont blow out traceback on image download 404, fixup connection tooltip for CentOS
+- Support fetching the latest Fedora Rawhide iso as fedora:rawhide url
+- Support CentOS and CentOS Stream versions (hardcoded urls)
+- Support operating with Vagrant images
+- check whether the instance existing before do the prepare work
+- Make the code more robust
+- Make list and clean functions more robust to handle both system and user sessions
+- add coreos test function
+
 * Fri Jun 04 2021 Python Maint <python-maint@redhat.com> - 0.5.0-2
 - Rebuilt for Python 3.10
 
