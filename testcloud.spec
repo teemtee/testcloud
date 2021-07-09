@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
 Version:        0.5.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -119,6 +119,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Fri Jun 04 2021 Python Maint <python-maint@redhat.com> - 0.5.0-2
+- Rebuilt for Python 3.10
+
 * Mon Mar 22 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.5.0-1
 - Fix crash in _handle_connection_tip
 - Allow to create an instance without specifying a name
