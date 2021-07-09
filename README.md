@@ -1,7 +1,11 @@
 # testcloud
 
 **testcloud** is a small helper script to download and boot cloud/coreos images
-locally. Currently, only Fedora *qcow2* images are tested and supported.
+locally. Testcloud supports wide range of distributions, namely Fedora, Fedora CoreOS,
+CentOS, CentOS Stream, Red Hat Enterprise Linux, Debian and Ubuntu.
+
+**testcloud** can run either in system mode or in constrained user session mode,
+which is usefull for running it eg. in unprivileged containers.
 
 ## Installation
 
