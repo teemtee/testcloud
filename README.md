@@ -53,6 +53,12 @@ Some examples how to create an instance with distribution:version shortcut:
 
 ```
 # Latest Fedora Release
+$ testcloud instance create fedora:latest
+```
+
+or, you can skip latest, which is the default value for version:
+```
+# Latest Fedora Release
 $ testcloud instance create fedora
 ```
 
@@ -67,8 +73,13 @@ $ testcloud instance create centos-stream:8
 ```
 
 ```
-# Latest Ubuntu Release
-$ testcloud instance create ubuntu
+# Ubuntu Hirsute (21.04)
+$ testcloud instance create ubuntu:hirsute
+```
+
+```
+# Debian 11
+$ testcloud instance create debian:11
 ```
 
 Supported distributions with shortcuts are: Fedora, CentOS, CentOS Stream, Ubuntu and Debian. For other distributions, you can provide link to basically any qcow2 image which has the cloud-init package included.
