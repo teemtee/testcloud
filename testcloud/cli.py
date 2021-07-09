@@ -308,17 +308,23 @@ def _create_instance(args):
         # Cleanup errors aren't critical
         pass
 
-
     if not args.name:
         args.name = _generate_name()
 
     if args.url_legacy:
-        log.error("This style of testcloud invocation was REMOVED.")
+        log.error("This style of testcloud invocation has been REMOVED.")
         log.error("Instead of 'testcloud instance create -u <url>', do 'testcloud instance create <url>'.")
         log.error("You can specify instance name parameter with -n/--name argument.")
         sys.exit(1)
 
-    if args.url and 'coreos' in args.url and not (args.ssh_path or args.ign_file or args.fcc_file):
+    if not args.url:
+        log.error("Missing url or distribution:version specification.")
+        log.error("Command to crate an instance: 'testcloud instance create <URL> or <distribution:version>'")
+        log.error("                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+        log.error("You can use 'testcloud instance create -h' for additional help.")
+        sys.exit(1)
+
+    if 'coreos' in args.url and not (args.ssh_path or args.ign_file or args.fcc_file):
         log.error("Missing --ssh_path/--ign_file/--fcc_file argument that's necessary for CoreOS.")
         sys.exit(1)
 
@@ -333,25 +339,25 @@ def _create_instance(args):
              )
         sys.exit(1)
 
-    no_url_coreos = False
     url = None
+    coreos = False
 
-    if not args.url:
-        if not (args.ssh_path or args.ign_file or args.fcc_file):
-            url = get_fedora_image_url(config_data.VERSION)
-        else:
-            url = get_fedora_image_url(config_data.STREAM)
-            no_url_coreos = True
-    elif "http" in args.url or "file" in args.url:
+    if args.ssh_path or args.ign_file or args.fcc_file:
+        coreos = True
+
+    if "http" in args.url or "file" in args.url:
         url = args.url
     elif "fedora" in args.url:
         image_by_name = re.match(r'fedora:(.*)', args.url)
         stream_name_raw = re.match(r'fedora-coreos:(.*)', args.url)
-        if image_by_name:
-            version = image_by_name.groups()[0]
+        # Normal Fedora Cloud
+        if not "fedora-coreos" in args.url:
+            version = image_by_name.groups()[0] if image_by_name else config_data.VERSION
             url = get_fedora_image_url(version)
-        elif stream_name_raw:
-            version = stream_name_raw.groups()[0]
+        # Fedora CoreOS
+        else:
+            version = stream_name_raw.groups()[0] if stream_name_raw else config_data.STREAM
+            coreos = True
             if version not in config_data.STREAM_LIST:
                 log.error("fedora-coreos currently only have 'testing', 'stable', 'next' stream")
                 sys.exit(1)
@@ -359,24 +365,25 @@ def _create_instance(args):
                 url = get_fedora_image_url(version)
     elif "centos-stream" in args.url:
         image_by_name = re.match(r'centos-stream:(.*)', args.url)
-        version = image_by_name.groups()[0]
+        version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_centos_image_url(version, True)
     elif "centos" in args.url:
         image_by_name = re.match(r'centos:(.*)', args.url)
-        version = image_by_name.groups()[0]
+        version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_centos_image_url(version, False)
     elif "ubuntu" in args.url:
         image_by_name = re.match(r'ubuntu:(.*)', args.url)
-        version = image_by_name.groups()[0]
+        version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_ubuntu_image_url(version)
     elif "debian" in args.url:
         image_by_name = re.match(r'debian:(.*)', args.url)
-        version = image_by_name.groups()[0]
+        version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_debian_image_url(version)
 
     if not url:
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
+
     tc_image = image.Image(url)
     try:
         tc_image.prepare()
@@ -387,38 +394,40 @@ def _create_instance(args):
         log.error("Couldn't download the desired image (%s)..." % url)
         sys.exit(1)
 
-    if (not args.url and no_url_coreos) or (args.url and 'coreos' in args.url):
-        log.debug("create coreos instance")
-        tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
-        # set ram size
-        if not args.ram:
-            tc_instance.ram = config_data.RAM_COREOS
+    tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
 
-        # set disk size
-        if not args.disksize:
-            tc_instance.disk_size = config_data.DISK_SIZE_COREOS
-
-        tc_instance.ssh_path = args.ssh_path
-        tc_instance.vcpus = args.vcpus
-        tc_instance.fcc_file = args.fcc_file
-        tc_instance.ign_file = args.ign_file
-        tc_instance.coreos = True
-
-    else:
+    # Normal Cloud
+    if not coreos:
         log.debug("create cloud instance")
-        tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
         tc_instance.coreos = False
 
         # set ram size
-        if not args.ram:
-            tc_instance.ram = config_data.RAM
+        tc_instance.ram = config_data.RAM if args.ram == -1 else args.ram
 
         # set disk size
-        if not args.disksize:
-            tc_instance.disk_size = config_data.DISK_SIZE
+        tc_instance.disk_size = config_data.DISK_SIZE if args.disksize == -1 else args.disksize
 
         # set vcpus
         tc_instance.vcpus = args.vcpus
+
+    # CoreOS
+    else:
+        log.debug("create coreos instance")
+        tc_instance.coreos = True
+
+        # set ram size
+        tc_instance.ram = config_data.RAM_COREOS if args.ram == -1 else args.ram
+
+        # set disk size
+        tc_instance.disk_size = config_data.DISK_SIZE_COREOS if args.disksize == -1 else args.disksize
+
+        # set vcpus
+        tc_instance.vcpus = args.vcpus
+
+        tc_instance.ssh_path = args.ssh_path
+        tc_instance.fcc_file = args.fcc_file
+        tc_instance.ign_file = args.ign_file
+
 
     # prepare instance
     try:
@@ -778,7 +787,8 @@ def get_argparser():
     instarg_create.add_argument("--ram",
                                 help="Specify the amount of ram in MiB for the VM.",
                                 type=int,
-                                default=config_data.RAM)
+                                # Default value is handled in _create_instance (config_data.RAM or config_data.RAM_COREOS)
+                                default=-1)
     instarg_create.add_argument("--vcpus",
                                 help="Number of virtual CPU cores to assign to the VM.",
                                 default=config_data.VCPUS)
@@ -800,7 +810,8 @@ def get_argparser():
     instarg_create.add_argument("--disksize",
                                 help="Desired instance disk size, in GB",
                                 type=int,
-                                default=config_data.DISK_SIZE)
+                                # Same as with RAM few line above
+                                default=-1)
     instarg_create.add_argument("--keep",
                                 help="Don't remove instance from disk when something fails, useful for debugging",
                                 action="store_true")
