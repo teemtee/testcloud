@@ -102,7 +102,7 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
     print("-"*60)
 
     if port != 22:
-        print("Due to limitations of tescloud's user session VMs and bugs in some systems (mainly RHEL 8 like),"
+        print("Due to limitations of tescloud's user session VMs and bugs in some systems,"
               " the ssh connection may not be available immediately...")
     if kind == "cloud-user":
         print("Due to limited support for Vagrant boxes, it may take up to 2 minutes for connection to be ready...")
