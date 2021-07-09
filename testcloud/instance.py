@@ -214,6 +214,7 @@ class Instance(object):
         self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
         self.ram = config_data.RAM
         self.vcpus = config_data.VCPUS
+        self.pci_net = None
         # desired size of disk, in GiB
         self.disk_size = config_data.DISK_SIZE
         self.vnc = False
@@ -544,7 +545,10 @@ class Instance(object):
             with lock:
                 port = self.find_next_usable_port()
                 self.create_port_file(port)
-            device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
+            if self.pci_net:
+                device_type = self.pci_net
+            else:
+                device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
             network_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
                             "-device", "{},netdev=testcloud_net.{}".format(device_type, port)]
             qemu_args.extend(network_args)
