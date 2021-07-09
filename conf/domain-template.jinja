@@ -3,7 +3,7 @@
   <uuid>{{ uuid }}</uuid>
   <memory unit='KiB'>{{ memory }}</memory>
   <currentMemory unit='KiB'>{{ memory }}</currentMemory>
-  <vcpu placement='static'>1</vcpu>
+  <vcpu placement='static'>{{ vcpus }}</vcpu>
   <os>
     <type arch='x86_64' machine='pc'>hvm</type>
     {{ uefi_loader }}

@@ -188,6 +188,11 @@ new instance using **testcloud**.
 : To set the amount of RAM that will be available to the virtual
     machine (in MiB).
 
+\--vcpus VCPUS
+
+: To set the amount of VCPUS that will be available to the virtual
+    machine.
+
 \--no-graphic
 
 : This turns off the graphical display of the virtual machine.
@@ -211,11 +216,6 @@ new instance using **testcloud**.
 
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.
-
-\--vcpus VCPUS
-
-: To set the amount of VCPUS that will be available to the virtual
-    machine.
 
 \--fcc_file FCC_FILE
 

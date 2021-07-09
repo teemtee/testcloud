@@ -213,6 +213,7 @@ class Instance(object):
         self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
         self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
         self.ram = config_data.RAM
+        self.vcpus = config_data.VCPUS
         # desired size of disk, in GiB
         self.disk_size = config_data.DISK_SIZE
         self.vnc = False
@@ -557,6 +558,7 @@ class Instance(object):
         instance_values = {'domain_name': self.name,
                            'uuid': uuid.uuid4(),
                            'memory': self.ram * 1024,  # MiB to KiB
+                           'vcpus': self.vcpus,
                            'disk': self.local_disk,
                            'mac_address': util.generate_mac_address(),
                            'uefi_loader': "",
@@ -569,7 +571,6 @@ class Instance(object):
             instance_values['seed'] = self.seed_path
         else:
             xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE_COREOS)
-            instance_values['vcpus'] = self.vcpus
             if config_data.CMD_LINE_ARGS_COREOS or config_data.CMD_LINE_ENVS_COREOS:
                 cmdline_args = config_data.CMD_LINE_ARGS_COREOS + ['name=opt/com.coreos/config,file=%s'%self.config_path, ]
                 for qemu_arg in cmdline_args:

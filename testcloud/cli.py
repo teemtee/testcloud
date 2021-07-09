@@ -417,6 +417,9 @@ def _create_instance(args):
         if not args.disksize:
             tc_instance.disk_size = config_data.DISK_SIZE
 
+        # set vcpus
+        tc_instance.vcpus = args.vcpus
+
     # prepare instance
     try:
         tc_instance.prepare()
@@ -776,6 +779,9 @@ def get_argparser():
                                 help="Specify the amount of ram in MiB for the VM.",
                                 type=int,
                                 default=config_data.RAM)
+    instarg_create.add_argument("--vcpus",
+                                help="Number of virtual CPU cores to assign to the VM.",
+                                default=config_data.VCPUS)
     instarg_create.add_argument("--no-graphic",
                                 help="Turn off graphical display.",
                                 action="store_true")
@@ -785,7 +791,6 @@ def get_argparser():
     instarg_create.add_argument("--atomic",
                                 help="Use this flag if you're booting an Atomic Host.",
                                 action="store_true")
-    # this might work better as a second, required positional arg
     instarg_create.add_argument("--timeout",
                                 help="Time (in seconds) to wait for boot to "
                                      "complete before completion, setting to 0"
@@ -808,9 +813,6 @@ def get_argparser():
     instarg_create.add_argument("--ign_file",
                                 help="specify your ign file path",
                                 type=str)
-    instarg_create.add_argument("--vcpus",
-                                help="vcpu number",
-                                default=config_data.VCPUS)
 
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",
