@@ -92,7 +92,7 @@ mkdir -p %{buildroot}%{_sysconfdir}/polkit-1/rules.d
 install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir}/polkit-1/rules.d/99-testcloud-nonroot-libvirt-access.rules
 
 %check
-%{__python3} setup.py test
+%pytest
 # Remove compiled .py files from /etc after os_install_post
 rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
 rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
