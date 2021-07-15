@@ -52,7 +52,7 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
     if not instance.backing_store:
         return
 
-    if config_data.USER_DATA != "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n    ":
+    if "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n" not in config_data.USER_DATA:
         config_altered = True
 
     # get_ubuntu_releases() is too slow to be called on any distro, so call it only when we know it's not something else we know
