@@ -161,8 +161,10 @@ def get_debian_image_url(version, arch="x86_64"):
 
 
 class Filelock(object):
-    def __init__(self, lock_path=os.path.join(config_data.DATA_DIR, 'testcloud.lock'), timeout=25, wait_time=0.5):
-        self.fd = open(lock_path, 'w+')
+    def __init__(self, timeout=25, wait_time=0.5):
+        # We need to define the lock_path here so it won't get overwritten by importing tc's config in this file
+        self.lock_path = os.path.join(config_data.DATA_DIR, 'testcloud.lock')
+        self.fd = open(self.lock_path, 'w+')
         self.timeout = timeout
         self.wait_time = wait_time
 
