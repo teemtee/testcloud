@@ -746,6 +746,16 @@ class Instance(object):
 
         raise TestcloudInstanceError("Unable to stop instance {}.".format(self.name))
 
+    def reboot(self, soft=True):
+        """Reboots the instance
+        Uses graceful shutdown when soft is True, destroys the vm otherwise
+
+        :raises TestcloudInstanceError: if the instance does not exist or
+                                        if unable to stop the instance (host is busy)
+        """
+        self.stop(soft=soft)
+        self.start()
+
     def _remove_from_disk(self):
         log.debug("removing instance {} from disk".format(self.path))
         shutil.rmtree(self.path)
