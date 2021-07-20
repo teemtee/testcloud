@@ -113,6 +113,7 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 
 %config(noreplace) %{_sysconfdir}/testcloud/settings.py
 %{_bindir}/testcloud
+%{_bindir}/t7d
 
 %files -n python3-%{name}
 %{python3_sitelib}/testcloud

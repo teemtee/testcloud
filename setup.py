@@ -49,7 +49,7 @@ setup(name='testcloud',
       package_dir={"testcloud": "testcloud"},
       include_package_data=True,
       cmdclass={'test': PyTest},
-      entry_points=dict(console_scripts=["testcloud=testcloud.cli:main"]),
+      entry_points=dict(console_scripts=["testcloud=testcloud.cli:main", "t7d=testcloud.cli:main"]),
       install_requires=[
           'Jinja2',
           'libvirt-python',
