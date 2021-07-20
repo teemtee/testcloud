@@ -33,15 +33,18 @@ class PyTest(Command):
         errno = subprocess.call(['pytest-3'])
         raise SystemExit(errno)
 
+with open('README.md') as f:
+    long_description_readme = f.read()
 
 setup(name='testcloud',
       version=find_version('testcloud', '__init__.py'),
-      description="small helper script to download and "
-      "boot cloud images locally",
+      description="A tool to download and boot cloud images locally, with an easy to use API.",
+      long_description=long_description_readme,
+      long_description_content_type='text/markdown',
       author="Mike Ruckman",
       author_email="roshi@fedoraproject.org",
       license="GPLv2+",
-      url="https://github.com/Rorosha/testcloud",
+      url="https://pagure.io/testcloud",
       packages=["testcloud"],
       package_dir={"testcloud": "testcloud"},
       include_package_data=True,
