@@ -1,0 +1,90 @@
+__testcloud()
+{
+    local cur prev prev2 prev3 base_opts image_opts instance_opts instance_create_opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    prev2="${COMP_WORDS[COMP_CWORD-2]}"
+    prev3="${COMP_WORDS[COMP_CWORD-3]}"
+    base_opts="instance image -h --help"
+    image_opts="list destroy -h --help"
+    instance_opts="list start stop remove create -c -h --help"
+    instance_create_opts="-h --ram --no-graphic --vnc --atomic --timeout --disksize"
+
+    echo ${COMP_WORDS[@]} >> /tmp/compwords
+
+    if [[ ${COMP_WORDS[@]} =~ "testcloud image" || ${COMP_WORDS[@]} =~ "t7d image" ]]; then
+        if [[ ${prev} == "image" ]]; then
+            COMPREPLY=( $(compgen -W "${image_opts}" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev2} == "image" && ${prev} == "list" ]]; then
+            return 0
+
+        elif [[ ${prev2} == "image" && ${prev} == "destroy" ]]; then
+            local images
+            images=`testcloud image list 2> /dev/null | grep -E "^  "`
+            COMPREPLY=( $(compgen -W "${images}" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev3} == "image" && ${prev2} == "destroy" ]]; then
+            return 0
+        fi
+
+    elif [[ ${COMP_WORDS[@]} =~ "testcloud instance" || ${COMP_WORDS[@]} =~ "t7d instance" ]]; then
+        if [[ ${prev} == "create" ]]; then
+            COMPREPLY=( $(compgen -W "${instance_create_opts}" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev} == "remove" ]]; then
+            local instances
+            instances="`testcloud instance list | tail -n+3 | head -n-1 | cut -f1 -d' '` --force"
+            COMPREPLY=( $(compgen -W "${instances}" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev2} == "remove" ]]; then
+            local instances
+            COMPREPLY=( $(compgen -W "--force" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev} == "list" ]]; then
+            COMPREPLY=( $(compgen -W "--all" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev} == "stop" ]]; then
+            local instances
+            instances=`testcloud instance list | grep running | cut -f1 -d" "`
+            COMPREPLY=( $(compgen -W "${instances}" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev} == "start" ]]; then
+            local instances
+            instances=`testcloud instance list | grep shutoff | cut -f1 -d" "`
+            COMPREPLY=( $(compgen -W "${instances}" -- ${cur}) )
+            return 0
+
+        elif [[ ${prev2} == "stop" ]]; then
+            return 0
+
+        elif [[ ${prev2} == "start" ]]; then
+            return 0
+
+        elif [[ ${COMP_WORDS[@]} =~ "instance -c" && ! ${COMP_WORDS[@]} =~ "///system" && ! ${COMP_WORDS[@]} =~ "///session" ]]; then
+            _get_comp_words_by_ref -n : cur
+            COMPREPLY=( $(compgen -W "qemu:///system qemu:///session" -- ${cur}) )
+            __ltrim_colon_completions "$cur" # left trim colon (blahblah)
+            return 0
+        fi
+
+        # fallback
+        COMPREPLY=( $(compgen -W "${instance_opts}" -- ${cur}) )
+        return 0
+
+
+    elif [[ ${cur} == * ]]; then
+        COMPREPLY=( $(compgen -W "${base_opts}" -- ${cur}) )
+        return 0
+    fi
+}
+
+complete -F __testcloud testcloud t7d

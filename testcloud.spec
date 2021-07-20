@@ -31,6 +31,7 @@ Summary:        Python 3 interface to testcloud
 
 Obsoletes:      python2-testcloud <= %{version}-%{release}
 
+BuildRequires:  bash-completion
 BuildRequires:  python3-libvirt
 BuildRequires:  python3-devel
 BuildRequires:  python3-jinja2
@@ -91,6 +92,10 @@ install -d %{buildroot}/%{_sharedstatedir}/testcloud/instances
 mkdir -p %{buildroot}%{_sysconfdir}/polkit-1/rules.d
 install conf/99-testcloud-nonroot-libvirt-access.rules %{buildroot}%{_sysconfdir}/polkit-1/rules.d/99-testcloud-nonroot-libvirt-access.rules
 
+# Copy bash completion script
+mkdir -p %{buildroot}%{_datadir}/bash-completion/completions/
+install conf/testcloud-bash %{buildroot}%{_datadir}/bash-completion/completions/testcloud
+
 %check
 %pytest
 # Remove compiled .py files from /etc after os_install_post
@@ -114,6 +119,7 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %config(noreplace) %{_sysconfdir}/testcloud/settings.py
 %{_bindir}/testcloud
 %{_bindir}/t7d
+%{_datadir}/bash-completion/completions/testcloud
 
 %files -n python3-%{name}
 %{python3_sitelib}/testcloud
