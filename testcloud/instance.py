@@ -654,7 +654,12 @@ class Instance(object):
 
         log.debug("Creating instance {}".format(self.name))
         dom = self._get_domain()
-        create_status = dom.create()
+        try:
+            create_status = dom.create()
+        except libvirt.libvirtError:
+            log.warning("Instance startup failed, retrying in 5 seconds...")
+            time.sleep(5)
+            create_status = dom.create()
 
         # libvirt doesn't directly raise errors on boot failure, check the
         # return code to verify that the boot process was successful from
