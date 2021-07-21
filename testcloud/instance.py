@@ -503,7 +503,7 @@ class Instance(object):
 
         imgcreate_command = ['qemu-img',
                              'create',
-                             '-f',
+                             '-qf',
                              'qcow2',
                              '-F',
                              'qcow2',
