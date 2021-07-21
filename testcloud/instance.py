@@ -503,19 +503,20 @@ class Instance(object):
 
         imgcreate_command = ['qemu-img',
                              'create',
-                             '-qf',
+                             '-f',
                              'qcow2',
                              '-F',
                              'qcow2',
                              '-b',
                              self.image.local_path,
+                             '-o',
+                             'lazy_refcounts=on',
                              self.local_disk,
                              ]
 
         # make sure to expand the resultant disk if the size is set
         if self.disk_size > 0:
             imgcreate_command.append("{}G".format(self.disk_size))
-
         subprocess.call(imgcreate_command)
 
 
