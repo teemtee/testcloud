@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.6.0
+Version:        0.6.1
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -126,6 +126,17 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed Jul 21 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.1-1
+- Add wait and retry around dom.create()
+- lazy_refcounts=on and cache=unsafe
+- Bash completion (by lbrabec)
+- Let's have also short t7d binary
+- Add long project description for pypi
+- Style: Let's not have lines with hundreds of characters...
+- API: Add reboot function
+- FileLock: Make sure we don't overwrite config_data.DATA_DIR
+- Fix systems using systemd-networkd in user session mode
+
 * Fri Jul 09 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.0-1
 - SPEC: Use pytest macro
 - Merge downstream spec changes
