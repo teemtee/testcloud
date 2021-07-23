@@ -124,6 +124,8 @@ echo "[Network]" >> /etc/systemd/network/20-tc-usernet.network &&
 echo "DHCP=yes" >> /etc/systemd/network/20-tc-usernet.network; fi']
 - [sh, -c, 'if systemctl status systemd-networkd | grep -q "enabled;\svendor\spreset:\senabled"; then
 systemctl restart systemd-networkd; fi']
+# CentOS and RHEL 8 keeps waiting before restarting sshd causing delays
+- [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
     """
     ATOMIC_USER_DATA = """#cloud-config
 password: %s
