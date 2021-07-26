@@ -1,0 +1,7 @@
+summary: Run a simple test under nested virtualization
+description:
+    Provision the latest fedora and centos guest using a short
+    name under a regular user and run a simple check.
+test: ./test.sh
+framework: beakerlib
+duration: 20m

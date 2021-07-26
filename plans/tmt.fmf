@@ -1,0 +1,27 @@
+summary: Integration testing with tmt
+discover:
+    how: fmf
+provision:
+    how: virtual
+    memory: 3072
+prepare:
+  - name: enable-updates
+    how: shell
+    script: |
+        dnf install -y dnf-plugins-core
+        dnf install -y epel-release --skip-broken
+        dnf config-manager --enable '*-testing'
+  - name: install-tmt
+    how: install
+    copr: psss/tmt
+    package: tmt-provision-virtual
+execute:
+    how: tmt
+
+/fedora:
+    provision+:
+        image: fedora
+
+/centos:
+    provision+:
+        image: centos
