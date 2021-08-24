@@ -159,11 +159,11 @@ def _get_used_images(args):
         path = os.path.join(config_data.DATA_DIR, "instances", inst["name"], inst["name"] + "-local.qcow2")
         command = "qemu-img info %s | grep 'backing file: '" % path
         image_name = subprocess.check_output(command , shell=True).decode().strip().replace("backing file: ", "")
-        if image_name.endswith(".qcow2"):
+        if image_name.endswith(".qcow2") or image_name.endswith(".img"):
             images_in_use.add(image_name)
         else:
             # If we failed to obtain lock for image, bail out and do not remove anything later on
-            raise subprocess.CalledProcessError
+            raise subprocess.CalledProcessError(1, None)
 
     return images_in_use
 
