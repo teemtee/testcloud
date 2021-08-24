@@ -52,7 +52,7 @@ def get_fedora_image_url(version, arch="x86_64"):
     """
     Accepts string specifying desired fedora version, pssible values are:
         - latest (translates to the latest Fedora GA) or XX (where XX is fedora release number)
-        - rawhide (the latest successful nightly compose)
+        - rawhide/branched (the latest successful nightly compose)
         - qa-matrix (nominated compose for testing, can result it either some rawhide nigthly or branched nightly)
         - one of STREAM_LIST (by default one of CoreOS stream names: 'testing', 'stable', 'next')
     Returns url to Fedora Cloud qcow2
@@ -67,7 +67,21 @@ def get_fedora_image_url(version, arch="x86_64"):
         url = result['architectures'][arch]['artifacts']['qemu']['formats']['qcow2.xz']['disk']['location']
 
         return url
-    #get testcloud url
+
+    #get Fedora Cloud url
+    try:
+        oraculum_releases = requests.get('https://packager-dashboard.fedoraproject.org/api/v1/releases').json()
+    except (ConnectionError, IndexError):
+        log.error("Couldn't fetch Fedora releases from oraculum...")
+        return None
+
+    if oraculum_releases["fedora"]["branched"] and version == str(oraculum_releases["fedora"]["branched"]):
+        version = "branched"
+
+    if not oraculum_releases["fedora"]["branched"] and version == "branched":
+        log.warning("Branched release currently doesn't exist, using rawhide...")
+        version = "rawhide"
+
     if version == "qa-matrix":
         try:
             nominated_response = requests.get("https://fedoraproject.org/wiki/Test_Results:Current_Installation_Test")
@@ -76,7 +90,7 @@ def get_fedora_image_url(version, arch="x86_64"):
             log.error("Couldn't fetch the current image from qa-matrix ..")
             return None
 
-    if version == "rawhide":
+    if version == "rawhide" or version == "branched":
         stamp = 0
         try:
             releases = requests.get('https://openqa.fedoraproject.org/nightlies.json').json()
@@ -85,19 +99,13 @@ def get_fedora_image_url(version, arch="x86_64"):
             return None
         for release in releases:
             if release["arch"] == arch and release["subvariant"] == "Cloud_Base" and release["type"] == "qcow2":
-                if release["mtime"] > stamp:
+                if release["mtime"] > stamp and version in release["url"]:
                     url = release["url"]
                     stamp = release["mtime"]
         return url
 
     if version == "latest":
-        try:
-            latest_release = requests.get('https://packager-dashboard.fedoraproject.org/api/v1/releases').json()
-        except (JSONDecodeError, ConnectionError):
-            log.error("Couldn't fetch the latest Fedora release...")
-            log.error("Expected format is 'fedora:XX' where XX is version number or 'latest', 'rawhide' or 'qa-matrix'.")
-            return None
-        version = str(latest_release["fedora"]["stable"])
+        version = str(oraculum_releases["fedora"]["stable"])
 
     try:
         releases = requests.get('https://getfedora.org/releases.json').json()
