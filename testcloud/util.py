@@ -120,6 +120,8 @@ def get_fedora_image_url(version, arch="x86_64"):
                 url = release["link"]
                 break
 
+    if not url:
+        log.error("Expected format is 'fedora:XX' where XX is version number or 'latest', 'rawhide', 'branched' or 'qa-matrix'.")
     return url
 
 def get_ubuntu_releases():
