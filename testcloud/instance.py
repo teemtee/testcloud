@@ -858,11 +858,11 @@ class Instance(object):
         raise TestcloudInstanceError(msg)
 
     def prepare_vagrant_init(self):
-        log.warn('Vagrant support in testcloud is not in finished nor in reliable state. You have been warned...')
+        log.warn('Support for images without cloud-init in testcloud is not reliable. You have been warned...')
         if self.connection == "qemu:///session":
             log.debug("Giving the VM some time (%s seconds) to boot up..." % config_data.VAGRANT_USER_SESSION_WAIT)
             time.sleep(config_data.VAGRANT_USER_SESSION_WAIT)
-        log.debug("Adjusting Vagrant VM to support cloud-init...")
+        log.debug("Adjusting the image to support cloud-init...")
         conn = libvirt.open(self.connection)
         stream = conn.newStream(libvirt.VIR_STREAM_NONBLOCK)
         dom = conn.lookupByName(self.name)

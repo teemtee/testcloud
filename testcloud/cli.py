@@ -104,8 +104,9 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
     if port != 22:
         print("Due to limitations of tescloud's user session VMs and bugs in some systems,"
               " the ssh connection may not be available immediately...")
-    if kind == "cloud-user":
-        print("Due to limited support for Vagrant boxes, it may take up to 2 minutes for connection to be ready...")
+    if vagrant:
+        print("Due to limited support for images without cloud-init pre installed,"
+              "it may take up to 2 minutes for connection to be ready...")
 
 def _handle_permissions_error_cli(error):
     # User might not be part of testcloud group, print user friendly message how to fix this
@@ -477,14 +478,16 @@ def _create_instance(args):
     # Write ip to file
     tc_instance.create_ip_file(vm_ip)
 
-    if args.url and args.url.endswith(".box"):
+    # CentOS .box files don't have cloud-init at all, others seem fine (eg. 1MT)
+    cloud_init_missing = bool(re.search(r'centos-(.*)-vagrant-(.*)', args.url.lower()))
+    if cloud_init_missing:
         tc_instance.prepare_vagrant_init()
 
-    # List connection details (for CentOS, we're doing the listing above in _start_instance)
+    # List connection details
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
     print("The SSH port of vm {}:  {}".format(args.name, vm_port))
 
-    _handle_connection_tip(tc_instance, vm_ip, vm_port, args.url and args.url.endswith(".box"))
+    _handle_connection_tip(tc_instance, vm_ip, vm_port, cloud_init_missing)
 
 def _domain_tip(args, action):
     connection = args.connection
