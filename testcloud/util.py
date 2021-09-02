@@ -57,8 +57,12 @@ def get_fedora_image_url(version, arch="x86_64"):
         - one of STREAM_LIST (by default one of CoreOS stream names: 'testing', 'stable', 'next')
     Returns url to Fedora Cloud qcow2
     """
+    primary_arches = ["x86_64", "aarch64"]
     # get coreos url
     if version in config_data.STREAM_LIST:
+        if arch != "x86_64":
+            log.error("non-x86_64 architecture is not supported by Fedora CoreOS.")
+            return None
         try:
             result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
         except (ConnectionError, IndexError):
@@ -83,6 +87,9 @@ def get_fedora_image_url(version, arch="x86_64"):
         version = "rawhide"
 
     if version == "qa-matrix":
+        if arch != "x86_64":
+            log.error("non-x86_64 architecture is not supported with qa-matrix.")
+            return None
         try:
             nominated_response = requests.get("https://fedoraproject.org/wiki/Test_Results:Current_Installation_Test")
             return re.findall(r'href=\"(.*.%s.qcow2)\"' % arch, nominated_response.text)[0]
@@ -116,9 +123,14 @@ def get_fedora_image_url(version, arch="x86_64"):
     url = None
     for release in releases:
         if release["version"] == version and release["variant"] == "Cloud" and release["link"].endswith(".qcow2"):
-            if release["arch"] == arch:
+            # There are links only to primary architecutres in releases.json... much fun
+            if arch in primary_arches and release["arch"] == arch:
                 url = release["link"]
                 break
+            elif arch not in primary_arches:
+                if release["arch"] == "x86_64":
+                    # Try to do a bit of dark magic (that would totally break in no time) to get meaningful url to secondary arch
+                    url = release["link"].replace("pub/fedora/linux/releases", "pub/fedora-secondary/releases").replace("x86_64", arch)
 
     if not url:
         log.error("Expected format is 'fedora:XX' where XX is version number or 'latest', 'rawhide', 'branched' or 'qa-matrix'.")
@@ -138,8 +150,14 @@ def get_ubuntu_releases():
 
 
 def get_ubuntu_image_url(version, arch="x86_64"):
-    arch_map = {"x86_64": "amd64", "aarch64": "arm64"}
+    arch_map = {"x86_64": "amd64", "aarch64": "arm64", "ppc64le": "ppc64el", "s390x": "s390x"}
 
+    if arch not in arch_map:
+        log.error("Requested architecture is not supported by testcloud for Ubuntu.")
+        return None
+
+    if arch != "x86_64":
+        config_data.UBUNTU_IMG_URL = config_data.UBUNTU_IMG_URL.replace("-disk-kvm.img", ".img")
     releases = get_ubuntu_releases()
     if len(releases) == 0:
         return None
@@ -153,7 +171,15 @@ def get_ubuntu_image_url(version, arch="x86_64"):
         return None
 
 def get_debian_image_url(version, arch="x86_64"):
-    arch_map = {"x86_64": "amd64", "aarch64": "arm64"}
+    arch_map = {"x86_64": "amd64", "aarch64": "arm64", "ppc64le": "ppc64el"}
+
+    if arch not in arch_map:
+        log.error("Requested architecture is not supported by testcloud for Debian.")
+        return None
+
+    if arch != "x86_64":
+        config_data.DEBIAN_IMG_URL = config_data.DEBIAN_IMG_URL.replace("genericcloud", "generic")
+
     inverted_releases = {v: k for k, v in config_data.DEBIAN_RELEASE_MAP.items()}
 
     if version == "latest":
