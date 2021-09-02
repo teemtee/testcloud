@@ -18,6 +18,7 @@ import libvirt
 import shutil
 import uuid
 import jinja2
+import platform
 import socket
 
 try:
@@ -211,8 +212,19 @@ class Instance(object):
     defined on the local system, using an existing :py:class:`Image`.
     """
 
-    def __init__(self, name, image=None, connection='qemu:///system', hostname=None):
+    def __init__(
+        self,
+        name,
+        image=None,
+        connection='qemu:///system',
+        hostname=None,
+        desired_arch=platform.machine(),
+        kvm=True
+    ):
+
         self.name = name
+        self.desired_arch = desired_arch
+        self.kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
         self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
         self.image = image
         self.connection = connection
@@ -259,6 +271,9 @@ class Instance(object):
             # generate seed image
             self._generate_seed_image()
         else:
+            # Create a dummy seed
+            open(self.seed_path, 'a').close()
+
             if self.ign_file:
                 shutil.copy(self.ign_file, self.config_path)
             else:
@@ -542,6 +557,70 @@ class Instance(object):
         # Make a copy of qemu args from config_object so we don't get to a shitty state when creating a bunch of vms
         qemu_args = config_data.CMD_LINE_ARGS.copy()
 
+        # Configuration for all supported architectures
+        model_map = {
+            "x86_64":
+                {
+                    "model": "pc",
+                    "cpu_kvm": '<cpu mode="host-passthrough" check="none" migratable="on"/>',
+                    "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu64</model></cpu>',
+                    "boot_drive_address": "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>",
+                    "qemu": "qemu-system-x86_64",
+                    "extra_specs":
+                    """
+                        <features><acpi/><apic/><vmport state='off'/></features>
+                        <pm><suspend-to-mem enabled='no'/><suspend-to-disk enabled='no'/></pm>
+                        <memballoon model='virtio'>
+                        <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+                        </memballoon>
+                    """
+                },
+            "ppc64le":
+                {
+                    "model": "pseries-5.1",
+                    "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
+                    "cpu_qemu": '<cpu mode="custom" match="exact" check="none"><model fallback="forbid">POWER9</model></cpu>',
+                    "boot_drive_address": "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>",
+                    "qemu": "qemu-system-ppc64",
+                    "extra_specs":
+                    """
+                        <memballoon model='virtio'>
+                        <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+                        </memballoon>
+                    """
+                },
+            "aarch64":
+                {
+                    "model": "virt",
+                    "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
+                    "cpu_qemu": '<cpu mode="custom" match="exact"><model>cortex-a57</model></cpu>',
+                    "boot_drive_address": "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>",
+                    "qemu": "qemu-system-aarch64",
+                    "extra_specs":
+                    """
+                        <features><acpi/><gic version="2"/></features>
+                        <memballoon model='virtio'>
+                        <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+                        </memballoon>
+                    """
+                },
+            "s390x":
+                {
+                    "model": "s390-ccw-virtio-6.1",
+                    "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
+                    "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu</model></cpu>',
+                    "boot_drive_address": "<address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0007'/>",
+                    "qemu": "qemu-system-s390x",
+                    "extra_specs":
+                    """
+                    """
+                }
+        }
+
+        if platform.machine() not in model_map:
+            log.error("Unsupported architecture, architectures supported by testcloud are: %s." % model_map.keys())
+            raise TestcloudInstanceError()
+
         # We need to shuffle things around network setup a bit if we're running in qemu:///session instead of qemu:///system
         if self.connection == "qemu:///session":
             network_type = "user"
@@ -573,15 +652,21 @@ class Instance(object):
                            'disk': self.local_disk,
                            'mac_address': util.generate_mac_address(),
                            'uefi_loader': "",
-                           'emulator_path': "/usr/bin/qemu-kvm",
+                           'emulator_path': "", # Required, will be determined later
+                           'arch': self.desired_arch,
+                           'virt_type': "kvm" if self.kvm else "qemu",
+                           'model': model_map[self.desired_arch]["model"],
+                           'cpu': model_map[self.desired_arch]["cpu_kvm"] if self.kvm else model_map[self.desired_arch]["cpu_qemu"],
+                           'extra_specs': model_map[self.desired_arch]["extra_specs"],
                            'network_type': network_type,
                            'network_source': network_source,
                            "ip_setup": ip_setup}
-        if not self.coreos:
-            xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE)
-            instance_values['seed'] = self.seed_path
-        else:
-            xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE_COREOS)
+
+        instance_values["model"] = model_map[self.desired_arch]["model"]
+
+        xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE)
+        instance_values['seed'] = self.seed_path
+        if self.coreos:
             if config_data.CMD_LINE_ARGS_COREOS or config_data.CMD_LINE_ENVS_COREOS:
                 cmdline_args = config_data.CMD_LINE_ARGS_COREOS + ['name=opt/com.coreos/config,file=%s'%self.config_path, ]
                 for qemu_arg in cmdline_args:
@@ -601,12 +686,18 @@ class Instance(object):
         if config_data.UEFI:
             instance_values["uefi_loader"] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
 
-        if not os.path.exists("/usr/bin/qemu-kvm"):
-            if os.path.exists("/usr/libexec/qemu-kvm"):
-                log.info("'/usr/bin/qemu-kvm' was not found, using '/usr/libexec/qemu-kvm' instead.")
-                instance_values["emulator_path"] = "/usr/libexec/qemu-kvm"
-            else:
-                raise TestcloudInstanceError("Neither '/usr/bin/qemu-kvm' nor '/usr/libexec/qemu-kvm' was found.")
+        if self.desired_arch == "aarch64":
+            instance_values["uefi_loader"] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/aarch64/QEMU_EFI-silent-pflash.raw</loader>"
+
+        # Try to query usable qemu binaries for desired architecture
+        qemu_paths = ["/usr/bin/%s" % model_map[self.desired_arch]["qemu"], "/usr/libexec/%s" % model_map[self.desired_arch]["qemu"]]
+        instance_values["emulator_path"] = None
+
+        for path in qemu_paths:
+            instance_values["emulator_path"] = path if os.path.exists(path) else instance_values["emulator_path"]
+
+        if not instance_values["emulator_path"]:
+            raise TestcloudInstanceError("No usable qemu binary exist, tried: %s" % qemu_paths)
 
         # Write out the final xml file for the domain
         with open(self.xml_path, 'w') as dom_template:

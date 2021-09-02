@@ -1,20 +1,16 @@
-<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='{{ virt_type }}' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>{{ domain_name }}</name>
   <uuid>{{ uuid }}</uuid>
   <memory unit='KiB'>{{ memory }}</memory>
   <currentMemory unit='KiB'>{{ memory }}</currentMemory>
   <vcpu placement='static'>{{ vcpus }}</vcpu>
   <os>
-    <type arch='x86_64' machine='pc'>hvm</type>
+    <type arch='{{ arch }}' machine='{{ model }}'>hvm</type>
     {{ uefi_loader }}
     <boot dev='hd'/>
   </os>
-  <features>
-    <acpi/>
-    <apic/>
-    <vmport state='off'/>
-  </features>
-  <cpu mode='host-passthrough'/>
+  {{ cpu }}
+  {{ extra_specs }}
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup'/>
     <timer name='pit' tickpolicy='delay'/>
@@ -23,17 +19,13 @@
   <on_poweroff>destroy</on_poweroff>
   <on_reboot>restart</on_reboot>
   <on_crash>restart</on_crash>
-  <pm>
-    <suspend-to-mem enabled='no'/>
-    <suspend-to-disk enabled='no'/>
-  </pm>
   <devices>
     <emulator>{{ emulator_path }}</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2' cache='unsafe'/>
       <source file="{{ disk }}"/>
       <target dev='vda' bus='virtio'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+      {{ boot_drive_address }}
     </disk>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw'/>
@@ -54,10 +46,7 @@
     <console type='pty'>
       <target type='serial' port='0'/>
     </console>
-    <input type='keyboard' bus='ps2'/>
-    <memballoon model='virtio'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
-    </memballoon>
+    <input type="keyboard" bus="virtio"/>
     <rng model='virtio'>
       <backend model='random'>/dev/urandom</backend>
     </rng>

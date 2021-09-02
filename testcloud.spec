@@ -79,9 +79,6 @@ install -d %{buildroot}%{_sharedstatedir}/testcloud/
 # Install domain jinja template for libvirt to import
 install conf/domain-template.jinja %{buildroot}/%{_sharedstatedir}/testcloud/domain-template.jinja
 
-# Install domain jinja coreos template for libvirt to import
-install conf/domain-coreos-template.jinja %{buildroot}/%{_sharedstatedir}/testcloud/domain-coreos-template.jinja
-
 # backingstores dir
 install -d %{buildroot}/%{_sharedstatedir}/testcloud/backingstores
 
@@ -112,7 +109,6 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %dir %attr(0775, qemu, testcloud) %{_sharedstatedir}/testcloud/backingstores
 %dir %attr(0775, qemu, testcloud) %{_sharedstatedir}/testcloud/instances
 %attr(0764, qemu, testcloud) %{_sharedstatedir}/testcloud/domain-template.jinja
-%attr(0764, qemu, testcloud) %{_sharedstatedir}/testcloud/domain-coreos-template.jinja
 
 %attr(0644, root, root) %{_sysconfdir}/polkit-1/rules.d/99-testcloud-nonroot-libvirt-access.rules
 

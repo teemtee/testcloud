@@ -318,9 +318,8 @@ def _create_instance(args):
 
     url = None
     coreos = False
-    arch = platform.machine()
 
-    if arch != "x86_64":
+    if args.arch != "x86_64":
         log.warning("Testcloud might not work correctly on non-x86-64 machines yet.")
 
     if args.ssh_path or args.ign_file or args.fcc_file:
@@ -334,7 +333,7 @@ def _create_instance(args):
         # Normal Fedora Cloud
         if not "fedora-coreos" in args.url:
             version = image_by_name.groups()[0] if image_by_name else config_data.VERSION
-            url = get_fedora_image_url(version, arch)
+            url = get_fedora_image_url(version, args.arch)
         # Fedora CoreOS
         else:
             version = stream_name_raw.groups()[0] if stream_name_raw else config_data.STREAM
@@ -343,23 +342,23 @@ def _create_instance(args):
                 log.error("fedora-coreos currently only have 'testing', 'stable', 'next' stream")
                 sys.exit(1)
             else:
-                url = get_fedora_image_url(version, arch)
+                url = get_fedora_image_url(version, args.arch)
     elif "centos-stream" in args.url:
         image_by_name = re.match(r'centos-stream[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_centos_image_url(version, True, arch)
+        url = get_centos_image_url(version, True, args.arch)
     elif "centos" in args.url:
         image_by_name = re.match(r'centos[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_centos_image_url(version, False, arch)
+        url = get_centos_image_url(version, False, args.arch)
     elif "ubuntu" in args.url:
         image_by_name = re.match(r'ubuntu[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_ubuntu_image_url(version, arch)
+        url = get_ubuntu_image_url(version, args.arch)
     elif "debian" in args.url:
         image_by_name = re.match(r'debian[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_debian_image_url(version, arch)
+        url = get_debian_image_url(version, args.arch)
 
     if not url:
         log.error("Couldn't find the desired image ( %s )..." % args.url)
@@ -375,7 +374,7 @@ def _create_instance(args):
         log.error("Couldn't download the desired image (%s)..." % url)
         sys.exit(1)
 
-    tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection)
+    tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection, desired_arch=args.arch)
 
     # Normal Cloud
     if not coreos:
@@ -759,6 +758,11 @@ def get_argparser():
                                 help="name of instance to create",
                                 type=str,
                                 default=None)
+    instarg_create.add_argument("-a",
+                                "--arch",
+                                help="desired architecture of an instance",
+                                type=str,
+                                default=platform.machine())
     instarg_create.add_argument("--ram",
                                 help="Specify the amount of ram in MiB for the VM.",
                                 type=int,
