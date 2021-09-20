@@ -127,15 +127,21 @@ def _prepare_domain_list(connection=None):
     Returns list of testcloud domains known to libvirt
     """
     if not connection or connection not in ["qemu:///system", "qemu:///session"]:
-        domains_system = _list_domains("qemu:///system")
+        try:
+            domains_system = _list_domains("qemu:///system")
+        except libvirt.libvirtError:
+            # We can't rely on having working qemu system session
+            domains_system = {}
         domains_user = _list_domains("qemu:///session")
         return {**domains_system, **domains_user}
     else:
         try:
             return _list_domains(connection)
         except libvirt.libvirtError:
-            log.error("Connection to QEMU failed, check the connection url you've specified.")
-            sys.exit(1)
+            if connection not in ["qemu:///system", "qemu:///session"]:
+                # We don't need logging of failures for standard qemu uris
+                log.error("Connection to QEMU failed, check the connection url ( %s ) you've specified." % connection)
+            return []
 
 def find_instance(name, image=None, connection='qemu:///system'):
     """Find an instance using a given name and image, if it exists.
