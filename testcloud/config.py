@@ -115,16 +115,15 @@ password: %s
 chpasswd: { expire: False }
 ssh_pwauth: True
 runcmd:
-- [sh, -c, 'mkdir -p /etc/systemd/network/']
-# We need to echo multiple times because sh echo doesn't support newline notation
-- [sh, -c, 'if [ ! -f /etc/systemd/network/20-tc-usernet.network ];
-then echo "[Match]" >> /etc/systemd/network/20-tc-usernet.network &&
+- [sh, -c, 'if [ ! -f /etc/systemd/network/20-tc-usernet.network ] &&
+systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled";
+then mkdir -p /etc/systemd/network/ &&
+echo "[Match]" >> /etc/systemd/network/20-tc-usernet.network &&
 echo "Name=en*" >> /etc/systemd/network/20-tc-usernet.network &&
 echo "[Network]" >> /etc/systemd/network/20-tc-usernet.network &&
 echo "DHCP=yes" >> /etc/systemd/network/20-tc-usernet.network; fi']
-- [sh, -c, 'if systemctl status systemd-networkd | grep -q "enabled;\svendor\spreset:\senabled"; then
+- [sh, -c, 'if systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled"; then
 systemctl restart systemd-networkd; fi']
-# CentOS and RHEL 8 keeps waiting before restarting sshd causing delays
 - [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
     """
     ATOMIC_USER_DATA = """#cloud-config
