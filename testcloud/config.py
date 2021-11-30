@@ -115,6 +115,11 @@ password: %s
 chpasswd: { expire: False }
 ssh_pwauth: True
 runcmd:
+- sed -i -e '/^.*PermitRootLogin/s/^.*$/PermitRootLogin yes/'
+  -e '/^.*UseDNS/s/^.*$/UseDNS no/'
+  -e '/^.*GSSAPIAuthentication/s/^.*$/GSSAPIAuthentication no/'
+  /etc/ssh/sshd_config
+- systemctl reload sshd
 - [sh, -c, 'if [ ! -f /etc/systemd/network/20-tc-usernet.network ] &&
 systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled";
 then mkdir -p /etc/systemd/network/ &&
