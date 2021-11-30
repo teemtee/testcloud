@@ -45,7 +45,7 @@ def get_centos_image_url(version, stream=False, arch="x86_64"):
     if version in versions:
         return versions[version].format(arch)
     else:
-        log.error("Don't know the requested CentOS version, allowed values are: %s" % str(versions.keys()))
+        log.error("Don't know the requested CentOS version, allowed values are: %s" % ", ".join(versions.keys()))
         return None
 
 def get_fedora_image_url(version, arch="x86_64"):
