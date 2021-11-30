@@ -359,8 +359,8 @@ def _create_instance(args):
     if "http" in args.url or "file" in args.url:
         url = args.url
     elif "fedora" in args.url:
-        image_by_name = re.match(r'fedora:(.*)', args.url)
-        stream_name_raw = re.match(r'fedora-coreos:(.*)', args.url)
+        image_by_name = re.match(r'fedora[:\-](.*)', args.url)
+        stream_name_raw = re.match(r'fedora-coreos[:\-](.*)', args.url)
         # Normal Fedora Cloud
         if not "fedora-coreos" in args.url:
             version = image_by_name.groups()[0] if image_by_name else config_data.VERSION
@@ -375,19 +375,19 @@ def _create_instance(args):
             else:
                 url = get_fedora_image_url(version, arch)
     elif "centos-stream" in args.url:
-        image_by_name = re.match(r'centos-stream:(.*)', args.url)
+        image_by_name = re.match(r'centos-stream[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_centos_image_url(version, True, arch)
     elif "centos" in args.url:
-        image_by_name = re.match(r'centos:(.*)', args.url)
+        image_by_name = re.match(r'centos[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_centos_image_url(version, False, arch)
     elif "ubuntu" in args.url:
-        image_by_name = re.match(r'ubuntu:(.*)', args.url)
+        image_by_name = re.match(r'ubuntu[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_ubuntu_image_url(version, arch)
     elif "debian" in args.url:
-        image_by_name = re.match(r'debian:(.*)', args.url)
+        image_by_name = re.match(r'debian[:\-](.*)', args.url)
         version = image_by_name.groups()[0] if image_by_name else "latest"
         url = get_debian_image_url(version, arch)
 
