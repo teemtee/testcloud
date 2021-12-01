@@ -138,13 +138,6 @@ runcmd:
   systemctl restart systemd-networkd; fi']
   - [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
     """
-    ATOMIC_USER_DATA = """#cloud-config
-password: %s
-chpasswd: { expire: False }
-ssh_pwauth: True
-runcmd:
-  - [ sh, -c, 'echo -e "ROOT_SIZE=4G\nDATA_SIZE=10G" > /etc/sysconfig/docker-storage-setup']
-    """
     COREOS_DATA = """variant: fcos
 version: 1.3.0
 passwd:

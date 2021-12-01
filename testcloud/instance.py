@@ -225,7 +225,6 @@ class Instance(object):
         self.disk_size = config_data.DISK_SIZE
         self.vnc = False
         self.graphics = False
-        self.atomic = False
         self.hostname = hostname if hostname else config_data.HOSTNAME
 
         self.image_path = os.path.join(config_data.DATA_DIR, "instances", self.name, self.name + "-local.qcow2")
@@ -274,23 +273,19 @@ class Instance(object):
         # deal with backing store
         self._create_local_disk()
 
-    def _create_user_data(self, password, overwrite=False, atomic=False):
+    def _create_user_data(self, password, overwrite=False):
         """Save the right  password to the 'user-data' file needed to
         emulate cloud-init. Default username on cloud images is "fedora"
 
         Will not overwrite an existing user-data file unless
         the overwrite kwarg is set to True."""
 
-        if atomic:
-            file_data = config_data.ATOMIC_USER_DATA % password
-
-        else:
-            # Wait for tmt-1.10, replace the ugly down there with
-            # file_data = config_data.USER_DATA.format(user_password=password)
-            if config_data.USER_DATA.count("%s") == 1:
-                file_data = config_data.USER_DATA % password
-            elif config_data.USER_DATA.count("%s") == 2:
-                file_data = config_data.USER_DATA % (password, password)
+        # Wait for tmt-1.10, replace the ugly down there with
+        # file_data = config_data.USER_DATA.format(user_password=password)
+        if config_data.USER_DATA.count("%s") == 1:
+            file_data = config_data.USER_DATA % password
+        elif config_data.USER_DATA.count("%s") == 2:
+            file_data = config_data.USER_DATA % (password, password)
 
         data_path = '{}/meta/user-data'.format(self.path)
 
@@ -630,8 +625,7 @@ class Instance(object):
         conn.defineXML(domain_xml)
 
     def expand_qcow(self, size="+10G"):
-        """Expand the storage for a qcow image. Currently only used for Atomic
-        Hosts."""
+        """Expand the storage for a qcow image. Currently unused."""
 
         log.info("expanding qcow2 image {}".format(self.image_path))
         subprocess.call(['qemu-img',
@@ -639,7 +633,7 @@ class Instance(object):
                          self.image_path,
                          size])
 
-        log.info("Resized image for Atomic testing...")
+        log.info("Resized image...")
         return
 
     def boot(self, timeout=config_data.BOOT_TIMEOUT):

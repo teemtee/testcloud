@@ -773,9 +773,6 @@ def get_argparser():
     instarg_create.add_argument("--vnc",
                                 help="Turns on vnc at :1 to the instance.",
                                 action="store_true")
-    instarg_create.add_argument("--atomic",
-                                help="Use this flag if you're booting an Atomic Host.",
-                                action="store_true")
     instarg_create.add_argument("--timeout",
                                 help="Time (in seconds) to wait for boot to "
                                      "complete before completion, setting to 0"

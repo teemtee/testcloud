@@ -9,7 +9,7 @@ __testcloud()
     base_opts="instance image -h --help"
     image_opts="list destroy -h --help"
     instance_opts="list start stop remove create -c -h --help"
-    instance_create_opts="-h --ram --no-graphic --vnc --atomic --timeout --disksize"
+    instance_create_opts="-h --ram --no-graphic --vnc --timeout --disksize"
 
     echo ${COMP_WORDS[@]} >> /tmp/compwords
 

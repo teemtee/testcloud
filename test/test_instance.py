@@ -29,9 +29,6 @@ class TestInstance:
     def test_boot_base(self):
         pass
 
-    def test_boot_atomic(self):
-        pass
-
     def test_boot_pristine(self):
         pass
 
