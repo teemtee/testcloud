@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.6.2
+Version:        0.6.3
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -126,6 +126,15 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed Dec 01 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.3-1
+- Drop Atomic Host
+- Simplify cli codepath, use cloud-user by default
+- cli: allow to spearate OS version by "-"
+- CentOS misc: improve error output on missing version
+- Disable UseDNS, GSSAPI for faster SSH, allow ssh for root
+- CentOS: Fix el7 based systems
+- CentOS: update 7 build, add CentOS Stream 9
+
 * Mon Sep 27 2021 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.2-1
 - Workaround EL8 bug - waiting for sshd restart with user sessions
 - Add a basic integration test and plan for tmt
