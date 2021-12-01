@@ -285,7 +285,12 @@ class Instance(object):
             file_data = config_data.ATOMIC_USER_DATA % password
 
         else:
-            file_data = config_data.USER_DATA % password
+            # Wait for tmt-1.10, replace the ugly down there with
+            # file_data = config_data.USER_DATA.format(user_password=password)
+            if config_data.USER_DATA.count("%s") == 1:
+                file_data = config_data.USER_DATA % password
+            elif config_data.USER_DATA.count("%s") == 2:
+                file_data = config_data.USER_DATA % (password, password)
 
         data_path = '{}/meta/user-data'.format(self.path)
 

@@ -111,25 +111,32 @@ class ConfigData(object):
 local-hostname: %s
     """
     USER_DATA = """#cloud-config
+ssh_pwauth: true
 password: %s
-chpasswd: { expire: False }
-ssh_pwauth: True
+chpasswd:
+  expire: false
+users:
+  - default
+  - name: cloud-user
+    plain_text_passwd: %s
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
 runcmd:
-- sed -i -e '/^.*PermitRootLogin/s/^.*$/PermitRootLogin yes/'
-  -e '/^.*UseDNS/s/^.*$/UseDNS no/'
-  -e '/^.*GSSAPIAuthentication/s/^.*$/GSSAPIAuthentication no/'
-  /etc/ssh/sshd_config
-- systemctl reload sshd
-- [sh, -c, 'if [ ! -f /etc/systemd/network/20-tc-usernet.network ] &&
-systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled";
-then mkdir -p /etc/systemd/network/ &&
-echo "[Match]" >> /etc/systemd/network/20-tc-usernet.network &&
-echo "Name=en*" >> /etc/systemd/network/20-tc-usernet.network &&
-echo "[Network]" >> /etc/systemd/network/20-tc-usernet.network &&
-echo "DHCP=yes" >> /etc/systemd/network/20-tc-usernet.network; fi']
-- [sh, -c, 'if systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled"; then
-systemctl restart systemd-networkd; fi']
-- [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
+  - sed -i -e '/^.*PermitRootLogin/s/^.*$/PermitRootLogin yes/'
+    -e '/^.*UseDNS/s/^.*$/UseDNS no/'
+    -e '/^.*GSSAPIAuthentication/s/^.*$/GSSAPIAuthentication no/'
+    /etc/ssh/sshd_config
+  - systemctl reload sshd
+  - [sh, -c, 'if [ ! -f /etc/systemd/network/20-tc-usernet.network ] &&
+  systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled";
+  then mkdir -p /etc/systemd/network/ &&
+  echo "[Match]" >> /etc/systemd/network/20-tc-usernet.network &&
+  echo "Name=en*" >> /etc/systemd/network/20-tc-usernet.network &&
+  echo "[Network]" >> /etc/systemd/network/20-tc-usernet.network &&
+  echo "DHCP=yes" >> /etc/systemd/network/20-tc-usernet.network; fi']
+  - [sh, -c, 'if systemctl status systemd-networkd | grep -q "enabled;\\svendor\\spreset:\\senabled"; then
+  systemctl restart systemd-networkd; fi']
+  - [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
     """
     ATOMIC_USER_DATA = """#cloud-config
 password: %s

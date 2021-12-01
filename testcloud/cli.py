@@ -42,7 +42,7 @@ simply boot images designed for cloud systems."""
 # instance handling functions
 ################################################################################
 
-def _handle_connection_tip(instance, ip, port, vagrant=False):
+def _handle_connection_tip(ip, port, vagrant=False):
     """
     Prints hint how to connect to the vm
     Prints detailed help for default config_data.USER_DATA and just the basic one for altered configurations
@@ -50,39 +50,9 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
     config_altered = False
     kind = ""
 
-    if not instance.backing_store:
-        return
-
-    if "#cloud-config\npassword: %s\nchpasswd: { expire: False }\nssh_pwauth: True\n" not in config_data.USER_DATA:
+    if "#cloud-config\nssh_pwauth: true\npassword: %s\nchpasswd:\n  expire: false\n" not in config_data.USER_DATA:
         config_altered = True
 
-    # get_ubuntu_releases() is too slow to be called on any distro, so call it only when we know it's not something else we know
-    # Ubuntu images don't have 'ubuntu' keyword in their filename
-    if not any(entry in instance.backing_store.lower() for entry in ["coreos", "fedora", "centos", "rhel", "debian"]) and not config_altered:
-        ubuntu_release_names = get_ubuntu_releases()
-        if "entries" in ubuntu_release_names:
-            ubuntu_release_names = ubuntu_release_names["entries"]
-        else:
-            ubuntu_release_names = []
-    else:
-        ubuntu_release_names = []
-
-    if "coreos" in instance.backing_store.lower():
-        kind = "CoreOS"
-    elif "fedora" in instance.backing_store.lower():
-        kind = "Fedora"
-    elif "centos" in instance.backing_store.lower():
-        if not vagrant:
-            kind = "CentOS"
-        else:
-            kind = "cloud-user"
-    elif any(ubuntu_release in instance.backing_store for ubuntu_release in ubuntu_release_names):
-        kind = "Ubuntu"
-    elif "debian" in instance.backing_store.lower():
-        kind = "Debian"
-    else:
-        # Let's use config_altered to indicate we don't detect an OS
-        config_altered = True
     print("-"*60)
     if config_altered:
         print("To connect to the VM, use the following command:")
@@ -96,9 +66,9 @@ def _handle_connection_tip(instance, ip, port, vagrant=False):
         elif kind == "CoreOS":
             print("To connect to the VM, use the following command :")
         if port == 22:
-            print("ssh %s@%s" % (kind.lower(), ip))
+            print("ssh cloud-user@%s" % ip)
         else:
-            print("ssh %s@%s -p %d" % (kind.lower(), ip, port))
+            print("ssh cloud-user@%s -p %d" % (ip, port))
 
     print("-"*60)
 
@@ -492,7 +462,7 @@ def _create_instance(args):
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
     print("The SSH port of vm {}:  {}".format(args.name, vm_port))
 
-    _handle_connection_tip(tc_instance, vm_ip, vm_port, cloud_init_missing)
+    _handle_connection_tip(vm_ip, vm_port, cloud_init_missing)
 
 def _domain_tip(args, action):
     connection = args.connection
