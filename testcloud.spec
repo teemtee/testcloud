@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.6.3
-Release:        2%{?dist}
+Version:        0.6.4
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -36,7 +36,6 @@ BuildRequires:  python3-libvirt
 BuildRequires:  python3-devel
 BuildRequires:  python3-jinja2
 BuildRequires:  python3-pytest
-BuildRequires:  python3-pytest-cov
 BuildRequires:  python3-requests
 BuildRequires:  python3-setuptools
 
@@ -57,6 +56,8 @@ getent group testcloud >/dev/null || groupadd testcloud
 
 %prep
 %setup -q -n %{name}-%{version}
+# Drop coverage testing
+sed -i 's/ --cov-report=term-missing --cov testcloud//g' tox.ini
 
 %build
 %py3_build
@@ -125,6 +126,11 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Thu Jan 27 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.4-1
+- fix selinux detection for image context (olichtne)
+- Drop dependency on python-mock
+- Drop coverage testing in rpm build
+
 * Sat Jan 22 2022 Fedora Release Engineering <releng@fedoraproject.org> - 0.6.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
 
