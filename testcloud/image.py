@@ -217,7 +217,12 @@ class Image(object):
         :param image_path: path to the image to change the context of
         """
 
-        selinux_active = subprocess.call(['selinuxenabled'])
+        try:
+            selinux_active = subprocess.call(['selinuxenabled'])
+        except FileNotFoundError:
+            logging.debug("selinuxenabled is not present (libselinux-utils package missing?)")
+            logging.debug("Assuming selinux is not installed and therefore disabled")
+            selinux_active = 1
 
         if selinux_active != 0:
             log.debug('SELinux not enabled, not changing context of'
