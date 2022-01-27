@@ -7,7 +7,7 @@
 
 import os
 
-import mock
+from unittest import mock
 
 from testcloud import instance, image, config
 
