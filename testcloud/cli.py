@@ -507,7 +507,7 @@ def _start_instance(args):
     vm_port = tc_instance.get_instance_port()
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
     print("The SSH port of vm {}:  {}".format(args.name, vm_port))
-    _handle_connection_tip(tc_instance, vm_ip, vm_port)
+    _handle_connection_tip(vm_ip, vm_port)
 
 
 def _stop_instance(args):
