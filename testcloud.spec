@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.6.4
+Version:        0.7.0
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -122,6 +122,11 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Mon May 02 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.7.0-1
+- non-x86 support
+- cli: Fixup crash on vm start in connection tip
+- Handle missing testcloud group also while creating instances from local image
+
 * Thu Jan 27 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.6.4-1
 - fix selinux detection for image context (olichtne)
 - Drop dependency on python-mock

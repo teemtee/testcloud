@@ -1,2 +1,2 @@
 # NOTE: if you update version, *make sure* to also update `docs/source/conf.py`
-__version__ = '0.6.4'
+__version__ = '0.7.0'
