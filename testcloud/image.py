@@ -255,7 +255,17 @@ class Image(object):
             config_data.STORE_DIR))
 
         if self.uri_type == 'file':
-            self._handle_file_url(self.remote_path, self.local_path, copy=copy)
+            if not os.path.exists(self.remote_path):
+                raise FileNotFoundError(
+                    'Specified image path {} does not exist.'.format(self.remote_path)
+                ) from None
+            try:
+                self._handle_file_url(self.remote_path, self.local_path, copy=copy)
+            except OSError:
+                # note: suppress inside exception warnings
+                raise TestcloudPermissionsError(
+                    'Problem writing to {}. Are you in group testcloud?'.format(self.local_path)
+                ) from None
         else:
             if not os.path.exists(self.local_path) and not os.path.exists(self.local_path.replace('.box', '.qcow2')):
                 self._download_remote_image(self.remote_path, self.local_path)
