@@ -696,6 +696,11 @@ class Instance(object):
         for path in qemu_paths:
             instance_values["emulator_path"] = path if os.path.exists(path) else instance_values["emulator_path"]
 
+        # Some systems might only have qemu-kvm as the qemu binary, try that if everything else failed...
+        if not instance_values["emulator_path"] and self.kvm:
+            for path in ["/usr/bin/qemu-kvm", "/usr/libexec/qemu-kvm"]:
+                instance_values["emulator_path"] = path if os.path.exists(path) else instance_values["emulator_path"]
+
         if not instance_values["emulator_path"]:
             raise TestcloudInstanceError("No usable qemu binary exist, tried: %s" % qemu_paths)
 
