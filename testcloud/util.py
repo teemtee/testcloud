@@ -60,9 +60,6 @@ def get_fedora_image_url(version, arch="x86_64"):
     primary_arches = ["x86_64", "aarch64"]
     # get coreos url
     if version in config_data.STREAM_LIST:
-        if arch != "x86_64":
-            log.error("non-x86_64 architecture is not supported by Fedora CoreOS.")
-            return None
         try:
             result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
         except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):

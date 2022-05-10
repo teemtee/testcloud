@@ -301,10 +301,6 @@ def _create_instance(args):
         log.error("You can use 'testcloud instance create -h' for additional help.")
         sys.exit(1)
 
-    if 'coreos' in args.url and not (args.ssh_path or args.ign_file or args.fcc_file):
-        log.error("Missing --ssh_path/--ign_file/--fcc_file argument that's necessary for CoreOS.")
-        sys.exit(1)
-
     existing_instance = instance.find_instance(args.name, image=None,
                                                connection=args.connection)
 
@@ -321,9 +317,6 @@ def _create_instance(args):
 
     if args.arch != "x86_64":
         log.warning("Testcloud might not work correctly on non-x86-64 machines yet.")
-
-    if args.ssh_path or args.ign_file or args.fcc_file:
-        coreos = True
 
     if "http" in args.url or "file" in args.url:
         url = args.url
@@ -363,6 +356,9 @@ def _create_instance(args):
     if not url:
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
+
+    if "coreos" in url:
+        coreos = True
 
     tc_image = image.Image(url)
     try:
@@ -405,7 +401,7 @@ def _create_instance(args):
         tc_instance.vcpus = args.vcpus
 
         tc_instance.ssh_path = args.ssh_path
-        tc_instance.fcc_file = args.fcc_file
+        tc_instance.bu_file = args.bu_file
         tc_instance.ign_file = args.ign_file
 
 
@@ -794,8 +790,8 @@ def get_argparser():
     instarg_create.add_argument("--ssh_path",
                                 help="specify your ssh pubkey path",
                                 type=str)
-    instarg_create.add_argument("--fcc_file",
-                                help="specify your fcc file path",
+    instarg_create.add_argument("--bu_file",
+                                help="specify your bu file path",
                                 type=str)
     instarg_create.add_argument("--ign_file",
                                 help="specify your ign file path",

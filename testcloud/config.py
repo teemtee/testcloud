@@ -100,7 +100,6 @@ class ConfigData(object):
     # libvirt domain XML Template
     # This lives either in the DEFAULT_CONF_DIR or DATA_DIR
     XML_TEMPLATE = "domain-template.jinja"
-    XML_TEMPLATE_COREOS = "domain-coreos-template.jinja"
 
     # Data for cloud-init
 
@@ -139,12 +138,25 @@ runcmd:
   - [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
     """
     COREOS_DATA = """variant: fcos
-version: 1.3.0
+version: 1.4.0
 passwd:
   users:
-    - name: coreos
+    - name: cloud-user
+      groups:
+        - wheel
+      password_hash: $y$j9T$90Mqu2Viusm6XbBpEBUW60$IF9ZBdoOtbJel4UxNLJDduWBj1ND93FdO5cTDndcXjB
       ssh_authorized_keys:
         - %s
+storage:
+  files:
+    - path: /etc/ssh/sshd_config.d/20-enable-passwords.conf
+      mode: 0644
+      contents:
+        inline: |
+          # Fedora CoreOS disables SSH password login by default.
+          # Enable it.
+          # This file must sort before 40-disable-passwords.conf.
+          PasswordAuthentication yes
     """
 
     # Extra cmdline args for the qemu invocation.
@@ -157,7 +169,7 @@ passwd:
     CMD_LINE_ARGS_COREOS = ['-fw_cfg' ,]
     CMD_LINE_ENVS_COREOS = {}
     # timeout, in seconds for instance boot process
-    BOOT_TIMEOUT = 45
+    BOOT_TIMEOUT = 70
 
     # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
     # Once the limit is reached, testcloud will attempt to remove oldest files

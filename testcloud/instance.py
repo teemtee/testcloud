@@ -250,9 +250,9 @@ class Instance(object):
         self.initrd = None
         # params for coreos instance
         self.config_path = "{}/{}.ign".format(self.path, self.name)
-        self.fcc_path = "{}/{}.fcc".format(self.path, self.name)
+        self.bu_path = "{}/{}.bu".format(self.path, self.name)
         self.ssh_path = None
-        self.fcc_file = None
+        self.bu_file = None
         self.ign_file = None
         self.coreos = False
 
@@ -357,20 +357,23 @@ class Instance(object):
 
     def _generate_config_file(self):
 
-        if self.fcc_file:
-            shutil.copy(self.fcc_file, self.fcc_path)
+        if self.bu_file:
+            shutil.copy(self.bu_file, self.bu_path)
         else:
-            with open(self.ssh_path, 'r') as inst:
-                key_content = inst.readline().strip()
-            fcc_data = config_data.COREOS_DATA % key_content
-            with open(self.fcc_path, 'w') as user_file:
-                user_file.write(fcc_data)
+            if self.ssh_path:
+                with open(self.ssh_path, 'r') as inst:
+                    key_content = inst.readline().strip()
+            else:
+                key_content = None
+            bu_data = config_data.COREOS_DATA % key_content
+            with open(self.bu_path, 'w') as user_file:
+                user_file.write(bu_data)
 
         log.debug("creating config file {}".format(self.config_path))
-        if not os.path.exists('/usr/bin/fcct'):
-            log.error("fcct package is necessary to operate with CoreOS images")
-            raise TestcloudInstanceError("fcct missing")
-        create_config = subprocess.call("fcct --pretty --strict < %s > %s"%(self.fcc_path, self.config_path), shell=True)
+        if not os.path.exists('/usr/bin/butane'):
+            log.error("butane package is necessary to operate with CoreOS images")
+            raise TestcloudInstanceError("butane missing")
+        create_config = subprocess.call("butane --pretty --strict < %s > %s"%(self.bu_path, self.config_path), shell=True)
 
         # Check the subprocess.call return value for success
         if create_config == 0:
@@ -589,7 +592,7 @@ class Instance(object):
                     "qemu": "qemu-system-aarch64",
                     "extra_specs":
                     """
-                        <features><acpi/><gic version="2"/></features>
+                        <features><acpi/><gic/></features>
                         <memballoon model='virtio'>
                         <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
                         </memballoon>
@@ -607,6 +610,7 @@ class Instance(object):
                     """
                 }
         }
+
 
         if platform.machine() not in model_map:
             log.error("Unsupported architecture, architectures supported by testcloud are: %s." % model_map.keys())

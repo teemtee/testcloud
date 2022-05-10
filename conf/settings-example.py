@@ -33,10 +33,10 @@
 #"""
 
 #COREOS_DATA = """variant: fcos
-#version: 3.2.0
+#version: 1.4.0
 #passwd:
 #  users:
-#    - name: coreos
+#    - name: cloud-user
 #      ssh_authorized_keys:
 #        - %s
 #    """
@@ -55,7 +55,7 @@
 # The timeout, in seconds, to wait for an instance to boot before
 # failing the boot process. Setting this to 0 disables waiting and
 # returns immediately after starting the boot process.
-#BOOT_TIMEOUT = 45
+#BOOT_TIMEOUT = 70
 
 # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
 # Once the limit is reached, testcloud will attempt to remove oldest files

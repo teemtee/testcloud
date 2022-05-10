@@ -100,17 +100,9 @@ create the instance.
 To create a new instance with the coreos image, run:
 
 ```
-$ testcloud instance create fedora-coreos:<stream> --ssh_path < path of ssh pub key>
+$ testcloud instance create fedora-coreos:<stream> or <url for qcow2 image>
 
-or
-
-$ testcloud instance create fedora-coreos:<stream> --fcc_file < path of fcc file>
-
-or
-
-$ testcloud instance create fedora-coreos:<stream> --ign_file < path of ign file>
 ```
-Only --ssh_path/--fcc_file/--ign_file is required
 
 You will be able to see the instance using the `list` command.
 
@@ -170,19 +162,12 @@ removing the instance.
 
 ### Logging into the instance
 
-When the cloud instance is created, **testcloud** will return its IP address
+When the cloud/coreos instance is created, **testcloud** will return its IP address
 that you can use to access the running instance via `ssh`. The default *login
-name* is `fedora` and the *password* is `passw0rd` for Fedora instances. Testcloud will output info how you can connect to any of the Supported Distributions.
+name* is `cloud-user` and the *password* is `passw0rd`. Testcloud will output info how you can connect to any of the Supported Distributions.
 
 ```
-ssh fedora@<instance-IP>
-```
-When the coreos instance is created, **testcloud** will return its IP address
-that you can use to access the running instance via `ssh`. The *login
-name* is `coreos`.
-
-```
-ssh coreos@<instance-IP>
+ssh cloud-user@<instance-IP>
 ```
 
 The IP address of an instance is also shown when you list the instance
@@ -232,9 +217,9 @@ new instance using **testcloud**.
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.
 
-\--fcc_file FCC_FILE
+\--bu_file BU_FILE
 
-: To provide a fcc_file you want to use
+: To provide a bu_file you want to use
 
 \--ign_file IGN_FILE
 
@@ -243,8 +228,6 @@ new Coreos instance using **testcloud**.
 \--ssh_path
 
 : To provide ssh pubkey path
-
-Please note --ssh_path ,--ign_file or --fcc_file  must be passed for Fedora CoreOS instances.
 
 ### Configuration
 
