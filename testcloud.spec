@@ -40,7 +40,8 @@ BuildRequires:  python3-requests
 BuildRequires:  python3-setuptools
 
 Requires:       genisoimage
-Requires:       libvirt
+Requires:       libvirt-daemon-driver-qemu
+Requires:       libvirt-daemon-driver-storage-core
 Requires:       libguestfs-tools-c
 Requires:       python3-requests
 Requires:       python3-libvirt
