@@ -350,29 +350,6 @@ class Instance(object):
             log.error("Seed image generation failed. Exiting")
             raise TestcloudInstanceError("Failure during seed image generation")
 
-    def _extract_initrd_and_kernel(self):
-        """Download the necessary kernel and initrd for booting a specified
-        cloud image."""
-
-        if self.image is None:
-            raise TestcloudInstanceError("attempted to access image "
-                                         "information for instance {} but "
-                                         "that information was not supplied "
-                                         "at creation time".format(self.name))
-
-        log.info("extracting kernel and initrd from {}".format(self.image.local_path))
-        subprocess.call(['virt-builder', '--get-kernel',
-                         self.image.local_path],
-                        cwd=self.path)
-
-        self.kernel = glob.glob("%s/*vmlinuz*" % self.path)[0]
-        self.initrd = glob.glob("%s/*initramfs*" % self.path)[0]
-
-        if self.kernel is None or self.initrd is None:
-            raise IndexError("Unable to find kernel or initrd, did they " +
-                             "download?")
-            sys.exit(1)
-
     def _generate_config_file(self):
 
         if self.fcc_file:
