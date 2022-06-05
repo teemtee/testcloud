@@ -42,12 +42,12 @@ BuildRequires:  python3-setuptools
 Requires:       genisoimage
 Requires:       libvirt-daemon-driver-qemu
 Requires:       libvirt-daemon-driver-storage-core
-Requires:       libguestfs-tools-c
 Requires:       python3-requests
 Requires:       python3-libvirt
 Requires:       python3-jinja2
-Requires:       python3-libguestfs
-Recommends:       fcct
+Recommends:     fcct
+Suggests:       python3-libguestfs
+Suggests:       libguestfs-tools-c
 
 %description -n python3-%{name}
 Python 3 interface to testcloud.
