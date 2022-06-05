@@ -39,6 +39,7 @@ BuildRequires:  python3-pytest
 BuildRequires:  python3-requests
 BuildRequires:  python3-setuptools
 
+Requires:       genisoimage
 Requires:       libvirt
 Requires:       libguestfs-tools-c
 Requires:       python3-requests

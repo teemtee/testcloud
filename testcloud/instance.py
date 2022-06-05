@@ -332,16 +332,20 @@ class Instance(object):
                       " regerating.".format(self.name))
 
     def _generate_seed_image(self):
-        """Create a virtual filesystem needed for boot with virt-make-fs on a
+        """Create a virtual filesystem needed for boot with genisoimgage on a
         given path (it should probably be somewhere in '/tmp'."""
 
         log.debug("creating seed image {}".format(self.seed_path))
 
-        make_image = subprocess.call(['virt-make-fs',
-                                      '--type=msdos',
-                                      '--label=cidata',
-                                      self.meta_path,
-                                      self.seed_path])
+        make_image = subprocess.call(['genisoimage',
+                                      '--input-charset', 'utf-8',
+                                      '--volid', 'cidata',
+                                      '--joliet',
+                                      '--rock',
+                                      '--debug',
+                                      '--output', self.seed_path,
+                                      '.',
+                                      ], cwd=self.meta_path)
 
         # Check the subprocess.call return value for success
         if make_image == 0:
