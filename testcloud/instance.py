@@ -9,6 +9,7 @@ Representation of a Testcloud spawned (or to-be-spawned) virtual machine
 
 import os
 import sys
+import re
 import subprocess
 import glob
 import logging
@@ -476,7 +477,16 @@ class Instance(object):
             guestfs
         except NameError:
             log.warning("Python libguestfs bindings are missing, guest detection won't work properly!")
-            return None
+            # Try a bit harder
+            if not self.image.name:
+                # If, for some reason, we don't have image.name, we can't guess anything
+                return None
+            # el 7 in image name means we need legacy net
+            if re.search(r'(rhel|centos).*-7', self.image.name.lower()):
+                return True
+            # false otherwise
+            return False
+
         g = guestfs.GuestFS(python_return_dict=True)
         g.add_drive_opts(self.local_disk, readonly=1)
 
