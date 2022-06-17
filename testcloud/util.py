@@ -65,7 +65,7 @@ def get_fedora_image_url(version, arch="x86_64"):
             return None
         try:
             result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
-        except (ConnectionError, IndexError):
+        except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
               log.error("Failed to fetch the image.")
               return None
         url = result['architectures'][arch]['artifacts']['qemu']['formats']['qcow2.xz']['disk']['location']
@@ -75,7 +75,7 @@ def get_fedora_image_url(version, arch="x86_64"):
     #get Fedora Cloud url
     try:
         oraculum_releases = requests.get('https://packager-dashboard.fedoraproject.org/api/v1/releases').json()
-    except (ConnectionError, IndexError):
+    except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
         log.error("Couldn't fetch Fedora releases from oraculum...")
         return None
 
@@ -101,7 +101,7 @@ def get_fedora_image_url(version, arch="x86_64"):
         stamp = 0
         try:
             releases = requests.get('https://openqa.fedoraproject.org/nightlies.json').json()
-        except (ConnectionError, IndexError):
+        except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
             log.error("Failed to fetch the image.")
             return None
         for release in releases:
@@ -116,7 +116,7 @@ def get_fedora_image_url(version, arch="x86_64"):
 
     try:
         releases = requests.get('https://getfedora.org/releases.json').json()
-    except (JSONDecodeError, ConnectionError):
+    except (JSONDecodeError, ConnectionError, requests.exceptions.JSONDecodeError):
         log.error("Couldn't fetch releases list...")
         return None
 
@@ -139,7 +139,7 @@ def get_fedora_image_url(version, arch="x86_64"):
 def get_ubuntu_releases():
     try:
         releases_resp = requests.get(config_data.UBUNTU_RELEASES_API).json()
-    except (ConnectionError, IndexError):
+    except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
         log.error("Failed to fetch Ubuntu releases list.")
         return {}
 
