@@ -343,7 +343,7 @@ class Instance(object):
                                       '--volid', 'cidata',
                                       '--joliet',
                                       '--rock',
-                                      '--debug',
+                                      '--quiet',
                                       '--output', self.seed_path,
                                       '.',
                                       ], cwd=self.meta_path)
