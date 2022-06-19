@@ -138,6 +138,7 @@ class Image(object):
                 log.info("Downloading {0} ({1} bytes)".format(self.name, file_size))
                 bytes_downloaded = 0
                 block_size = 4096
+                percent_last = 0
 
                 while True:
 
@@ -155,7 +156,14 @@ class Image(object):
                                                                      file_size,
                                                                      bytes_remaining)
                                 status = status + chr(8) * (len(status) + 1)
-                                sys.stdout.write(status)
+                                if config_data.DOWNLOAD_PROGRESS_VERBOSE:
+                                    sys.stdout.write(status)
+                                else:
+                                    percent = int(bytes_downloaded / file_size * 100)
+                                    if percent_last != percent:
+                                        sys.stdout.write("Downloaded %s %% ...\r" % percent)
+                                        sys.stdout.flush()
+                                        percent_last = percent
 
                     except TypeError:
                         #  Rename the file since download has completed
