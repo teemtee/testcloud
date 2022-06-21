@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
 Version:        0.7.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -124,6 +124,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Mon Jun 13 2022 Python Maint <python-maint@redhat.com> - 0.7.1-2
+- Rebuilt for Python 3.11
+
 * Thu May 05 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.7.1-1
 - Try qemu-kvm if there is nothing else...
 
