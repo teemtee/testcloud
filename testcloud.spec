@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.7.1
-Release:        2%{?dist}
+Version:        0.8.0
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -124,6 +124,16 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Fri Jun 24 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.0-1
+- Bump CentOS Stream versions
+- Build seed image with genisoimage (mpitt)
+- Reduce libvirt dependencies (mpitt)
+- Drop libguestfs from Requires to Suggests (mpitt)
+- util: except also requests.exceptions.JSONDecodeError
+- _needs_legacy_net: try to guess based on image name with missing guestfs
+- add coreos aarch64 support (lnie)
+- Allow to configure download progress verbosity
+
 * Mon Jun 13 2022 Python Maint <python-maint@redhat.com> - 0.7.1-2
 - Rebuilt for Python 3.11
 
