@@ -365,7 +365,11 @@ class Instance(object):
                     key_content = inst.readline().strip()
             else:
                 key_content = None
-            bu_data = config_data.COREOS_DATA % key_content
+            # We need this weird code until the way of objects sharing with tmt gets refactored
+            try:
+                bu_data = config_data.COREOS_DATA % key_content
+            except TypeError:
+                bu_data = config_data.COREOS_DATA
             with open(self.bu_path, 'w') as user_file:
                 user_file.write(bu_data)
 
