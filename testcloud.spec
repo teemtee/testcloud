@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.8.0
+Version:        0.8.1
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -124,6 +124,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Thu Jun 30 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.1-1
+- CoreOS: Go on with COREOS_DATA replace failure
+
 * Fri Jun 24 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.0-1
 - Bump CentOS Stream versions
 - Build seed image with genisoimage (mpitt)
