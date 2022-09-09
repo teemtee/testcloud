@@ -87,6 +87,7 @@ recognized.
         Specify the URL from where testcloud should download the instance qcow2 image or distro:version handle. \fBThis option is compulsory\fR.
         Some examples of supported short urls:
         - fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image)
+        - fedora-coreos:next, fedora-coreos:testing, fedora-coreos:stable
         - fedora:qa-matrix (image from https://fedoraproject.org/wiki/Test_Results:Current_Cloud_Test )
         - centos:XX (eg. centos:8, centos:latest)
         - centos-stream:XX (eg. centos-stream:8, centos-stream:latest)
@@ -113,6 +114,17 @@ recognized.
 
 \fB--timeout TIMEOUT\fR
         Specify the time (in seconds) to wait for the instance boot to complete. To disable waiting time (default behaviour) set to \fB0\fR.
+
+\fB ADDITIONAL COREOS OPTIONS\fR
+
+\fB--bu_file BU_FILE\fR
+        \fB:\fR To provide a bu_file you want to use
+
+\fB--ign_file IGN_FILE\fR
+        \fB:\fR To provide an ign_file you want to use
+
+\fB--ssh_path\fR
+        \fB:\fR To provide a ssh pubkey path you want to use
 
 .SH EXAMPLES
 .PP
