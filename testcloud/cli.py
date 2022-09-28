@@ -404,6 +404,7 @@ def _create_instance(args):
         tc_instance.bu_file = args.bu_file
         tc_instance.ign_file = args.ign_file
 
+    tc_instance.qemu_cmds = args.qemu_cmds.split() if args.qemu_cmds else []
 
     # prepare instance
     try:
@@ -796,6 +797,9 @@ def get_argparser():
     instarg_create.add_argument("--ign_file",
                                 help="specify your ign file path",
                                 type=str)
+    instarg_create.add_argument("--qemu_cmds",
+                                 type=str,
+                                 help="specify qemu commands")
 
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",

@@ -255,6 +255,7 @@ class Instance(object):
         self.bu_file = None
         self.ign_file = None
         self.coreos = False
+        self.qemu_cmds = []
 
     def prepare(self):
 
@@ -683,6 +684,8 @@ class Instance(object):
 
             for qemu_env in config_data.CMD_LINE_ENVS:
                 args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS[qemu_env])
+        for qemu_arg in self.qemu_cmds:
+            args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
         args_envs = "  <qemu:commandline>\n" + args_envs + " </qemu:commandline>"
         instance_values["qemu_args"] = args_envs
         if config_data.UEFI:
