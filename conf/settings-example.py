@@ -50,13 +50,13 @@
 
 # Extra coreos cmdline args for the qemu invocation.
 # Customize as needed :)
-#CMD_LINE_ARGS_COREOS = ['-fw_cfg' ,]
+#CMD_LINE_ARGS_COREOS = []
 #CMD_LINE_ENVS_COREOS = {}
 
 # The timeout, in seconds, to wait for an instance to boot before
 # failing the boot process. Setting this to 0 disables waiting and
 # returns immediately after starting the boot process.
-#BOOT_TIMEOUT = 70
+#BOOT_TIMEOUT = 120
 
 # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
 # Once the limit is reached, testcloud will attempt to remove oldest files

@@ -666,11 +666,14 @@ class Instance(object):
         xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE)
         instance_values['seed'] = self.seed_path
         if self.coreos:
-            if config_data.CMD_LINE_ARGS_COREOS or config_data.CMD_LINE_ENVS_COREOS:
-                cmdline_args = config_data.CMD_LINE_ARGS_COREOS + ['name=opt/com.coreos/config,file=%s'%self.config_path, ]
-                for qemu_arg in cmdline_args:
-                    args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
+            if self.desired_arch == 'x86_64' or self.desired_arch == 'aarch64':
+                cmdline_args = [ '-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path, ]
+            else:
+                cmdline_args = ['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path, '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0007']
+            for qemu_arg in cmdline_args:
+                args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
 
+            if config_data.CMD_LINE_ARGS_COREOS or config_data.CMD_LINE_ENVS_COREOS:
                 for qemu_env in config_data.CMD_LINE_ENVS_COREOS:
                     args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS_COREOS[qemu_env])
 
