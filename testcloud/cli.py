@@ -405,6 +405,7 @@ def _create_instance(args):
         tc_instance.ign_file = args.ign_file
 
     tc_instance.qemu_cmds = args.qemu_cmds.split() if args.qemu_cmds else []
+    tc_instance.mac_address = args.mac_address
 
     # prepare instance
     try:
@@ -800,6 +801,9 @@ def get_argparser():
     instarg_create.add_argument("--qemu_cmds",
                                  type=str,
                                  help="specify qemu commands")
+    instarg_create.add_argument("--mac_address",
+                                 type=str,
+                                 help="specify mac address")
 
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",

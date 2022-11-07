@@ -242,6 +242,7 @@ class Instance(object):
 
         self.image_path = os.path.join(config_data.DATA_DIR, "instances", self.name, self.name + "-local.qcow2")
         self.backing_store = image.local_path if image else None
+        self.mac_address = None
         # params for cloud instance
         self.meta_path = "{}/meta".format(self.path)
         self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
@@ -650,7 +651,7 @@ class Instance(object):
                            'memory': self.ram * 1024,  # MiB to KiB
                            'vcpus': self.vcpus,
                            'disk': self.local_disk,
-                           'mac_address': util.generate_mac_address(),
+                           'mac_address': self.mac_address or util.generate_mac_address(),
                            'uefi_loader': "",
                            'emulator_path': "", # Required, will be determined later
                            'arch': self.desired_arch,
