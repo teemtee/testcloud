@@ -58,6 +58,8 @@ def get_fedora_image_url(version, arch="x86_64"):
     Returns url to Fedora Cloud qcow2
     """
     primary_arches = ["x86_64", "aarch64"]
+    url = None
+
     # get coreos url
     if version in config_data.STREAM_LIST:
         try:
@@ -106,6 +108,9 @@ def get_fedora_image_url(version, arch="x86_64"):
                 if release["mtime"] > stamp and version in release["url"]:
                     url = release["url"]
                     stamp = release["mtime"]
+        if not url:
+            log.error("Failed to find/guess url for Fedora %s image" % version)
+            return None
         return url
 
     if version == "latest":
