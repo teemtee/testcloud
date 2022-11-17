@@ -243,6 +243,7 @@ class Instance(object):
         self.image_path = os.path.join(config_data.DATA_DIR, "instances", self.name, self.name + "-local.qcow2")
         self.backing_store = image.local_path if image else None
         self.mac_address = None
+        self.tpm = False
         # params for cloud instance
         self.meta_path = "{}/meta".format(self.path)
         self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
@@ -709,6 +710,13 @@ class Instance(object):
 
         if not instance_values["emulator_path"]:
             raise TestcloudInstanceError("No usable qemu binary exist, tried: %s" % qemu_paths)
+
+        if self.tpm:
+            instance_values["tpm"] = '''
+                                     <tpm model='tpm-tis'>
+                                     <backend type='emulator' version='2.0'/>
+                                     </tpm>
+                                     '''
 
         # Write out the final xml file for the domain
         with open(self.xml_path, 'w') as dom_template:

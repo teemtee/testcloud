@@ -47,6 +47,7 @@
       <target type='serial' port='0'/>
     </console>
     <input type="keyboard" bus="virtio"/>
+    {{ tpm }}
     <rng model='virtio'>
       <backend model='random'>/dev/urandom</backend>
     </rng>
