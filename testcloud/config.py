@@ -222,10 +222,12 @@ storage:
         "latest": "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2"
     }
 
+    # Used to try to auto-fetch the latest qcow2
+    CENTOS_STREAM_URL_PREFIX = "https://cloud.centos.org/centos/{0}-stream/{1}/images/"
     CENTOS_STREAM_VERSIONS = {
         "8":      "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20220913.0.{0}.qcow2",
-        "9":      "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20221101.0.{0}.qcow2",
-        "latest": "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20221101.0.{0}.qcow2"
+        "9":      "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20221110.0.{0}.qcow2",
+        "latest": "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20221110.0.{0}.qcow2"
     }
 
     DEBIAN_RELEASE_MAP = {"10": "buster","11": "bullseye"}

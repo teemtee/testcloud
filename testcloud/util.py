@@ -37,7 +37,17 @@ def generate_mac_address():
     return mac
 
 def get_centos_image_url(version, stream=False, arch="x86_64"):
+    # Try to dynamically get the latest at first
     if stream:
+        STREAM_URL_PREFIX = config_data.CENTOS_STREAM_URL_PREFIX.format(version, arch)
+        IMG_NAME = r'CentOS-Stream-GenericCloud-{0}-[0-9.]+.{1}.qcow2'.format(version, arch)
+        try:
+            latest_img_name = sorted(re.findall(IMG_NAME, requests.get(STREAM_URL_PREFIX).text))[-1]
+            assert requests.head(STREAM_URL_PREFIX + latest_img_name).status_code == 200
+            return STREAM_URL_PREFIX + latest_img_name
+        except:
+            log.warning("Attempt to find the latest CentOS Stream build failed, using the hardcoded value.")
+            pass
         versions = config_data.CENTOS_STREAM_VERSIONS
     else:
         versions = config_data.CENTOS_VERSIONS
