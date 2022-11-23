@@ -635,7 +635,7 @@ class Instance(object):
             else:
                 device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
             network_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
-                            "-device", "{},netdev=testcloud_net.{}".format(device_type, port)]
+                            "-device", "{},addr=1e.0,netdev=testcloud_net.{}".format(device_type, port)]
             qemu_args.extend(network_args)
         else:
             network_type = "network"
