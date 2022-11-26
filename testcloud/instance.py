@@ -570,9 +570,7 @@ class Instance(object):
                     """
                         <features><acpi/><apic/><vmport state='off'/></features>
                         <pm><suspend-to-mem enabled='no'/><suspend-to-disk enabled='no'/></pm>
-                        <memballoon model='virtio'>
-                        <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
-                        </memballoon>
+                        <memballoon model='virtio'></memballoon>
                     """
                 },
             "ppc64le":
@@ -583,9 +581,7 @@ class Instance(object):
                     "qemu": "qemu-system-ppc64",
                     "extra_specs":
                     """
-                        <memballoon model='virtio'>
-                        <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
-                        </memballoon>
+                        <memballoon model='virtio'></memballoon>
                     """
                 },
             "aarch64":
@@ -597,9 +593,7 @@ class Instance(object):
                     "extra_specs":
                     """
                         <features><acpi/><gic/></features>
-                        <memballoon model='virtio'>
-                        <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
-                        </memballoon>
+                        <memballoon model='virtio'></memballoon>
                     """
                 },
             "s390x":
