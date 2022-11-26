@@ -562,7 +562,6 @@ class Instance(object):
                     "model": "pc",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none" migratable="on"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu64</model></cpu>',
-                    "boot_drive_address": "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>",
                     "qemu": "qemu-system-x86_64",
                     "extra_specs":
                     """
@@ -578,7 +577,6 @@ class Instance(object):
                     "model": "pseries-5.1",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact" check="none"><model fallback="forbid">POWER9</model></cpu>',
-                    "boot_drive_address": "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>",
                     "qemu": "qemu-system-ppc64",
                     "extra_specs":
                     """
@@ -592,7 +590,6 @@ class Instance(object):
                     "model": "virt",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact"><model>cortex-a57</model></cpu>',
-                    "boot_drive_address": "<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>",
                     "qemu": "qemu-system-aarch64",
                     "extra_specs":
                     """
@@ -607,7 +604,6 @@ class Instance(object):
                     "model": "s390-ccw-virtio-6.1",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu</model></cpu>',
-                    "boot_drive_address": "<address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0007'/>",
                     "qemu": "qemu-system-s390x",
                     "extra_specs":
                     """
