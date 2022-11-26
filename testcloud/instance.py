@@ -562,7 +562,7 @@ class Instance(object):
         model_map = {
             "x86_64":
                 {
-                    "model": "pc",
+                    "model": "q35",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none" migratable="on"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu64</model></cpu>',
                     "qemu": "qemu-system-x86_64",
