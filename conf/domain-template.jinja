@@ -25,20 +25,17 @@
       <driver name='qemu' type='qcow2' cache='unsafe'/>
       <source file="{{ disk }}"/>
       <target dev='vda' bus='virtio'/>
-      {{ boot_drive_address }}
     </disk>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw'/>
       <source file="{{ seed }}"/>
       <target dev='vdb' bus='virtio'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
     </disk>
     <interface type='{{ network_type }}'>
       <mac address="{{ mac_address }}"/>
       {{ network_source }}
       {{ ip_setup }}
       <model type='virtio'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
     <serial type='pty'>
       <target port='0'/>
