@@ -577,7 +577,7 @@ class Instance(object):
                 },
             "ppc64le":
                 {
-                    "model": "pseries-5.1",
+                    "model": "pseries",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact" check="none"><model fallback="forbid">POWER9</model></cpu>',
                     "qemu": "qemu-system-ppc64",
@@ -604,7 +604,7 @@ class Instance(object):
                 },
             "s390x":
                 {
-                    "model": "s390-ccw-virtio-6.1",
+                    "model": "s390-ccw-virtio",
                     "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
                     "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu</model></cpu>',
                     "qemu": "qemu-system-s390x",
