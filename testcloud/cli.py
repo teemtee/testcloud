@@ -34,6 +34,10 @@ if config_data.LOG_FILE is not None:
 log = logging.getLogger('testcloud')
 log.addHandler(logging.NullHandler())  # this is needed when running in library mode
 
+if not config_data.DEBUG:
+    log.setLevel(logging.INFO)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 description = """Testcloud is a small wrapper program designed to quickly and
 simply boot images designed for cloud systems."""
 
@@ -374,7 +378,7 @@ def _create_instance(args):
 
     # Normal Cloud
     if not coreos:
-        log.debug("create cloud instance")
+        log.info("create cloud instance %s" % args.name)
         tc_instance.coreos = False
 
         # set ram size
@@ -388,7 +392,7 @@ def _create_instance(args):
 
     # CoreOS
     else:
-        log.debug("create coreos instance")
+        log.info("create coreos instance %s" % args.name)
         tc_instance.coreos = True
 
         # set ram size
@@ -491,7 +495,7 @@ def _start_instance(args):
 
     :param args: args from argparser
     """
-    log.debug("start instance: {}".format(args.name))
+    log.info("start instance: {}".format(args.name))
     _domain_tip(args, "start")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
@@ -514,7 +518,7 @@ def _stop_instance(args):
 
     :param args: args from argparser
     """
-    log.debug("stop instance: {}".format(args.name))
+    log.info("stop instance: {}".format(args.name))
     _domain_tip(args, "stop")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
@@ -532,7 +536,7 @@ def _shutdown_instance(args, raise_e=False):
     :param args: args from argparser
     :param raise_e: raises TestcloudInstanceError if True, catches it if False
     """
-    log.debug("shutdown instance: {}".format(args.name))
+    log.info("shutdown instance: {}".format(args.name))
     _domain_tip(args, "shutdown")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
@@ -555,7 +559,7 @@ def _remove_instance(args):
 
     :param args: args from argparser
     """
-    log.debug("remove instance: {}".format(args.name))
+    log.info("remove instance: {}".format(args.name))
     _domain_tip(args, "remove")
 
     tc_instance = instance.find_instance(args.name, connection=args.connection)
@@ -612,7 +616,7 @@ def _list_image(args):
 
     :param args: args from argparser
     """
-    log.debug("list images")
+    log.info("list images")
     images = image.list_images()
     print("Current Images:")
     for img in images:
@@ -626,7 +630,7 @@ def _remove_image(args):
     :param args: args from argparser
     """
 
-    log.debug("removing image {}".format(args.name))
+    log.info("removing image {}".format(args.name))
 
     tc_image = image.find_image(args.name)
 

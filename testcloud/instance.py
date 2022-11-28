@@ -798,7 +798,7 @@ class Instance(object):
             raise TestcloudInstanceError("Instance {} did not start "
                                          "successfully, see libvirt logs for "
                                          "details".format(self.name))
-        log.debug("Polling instance for active network interface")
+        log.info("Polling instance for active network interface")
 
         poll_tick = 0.5
         timeout_ticks = timeout / poll_tick

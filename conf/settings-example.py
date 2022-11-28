@@ -6,6 +6,7 @@
 # - /etc/testcloud/settings.py
 
 
+#DEBUG = False
 #DOWNLOAD_PROGRESS = True
 #DOWNLOAD_PROGRESS_VERBOSE = True
 #LOG_FILE = None
