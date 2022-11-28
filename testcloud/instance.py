@@ -21,6 +21,7 @@ import uuid
 import jinja2
 import platform
 import socket
+import string
 
 try:
     import guestfs
@@ -244,6 +245,7 @@ class Instance(object):
         self.backing_store = image.local_path if image else None
         self.mac_address = None
         self.tpm = False
+        self.disk_number = 1
         # params for cloud instance
         self.meta_path = "{}/meta".format(self.path)
         self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
@@ -540,6 +542,17 @@ class Instance(object):
         if self.disk_size > 0:
             imgcreate_command.append("{}G".format(self.disk_size))
         subprocess.call(imgcreate_command)
+        if self.disk_number > 1:
+            for i in range(self.disk_number - 1):
+                disk_path = "{}/{}-local{}.qcow2".format(self.path, self.name, i + 2)
+                imgcreate_command_disk = ['qemu-img',
+                                          'create',
+                                         '-qf',
+                                         'qcow2',
+                                         disk_path,
+                                          '{}G'.format(self.disk_size)
+                                         ]
+                subprocess.call(imgcreate_command_disk)
 
 
     def write_domain_xml(self):
@@ -608,6 +621,14 @@ class Instance(object):
                 }
         }
 
+        disk_string = """
+                      <disk type='file' device='disk'>
+                      <driver name='qemu' type='qcow2' cache='unsafe'/>
+                      <source file="%s"/>
+                      <target dev='vd%s' bus='virtio'/>
+                      </disk>
+                      """
+
 
         if platform.machine() not in model_map:
             log.error("Unsupported architecture, architectures supported by testcloud are: %s." % model_map.keys())
@@ -652,7 +673,8 @@ class Instance(object):
                            'extra_specs': model_map[self.desired_arch]["extra_specs"],
                            'network_type': network_type,
                            'network_source': network_source,
-                           "ip_setup": ip_setup}
+                           "ip_setup": ip_setup,
+                           "additional_disks": ""}
 
         instance_values["model"] = model_map[self.desired_arch]["model"]
 
@@ -662,7 +684,7 @@ class Instance(object):
             if self.desired_arch == 'x86_64' or self.desired_arch == 'aarch64':
                 cmdline_args = [ '-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path, ]
             else:
-                cmdline_args = ['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path, '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0007']
+                cmdline_args = ['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path, '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008']
             for qemu_arg in cmdline_args:
                 args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
 
@@ -707,8 +729,11 @@ class Instance(object):
                                      <backend type='emulator' version='2.0'/>
                                      </tpm>
                                      '''
-
-        # Write out the final xml file for the domain
+        if self.disk_number > 1:
+            for i in range(self.disk_number - 1):
+                name_str = "{}/{}-local{}.qcow2".format(self.path, self.name, i + 2)
+                instance_values['additional_disks'] += disk_string%(name_str, string.ascii_lowercase[i+2])
+       # Write out the final xml file for the domain
         with open(self.xml_path, 'w') as dom_template:
             dom_template.write(xml_template.render(instance_values))
 

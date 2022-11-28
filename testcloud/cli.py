@@ -403,9 +403,11 @@ def _create_instance(args):
         tc_instance.ssh_path = args.ssh_path
         tc_instance.bu_file = args.bu_file
         tc_instance.ign_file = args.ign_file
+
     tc_instance.qemu_cmds = args.qemu_cmds.split() if args.qemu_cmds else []
     tc_instance.mac_address = args.mac_address
     tc_instance.tpm = args.tpm
+    tc_instance.disk_number = args.disk_number
     # prepare instance
     try:
         tc_instance.prepare()
@@ -806,7 +808,10 @@ def get_argparser():
     instarg_create.add_argument("--tpm",
                                  help="add tpm device",
                                  action="store_true")
-
+    instarg_create.add_argument("--disk_number",
+                                help="Desired disk number",
+                                type=int,
+                                default=1)
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",
                                         description="Types of commands available",

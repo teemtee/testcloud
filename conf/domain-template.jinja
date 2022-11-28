@@ -31,6 +31,7 @@
       <source file="{{ seed }}"/>
       <target dev='vdb' bus='virtio'/>
     </disk>
+    {{ additional_disks }}
     <interface type='{{ network_type }}'>
       <mac address="{{ mac_address }}"/>
       {{ network_source }}

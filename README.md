@@ -214,6 +214,10 @@ new instance using **testcloud**.
 
 : To set the disk size of the virtual machine (in GiB)
 
+\--disk_number
+
+: To provide disk number you want
+
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.
 
