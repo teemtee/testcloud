@@ -455,16 +455,20 @@ def _create_instance(args):
     # Write ip to file
     tc_instance.create_ip_file(vm_ip)
 
-    # CentOS .box files don't have cloud-init at all, others seem fine (eg. 1MT)
-    cloud_init_missing = bool(re.search(r'centos-(.*)-vagrant-(.*)', args.url.lower()))
-    if cloud_init_missing:
-        tc_instance.prepare_vagrant_init()
+    # CentOS .box files don't have cloud-init at all
+    centos_vagrant = bool(re.search(r'centos-(.*)-vagrant-(.*)', args.url.lower()))
+    # Fedora .box files have cloud-init masked
+    fedora_vagrant = bool(re.search(r'fedora-cloud-base-vagrant-(.*)', args.url.lower()))
+    if centos_vagrant:
+        tc_instance.prepare_vagrant_init(config_data.VARGANT_CENTOS_SH)
+    if fedora_vagrant:
+        tc_instance.prepare_vagrant_init(config_data.VAGRANT_FEDORA_SH)
 
     # List connection details
     print("The IP of vm {}:  {}".format(args.name, vm_ip))
     print("The SSH port of vm {}:  {}".format(args.name, vm_port))
 
-    _handle_connection_tip(vm_ip, vm_port, cloud_init_missing)
+    _handle_connection_tip(vm_ip, vm_port, centos_vagrant or fedora_vagrant)
 
 def _domain_tip(args, action):
     connection = args.connection

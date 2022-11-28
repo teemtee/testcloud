@@ -211,10 +211,14 @@ storage:
     # Port base for userspace sessions for SSH forward
     SSH_USER_PORT_BASE = 10022
 
-    # Data for CentOS Vagrant
-    COS_VAG_USER = "root"
-    COS_VAG_PASS = "vagrant"
+    # Data for Vagrant
+    VAGRANT_USER = "root"
+    VAGRANT_PASS = "vagrant"
     VAGRANT_USER_SESSION_WAIT = 45 # How long testcloud will wait before typing into the vms's console
+
+    # Known vagrant distros
+    VARGANT_CENTOS_SH = "dnf -y install cloud-init && cloud-init init && reboot\n"
+    VAGRANT_FEDORA_SH = "systemctl unmask cloud-init && systemctl start cloud-init && systemctl start sshd\n"
 
     # There currently isn't an api way to fetch the current CentOS Releases
     CENTOS_VERSIONS = {
