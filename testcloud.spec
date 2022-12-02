@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.8.1
+Version:        0.8.2
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -124,6 +124,14 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Fri Dec 02 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.2-1
+- CentOS Stream {8,9}: bump image version
+- Leave boot drive address guessing to libvirt
+- Workaround libvirt/qemu PCI auto-assign issue
+
+* Sat Jul 23 2022 Fedora Release Engineering <releng@fedoraproject.org> - 0.8.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
 * Thu Jun 30 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.1-1
 - CoreOS: Go on with COREOS_DATA replace failure
 
