@@ -379,6 +379,7 @@ def _create_instance(args):
                                       disk_number=args.disk_number,
                                       nic_number=args.nic_number,
                                       tpm=args.tpm,
+                                      serial=args.serial,
                                       )
 
     tc_instance = instance.Instance(args.name,
@@ -795,6 +796,9 @@ def get_argparser():
                                  help="specify mac address")
     instarg_create.add_argument("--tpm",
                                  help="add tpm device",
+                                 action="store_true")
+    instarg_create.add_argument("--serial",
+                                 help="set Serial number",
                                  action="store_true")
     instarg_create.add_argument("--disk_number",
                                 help="Desired disk number",

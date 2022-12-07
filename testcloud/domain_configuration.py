@@ -166,9 +166,10 @@ class RawStorageDevice(StorageDeviceConfiguration):
 
 
 class QCow2StorageDevice(StorageDeviceConfiguration):
-    def __init__(self, path, size=0) -> None:
+    def __init__(self, path, size=0, serial_str='') -> None:
         self.path = path
         self.size = size
+        self.serial_str = serial_str
 
     def generate(self):
         return """
@@ -176,10 +177,12 @@ class QCow2StorageDevice(StorageDeviceConfiguration):
             <driver name='qemu' type='qcow2' cache='unsafe'/>
             <source file="%s"/>
             <target dev='%s' bus='virtio'/>
+            <serial>%s</serial>
         </disk>
         """ % (
             self.path,
             next(storage_device_name),
+            self.serial_str,
         )
 
 
@@ -383,6 +386,7 @@ def _get_default_domain_conf(name=None,
                              disk_number=1,
                              disk_size=0,
                              nic_number=1,
+                             serial=False,
                              image=None
                              ):
 
@@ -426,7 +430,7 @@ def _get_default_domain_conf(name=None,
     else:
         raise TestcloudInstanceError("Unsupported connection type")
 
-    image = QCow2StorageDevice(domain_configuration.local_disk, disk_size)
+    image = QCow2StorageDevice(domain_configuration.local_disk, disk_size, '')
     domain_configuration.storage_devices.append(image)
 
     if coreos:
@@ -442,10 +446,10 @@ def _get_default_domain_conf(name=None,
     if tpm:
         domain_configuration.tpm_configuration = TPMConfiguration()
 
-    if disk_number > 1:
-        for i in range(disk_number - 1):
-            additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
-            domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size))
+    for i in range(disk_number - 1):
+        additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
+        serial_str = "testcloud-{}".format(i + 1) if serial else ''
+        domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size, serial_str))
 
     return domain_configuration
 
