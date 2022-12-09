@@ -222,7 +222,7 @@ storage:
 
     # There currently isn't an api way to fetch the current CentOS Releases
     CENTOS_VERSIONS = {
-        "7":      "https://cloud.centos.org/centos/7/images/CentOS-7-{0}-GenericCloud-2111.qcow2",
+        "7":      "https://cloud.centos.org/centos/7/images/CentOS-7-{0}-GenericCloud-2211.qcow2",
         "8":      "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2",
         "latest": "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2"
     }
