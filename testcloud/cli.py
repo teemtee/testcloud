@@ -358,6 +358,8 @@ def _create_instance(args):
         sys.exit(1)
 
     tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection, desired_arch=args.arch)
+    if args.future:
+        tc_instance.write_domain_xml = tc_instance.write_domain_xml_ng
 
     # Normal Cloud
     if not coreos:
@@ -644,6 +646,10 @@ def get_argparser():
                          "--connection",
                          default="qemu:///system",
                          help="libvirt connection url to use")
+    parser.add_argument("-x",
+                         "--future",
+                         help="use experimental codepaths",
+                         action="store_true")
 
     # instance list
     instarg_list = subparsers.add_parser("list", help="list all instances")

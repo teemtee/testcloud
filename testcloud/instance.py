@@ -29,6 +29,7 @@ except ImportError:
 from testcloud import config
 from testcloud import util
 from testcloud.exceptions import TestcloudInstanceError, TestcloudPermissionsError
+from testcloud.domain_configuration import *
 
 config_data = config.get_config()
 
@@ -258,6 +259,7 @@ class Instance(object):
         self.ign_file = None
         self.coreos = False
         self.qemu_cmds = []
+        self.domain_configuration : DomainConfiguration | None = None
 
     def prepare(self):
 
@@ -736,6 +738,70 @@ class Instance(object):
             dom_template.write(xml_template.render(instance_values))
 
         return
+
+    def write_domain_xml_ng(self):
+        log.info("Experimental codepath: Instance.write_domain_xml_ng()")
+        if self.domain_configuration:
+            with open(self.xml_path, 'w') as domain_file:
+                domain_file.write(self.domain_configuration.generate())
+
+        domain_configuration = DomainConfiguration()
+        domain_configuration.name = self.name
+        domain_configuration.cpu_count = self.vcpus
+        domain_configuration.memory_size = self.ram * 1024
+
+        match self.desired_arch:
+            case "x86_64":
+                domain_configuration.system_architecture = X86_64ArchitectureConfiguration(uefi=config_data.UEFI, kvm=self.kvm)
+            case "aarch64":
+                domain_configuration.system_architecture = AArch64ArchitectureConfiguration(kvm=self.kvm)
+            case "ppc64le":
+                domain_configuration.system_architecture = Ppc64leArchitectureConfiguration(kvm=self.kvm)
+            case "s390x":
+                domain_configuration.system_architecture = S390xArchitectureConfiguration(kvm=self.kvm)
+            case _:
+                raise TestcloudInstanceError("Unsupported arch")
+
+        mac_address = self.mac_address or util.generate_mac_address()
+        match self.connection:
+            case "qemu:///system":
+                domain_configuration.network_configuration = SystemNetworkConfiguration(mac_address=mac_address)
+            case "qemu:///session":
+                with util.Filelock():
+                    port = self.find_next_usable_port()
+                    self.create_port_file(port)
+                device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
+                domain_configuration.network_configuration = UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
+            case _:
+                raise TestcloudInstanceError("Unsupported connection type")
+
+        image = QCow2StorageDevice(self.local_disk)
+        domain_configuration.storage_devices.append(image)
+
+        if self.coreos:
+            domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS_COREOS)
+            domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS_COREOS)
+            if self.desired_arch in ["x86_64", "aarch64"]:
+                domain_configuration.qemu_args.extend(['-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path])
+            else:
+                domain_configuration.qemu_args.extend(['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path,
+                                                       '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008'])
+        else:
+            domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS)
+            domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS)
+            seed_disk = RawStorageDevice(self.seed_path)
+            domain_configuration.storage_devices.append(seed_disk)
+
+        if self.tpm:
+            domain_configuration.tpm_configuration = TPMConfiguration()
+
+        if self.disk_number > 1:
+            for i in range(self.disk_number - 1):
+                additional_disk_path = "{}/{}-local{}.qcow2".format(self.path, self.name, i + 2)
+                domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path))
+
+        with open(self.xml_path, 'w') as domain_file:
+            domain_file.write(domain_configuration.generate())
 
     def spawn_vm(self):
         """Create and boot the instance, using prepared data."""
