@@ -224,20 +224,48 @@ storage:
     CENTOS_VERSIONS = {
         "7":      "https://cloud.centos.org/centos/7/images/CentOS-7-{0}-GenericCloud-2211.qcow2",
         "8":      "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2",
-        "latest": "https://cloud.centos.org/centos/8/{0}/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.{0}.qcow2"
+        "latest": "8"
     }
 
     # Used to try to auto-fetch the latest qcow2
     CENTOS_STREAM_URL_PREFIX = "https://cloud.centos.org/centos/{0}-stream/{1}/images/"
     CENTOS_STREAM_VERSIONS = {
         "8":      "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20220913.0.{0}.qcow2",
-        "9":      "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20221110.0.{0}.qcow2",
-        "latest": "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20221110.0.{0}.qcow2"
+        "9":      "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20230307.0.{0}.qcow2",
+        "latest": "9"
+    }
+
+    ROCKY_URL_PREFIX = "https://download.rockylinux.org/pub/rocky/{0}/images/{1}/"
+    ROCKY_VERSIONS = {
+        "8":      "https://download.rockylinux.org/pub/rocky/8/images/{0}/Rocky-8-GenericCloud-Base-8.7-20230215.0.{0}.qcow2",
+        "9":      "https://download.rockylinux.org/pub/rocky/9/images/{0}/Rocky-9-GenericCloud-Base-9.1-20230215.0.{0}.qcow2",
+        "latest": "9"
+    }
+
+    ALMA_URL_PREFIX = "https://ftp.linux.cz/pub/linux/almalinux/{0}/cloud/{1}/images/"
+    ALMA_VERSIONS = {
+        "8":      "https://ftp.sh.cvut.cz/almalinux/8/cloud/{0}/images/AlmaLinux-8-GenericCloud-8.7-20221111.{0}.qcow2",
+        "9":      "https://ftp.sh.cvut.cz/almalinux/9/cloud/{0}/images/AlmaLinux-9-GenericCloud-9.1-20221118.{0}.qcow2",
+        "latest": "9"
+    }
+
+    ORACLE_VERSIONS = {
+        "7":      "https://yum.oracle.com/templates/OracleLinux/OL7/u9/x86_64/OL7U9_x86_64-kvm-b145.qcow",
+        "8":      "https://yum.oracle.com/templates/OracleLinux/OL8/u7/x86_64/OL8U7_x86_64-kvm-b148.qcow",
+        "9":      "https://yum.oracle.com/templates/OracleLinux/OL9/u1/x86_64/OL9U1_x86_64-kvm-b158.qcow",
+        "latest": "9"
+    }
+
+    ORACLE_A64_VERSIONS = {
+        "8":      "https://yum.oracle.com/templates/OracleLinux/OL8/u7/aarch64/OL8U7_aarch64-kvm-cloud-b11.qcow",
+        "9":      "https://yum.oracle.com/templates/OracleLinux/OL9/u1/aarch64/OL9U1_aarch64-kvm-cloud-b14.qcow",
+        "latest": "9"
     }
 
     DEBIAN_RELEASE_MAP = {"10": "buster","11": "bullseye"}
     DEBIAN_LATEST = "11"
     DEBIAN_IMG_URL = "https://cloud.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2"
+
     UBUNTU_RELEASES_API = "https://api.launchpad.net/devel/ubuntu/series"
     UBUNTU_IMG_URL = "https://cloud-images.ubuntu.com/%s/current/%s-server-cloudimg-%s-disk-kvm.img"
 

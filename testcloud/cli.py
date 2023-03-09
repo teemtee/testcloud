@@ -21,7 +21,7 @@ import time
 from . import config
 from . import image
 from . import instance
-from .util import get_centos_image_url, get_fedora_image_url, get_ubuntu_image_url, get_ubuntu_releases, get_debian_image_url
+from .util import get_image_url
 from .exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
 
 
@@ -322,40 +322,10 @@ def _create_instance(args):
     if args.arch != "x86_64":
         log.warning("Testcloud might not work correctly on non-x86-64 machines yet.")
 
-    if "http" in args.url or "file" in args.url:
-        url = args.url
-    elif "fedora" in args.url:
-        image_by_name = re.match(r'fedora[:\-](.*)', args.url)
-        stream_name_raw = re.match(r'fedora-coreos[:\-](.*)', args.url)
-        # Normal Fedora Cloud
-        if not "fedora-coreos" in args.url:
-            version = image_by_name.groups()[0] if image_by_name else config_data.VERSION
-            url = get_fedora_image_url(version, args.arch)
-        # Fedora CoreOS
-        else:
-            version = stream_name_raw.groups()[0] if stream_name_raw else config_data.STREAM
-            coreos = True
-            if version not in config_data.STREAM_LIST:
-                log.error("fedora-coreos currently only have 'testing', 'stable', 'next' stream")
-                sys.exit(1)
-            else:
-                url = get_fedora_image_url(version, args.arch)
-    elif "centos-stream" in args.url:
-        image_by_name = re.match(r'centos-stream[:\-](.*)', args.url)
-        version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_centos_image_url(version, True, args.arch)
-    elif "centos" in args.url:
-        image_by_name = re.match(r'centos[:\-](.*)', args.url)
-        version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_centos_image_url(version, False, args.arch)
-    elif "ubuntu" in args.url:
-        image_by_name = re.match(r'ubuntu[:\-](.*)', args.url)
-        version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_ubuntu_image_url(version, args.arch)
-    elif "debian" in args.url:
-        image_by_name = re.match(r'debian[:\-](.*)', args.url)
-        version = image_by_name.groups()[0] if image_by_name else "latest"
-        url = get_debian_image_url(version, args.arch)
+    try:
+        url = get_image_url(args.url) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+    except TestcloudImageError:
+        pass
 
     if not url:
         log.error("Couldn't find the desired image ( %s )..." % args.url)
