@@ -31,14 +31,14 @@ __testcloud()
             return 0
         fi
 
-    elif [[ ${COMP_WORDS[@]} =~ "testcloud instance" || ${COMP_WORDS[@]} =~ "t7d instance" ]]; then
+    elif [[ ${COMP_WORDS[@]} =~ "testcloud" || ${COMP_WORDS[@]} =~ "t7d" ]]; then
         if [[ ${prev} == "create" ]]; then
             COMPREPLY=( $(compgen -W "${instance_create_opts}" -- ${cur}) )
             return 0
 
         elif [[ ${prev} == "remove" ]]; then
             local instances
-            instances="`testcloud instance list | tail -n+3 | head -n-1 | cut -f1 -d' '` --force"
+            instances="`testcloud list | tail -n+3 | head -n-1 | cut -f1 -d' '` --force"
             COMPREPLY=( $(compgen -W "${instances}" -- ${cur}) )
             return 0
 
@@ -53,13 +53,13 @@ __testcloud()
 
         elif [[ ${prev} == "stop" ]]; then
             local instances
-            instances=`testcloud instance list | grep running | cut -f1 -d" "`
+            instances=`testcloud list | grep running | cut -f1 -d" "`
             COMPREPLY=( $(compgen -W "${instances}" -- ${cur}) )
             return 0
 
         elif [[ ${prev} == "start" ]]; then
             local instances
-            instances=`testcloud instance list | grep shutoff | cut -f1 -d" "`
+            instances=`testcloud list | grep shutoff | cut -f1 -d" "`
             COMPREPLY=( $(compgen -W "${instances}" -- ${cur}) )
             return 0
 
@@ -69,7 +69,7 @@ __testcloud()
         elif [[ ${prev2} == "start" ]]; then
             return 0
 
-        elif [[ ${COMP_WORDS[@]} =~ "instance -c" && ! ${COMP_WORDS[@]} =~ "///system" && ! ${COMP_WORDS[@]} =~ "///session" ]]; then
+        elif [[ ${COMP_WORDS[@]} =~ " -c" && ! ${COMP_WORDS[@]} =~ "///system" && ! ${COMP_WORDS[@]} =~ "///session" ]]; then
             _get_comp_words_by_ref -n : cur
             COMPREPLY=( $(compgen -W "qemu:///system qemu:///session" -- ${cur}) )
             __ltrim_colon_completions "$cur" # left trim colon (blahblah)

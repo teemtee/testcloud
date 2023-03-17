@@ -92,6 +92,9 @@ def _handle_permissions_error_cli(error):
     print("su - $USER")
     sys.exit(1)
 
+def _bail_from_legacy_cli(args):
+    log.error("instance subcommand was removed from testcloud. For instance operations, omit the 'instance' keyword.")
+
 def _list_instance(args):
     """Handler for 'list' command. Expects the following elements in args:
         * name(str)
@@ -99,9 +102,6 @@ def _list_instance(args):
     :param args: args from argparser
     """
     instances = instance.list_instances()
-
-    if args.all:
-        log.warning("(DEPRECATED) --all is now the default behavior")
 
     print("{!s:<16} {!s:^30} {!s:<10}    {!s:<10}".format("Name", "IP", "SSH Port", "State"))
     print("-"*80)
@@ -292,16 +292,10 @@ def _create_instance(args):
     if not args.name:
         args.name = _generate_name()
 
-    if args.url_legacy:
-        log.error("This style of testcloud invocation has been REMOVED.")
-        log.error("Instead of 'testcloud instance create -u <url>', do 'testcloud instance create <url>'.")
-        log.error("You can specify instance name parameter with -n/--name argument.")
-        sys.exit(1)
-
     if not args.url:
         log.error("Missing url or distribution:version specification.")
-        log.error("Command to crate an instance: 'testcloud instance create <URL> or <distribution:version>'")
-        log.error("                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+        log.error("Command to crate an instance: 'testcloud create <URL> or <distribution:version>'")
+        log.error("                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
         log.error("You can use 'testcloud instance create -h' for additional help.")
         sys.exit(1)
 
@@ -620,24 +614,24 @@ def get_argparser():
                                        description="Types of commands available",
                                        help="<command> --help")
 
-    instarg = subparsers.add_parser("instance", help="help on instance options")
-    instarg.add_argument("-c",
+    instarg_legacy = subparsers.add_parser("instance", help="help on instance options")
+    instarg_legacy.set_defaults(func=_bail_from_legacy_cli)
+
+    instarg_legacy.add_argument("anything",
+                                type=str,
+                                nargs='*')
+
+    parser.add_argument("-c",
                          "--connection",
                          default="qemu:///system",
                          help="libvirt connection url to use")
-    instarg_subp = instarg.add_subparsers(title="instance commands",
-                                          description="Commands available for instance operations",
-                                          help="<command> help")
 
     # instance list
-    instarg_list = instarg_subp.add_parser("list", help="list all instances")
+    instarg_list = subparsers.add_parser("list", help="list all instances")
     instarg_list.set_defaults(func=_list_instance)
-    instarg_list.add_argument("--all",
-                              help="(DEPRECATED) --all is now the default behavior",
-                              action="store_true")
 
     # instance start
-    instarg_start = instarg_subp.add_parser("start", help="start instance")
+    instarg_start = subparsers.add_parser("start", help="start instance")
     instarg_start.add_argument("name",
                                help="name of instance to start")
     instarg_start.add_argument("--timeout",
@@ -649,22 +643,22 @@ def get_argparser():
     instarg_start.set_defaults(func=_start_instance)
 
     # instance stop
-    instarg_stop = instarg_subp.add_parser("stop", help="stop instance (forced poweroff, same as 'instance force-off')")
+    instarg_stop = subparsers.add_parser("stop", help="stop instance (forced poweroff, same as 'instance force-off')")
     instarg_stop.add_argument("name",
                               help="name of instance to stop")
     instarg_stop.set_defaults(func=_stop_instance)
     # instance force-off
-    instarg_foff = instarg_subp.add_parser("force-off", help="force-off instance (forced poweroff, same as 'instance stop')")
+    instarg_foff = subparsers.add_parser("force-off", help="force-off instance (forced poweroff, same as 'instance stop')")
     instarg_foff.add_argument("name",
                               help="name of instance to force-off")
     instarg_foff.set_defaults(func=_stop_instance)
     # instance shutdown
-    instarg_shutdown = instarg_subp.add_parser("shutdown", help="shutdown instance (graceful poweroff)")
+    instarg_shutdown = subparsers.add_parser("shutdown", help="shutdown instance (graceful poweroff)")
     instarg_shutdown.add_argument("name",
                               help="name of instance to shutdown")
     instarg_shutdown.set_defaults(func=_shutdown_instance)
     # instance remove
-    instarg_remove = instarg_subp.add_parser("remove", help="remove instance")
+    instarg_remove = subparsers.add_parser("remove", help="remove instance")
     instarg_remove.add_argument("name",
                                 help="name of instance to remove")
     instarg_remove.add_argument("-f",
@@ -673,7 +667,7 @@ def get_argparser():
                                 action="store_true")
     instarg_remove.set_defaults(func=_remove_instance)
 
-    instarg_destroy = instarg_subp.add_parser("destroy", help="deprecated alias for remove")
+    instarg_destroy = subparsers.add_parser("destroy", help="deprecated alias for remove")
     instarg_destroy.add_argument("name",
                                  help="name of instance to remove")
     instarg_destroy.add_argument("-f",
@@ -683,11 +677,11 @@ def get_argparser():
     instarg_destroy.set_defaults(func=_remove_instance)
 
     # instance clean
-    instarg_clean = instarg_subp.add_parser("clean", help="remove non-existing libvirt vms from testcloud")
+    instarg_clean = subparsers.add_parser("clean", help="remove non-existing libvirt vms from testcloud")
     instarg_clean.set_defaults(func=_clean_instances)
 
     # instance reboot
-    instarg_reboot = instarg_subp.add_parser("reboot", help="reboot instance (graceful reboot)")
+    instarg_reboot = subparsers.add_parser("reboot", help="reboot instance (graceful reboot)")
     instarg_reboot.add_argument("name",
                                 help="name of instance to reboot")
     instarg_reboot.add_argument("--timeout",
@@ -698,7 +692,7 @@ def get_argparser():
                                 default=config_data.BOOT_TIMEOUT)
     instarg_reboot.set_defaults(func=_reboot_instance)
     # instance reset
-    instarg_reset = instarg_subp.add_parser("reset", help="reset instance (forced reboot)")
+    instarg_reset = subparsers.add_parser("reset", help="reset instance (forced reboot)")
     instarg_reset.add_argument("name",
                                 help="name of instance to reset")
     instarg_reset.add_argument("--timeout",
@@ -719,17 +713,12 @@ def get_argparser():
     - ubuntu:release_name (eg. ubuntu:focal, ubuntu:latest)
     - debian:release_name/release_number (eg. debian:11, debian:sid, debian:latest)
     '''
-    instarg_create = instarg_subp.add_parser("create", help="create instance", formatter_class=argparse.RawTextHelpFormatter)
+    instarg_create = subparsers.add_parser("create", help="create instance", formatter_class=argparse.RawTextHelpFormatter)
     instarg_create.set_defaults(func=_create_instance)
     instarg_create.add_argument("url",
                                 help=create_help,
                                 type=str,
                                 nargs='?')
-    instarg_create.add_argument("-u",
-                                "--url",
-                                help="REMOVED parameter, URL is now the first positional argument to testcloud instance create.",
-                                type=str,
-                                dest="url_legacy")
     instarg_create.add_argument("-n",
                                 "--name",
                                 help="name of instance to create",
