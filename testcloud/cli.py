@@ -18,6 +18,8 @@ import subprocess
 import sys
 import time
 
+from urllib.parse import urlparse
+
 from . import config
 from . import image
 from . import instance
@@ -275,6 +277,26 @@ def _generate_name():
 
     return name
 
+def _download_image(args):
+    if not args.url:
+        log.error("Url wasn't specified.")
+        sys.exit(1)
+
+    try:
+        url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+    except TestcloudImageError:
+        log.error("Couldn't find the desired image ( %s )..." % args.url)
+        sys.exit(1)
+
+    tc_image = image.Image(url)
+
+    try:
+        tc_image._download_remote_image(url, os.path.join(args.dest_path, os.path.basename(urlparse(url).path)))
+    except TestcloudImageError:
+        log.error("Couldn't download the requested image due to an error.")
+        sys.exit(1)
+    except TestcloudPermissionsError:
+        log.error("Couldn't write to the requested target location ( %s )." % args.dest_path)
 
 def _create_instance(args):
     """Handler for 'instance create' command. Expects the following elements in args:
@@ -795,6 +817,24 @@ def get_argparser():
     imgarg_destroy.add_argument("name",
                                 help="name of image to remove")
     imgarg_destroy.set_defaults(func=_remove_image)
+
+    # image download
+    imarg_download = imgarg_subp.add_parser('download', help="download image")
+    imarg_download.add_argument("url",
+                                help=create_help,
+                                type=str)
+    imarg_download.add_argument("-d",
+                                "--dest_path",
+                                help="dest path to put image",
+                                type=str,
+                                default=os.getcwd())
+    imarg_download.add_argument("-a",
+                                "--arch",
+                                help="desired architecture of an image",
+                                type=str,
+                                default=platform.machine())
+
+    imarg_download.set_defaults(func=_download_image)
 
     return parser
 
