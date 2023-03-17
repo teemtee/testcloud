@@ -16,8 +16,8 @@ import logging
 
 import requests
 
-from . import config
-from .exceptions import TestcloudImageError, TestcloudPermissionsError
+from testcloud import config
+from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError
 
 config_data = config.get_config()
 

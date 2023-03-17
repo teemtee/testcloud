@@ -20,11 +20,11 @@ import time
 
 from urllib.parse import urlparse
 
-from . import config
-from . import image
-from . import instance
-from .util import get_image_url
-from .exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
+from testcloud import config
+from testcloud import image
+from testcloud import instance
+from testcloud.util import get_image_url
+from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
 
 
 config_data = config.get_config()

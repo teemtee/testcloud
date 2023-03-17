@@ -8,10 +8,8 @@ Representation of a Testcloud spawned (or to-be-spawned) virtual machine
 """
 
 import os
-import sys
 import re
 import subprocess
-import glob
 import logging
 import time
 
@@ -28,9 +26,9 @@ try:
 except ImportError:
     pass # We'll lose guest detection ( https://bugzilla.redhat.com/show_bug.cgi?id=1075594 )
 
-from . import config
-from . import util
-from .exceptions import TestcloudInstanceError, TestcloudPermissionsError
+from testcloud import config
+from testcloud import util
+from testcloud.exceptions import TestcloudInstanceError, TestcloudPermissionsError
 
 config_data = config.get_config()
 
