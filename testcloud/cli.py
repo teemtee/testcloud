@@ -317,7 +317,7 @@ def _create_instance(args):
         log.warning("Testcloud might not work correctly on non-x86-64 machines yet.")
 
     try:
-        url = get_image_url(args.url) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+        url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
     except TestcloudImageError:
         pass
 
