@@ -313,9 +313,6 @@ def _create_instance(args):
     url = None
     coreos = False
 
-    if args.arch != "x86_64":
-        log.warning("Testcloud might not work correctly on non-x86-64 machines yet.")
-
     try:
         url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
     except TestcloudImageError:
