@@ -50,45 +50,40 @@ your own, you can use the image from the **Fedora Cloud** download pages
 To create a new instance with the cloud image, run:
 
 ```
-$ testcloud instance create <url for qcow2 image> or <distro:version>
+$ testcloud create <url for qcow2 image> or <distro:version>
 ```
 
 Some examples how to create an instance with distribution:version shortcut:
 
 ```
 # Latest Fedora Release
-$ testcloud instance create fedora:latest
-```
-
-or, you can skip latest, which is the default value for version:
-```
-# Latest Fedora Release
-$ testcloud instance create fedora
+$ testcloud create fedora
 ```
 
 ```
 # Fedora Rawhide (latest Nightly Compose)
-$ testcloud instance create fedora:rawhide
+$ testcloud create fedora:rawhide
 ```
 
 ```
 # CentOS Stream 8
-$ testcloud instance create centos-stream:8
+$ testcloud create centos-stream:8
 ```
 
 ```
 # Ubuntu Hirsute (21.04)
-$ testcloud instance create ubuntu:hirsute
+$ testcloud create ubuntu:hirsute
 ```
 
 ```
 # Debian 11
-$ testcloud instance create debian:11
+$ testcloud create debian:11
 ```
 
-Supported distributions with shortcuts are: Fedora, CentOS, CentOS Stream, Ubuntu and Debian. For other distributions, you can provide link to basically any qcow2 image which has the cloud-init package included.
+Supported distributions with shortcuts are: Fedora, CentOS, CentOS Stream, Ubuntu, Debian, Alma, Rocky, and Oracle.
+For other distributions, you can provide link to basically any qcow2 image which has the cloud-init package included.
 
-Testcloud supports also Vagrant .box files, in a limited manner and currently only for CentOS.
+Testcloud supports also Vagrant .box files, in a limited manner and currently only for Fedora and CentOS.
 
 **testcloud** will download the *qcow2* image and save it in the
 `/var/lib/testcloud/backingstores/<qcow2-filename>`. It will use this
@@ -100,18 +95,41 @@ create the instance.
 To create a new instance with the coreos image, run:
 
 ```
-$ testcloud instance create fedora-coreos:<stream> or <url for qcow2 image>
+$ testcloud create fedora-coreos:<stream> or <url for qcow2 image>
 
 ```
 
 You will be able to see the instance using the `list` command.
 
 ```
-$ testcloud instance list
+$ testcloud list
 ```
 
 Alternatively, the instances can also be viewed and manipulated using
 the **virt-manager** tool.
+
+### Creating an instance with speciffic architecture
+
+Instances can be created with a different architecture than the host architecture. You'll need to have a proper
+qemu binary installed for this to work (eg. qemu-system-aarch64-core for aarch64 on x86_64 on Fedora). Supported
+architectures in testcloud are: x86_64, aarch64, ppc64le, and s390x. Any combinations of these are supported.
+
+Some examples:
+
+```
+# Fedora aarch64 on x86_64 (or any other)
+$ testcloud create fedora --arch aarch64
+```
+
+```
+# CentOS Stream x86_64 on aarch64 (or any other)
+$ testcloud create centos-stream --arch x86_64
+```
+
+```
+# Fedora Rawhide ppc64le on aarch64 (or any other)
+$ testcloud create fedora:rawhide --arch ppc64le
+```
 
 ### Starting, stopping, and removing an instance
 
@@ -121,25 +139,25 @@ the **testcloud**, too:
 1. List all instances to see the correct name of the instance:
 
        ```
-       $ testcloud instance list
+       $ testcloud list
        ```
 
 2. Start the instance:
 
        ```
-       $ testcloud instance start <instance-name>
+       $ testcloud start <instance-name>
        ```
 
 3. Stop the instance:
 
        ```
-       $ testcloud instance stop <instance-name>
+       $ testcloud stop <instance-name>
        ```
 
 4. Remove the instance:
 
        ```
-       $ testcloud instance remove <instance-name>
+       $ testcloud remove <instance-name>
        ```
 
 Removing the instance only succeeds when the appropriate instance has
@@ -151,13 +169,13 @@ removing the instance.
 1. Reboot the instance:
 
        ```
-       $ testcloud instance reboot <instance-name>
+       $ testcloud reboot <instance-name>
        ```
 
 2. Remove non-existing libvirt VMs from testcloud:
 
        ```
-       $ testcloud instance clean
+       $ testcloud clean
        ```
 
 ### Logging into the instance
@@ -171,7 +189,7 @@ ssh cloud-user@<instance-IP>
 ```
 
 The IP address of an instance is also shown when you list the instance
-using the `testcloud instance list` command. You can also control the
+using the `testcloud list` command. You can also control the
 instance using the **virt-manager** , **GNOME Boxes** or any other tool to manage libvirt VMs.
 
 ### Available options to create an instance
@@ -182,6 +200,11 @@ new instance using **testcloud**.
 -c, \--connection QEMU_URI
 
 : You can specify uri to qemu you wish to use. For limited environments, you might wish to use *qemu:///session*. Remote connections other than *qemu:///session* and *qemu:///system* (like qemu+ssh,...) are known to be problematic.
+
+\--arch ARCH
+
+: To request a speciffic architecture for the guest. The default
+|    is the architecture of the host system.
 
 \--ram RAM
 

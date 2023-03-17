@@ -45,9 +45,6 @@ recognized.
 .IP
 \fI/etc/testcloud/settings.py\fR
 .SH COMMANDS
-\fBinstance\fR
-        Control and manipulate the instances (see OPTIONS) for more details.
-
 \fBimage\fR
         Control and manipulate the images (see OPTIONS) for more details.
 .SH OPTIONS
@@ -97,6 +94,9 @@ recognized.
 \fB-n, --name NAME\fR
         Set desired instance name. A nice and memorable name will be generated for you if not specified.
 
+\fB--arch ARCH\fR
+        Set the desired guest architecture. Host arch is the default, supported are: x86_64, aarch64, ppc64le, and s390x.
+
 \fB--ram RAM\fR
         Set the amount of RAM that will be available to the instance's VM (in MiB).
 
@@ -133,23 +133,23 @@ recognized.
 .PP
 Create a new instance:
 .IP
-\fBtestcloud instance create <URL>\fR
+\fBtestcloud create <URL>\fR
 .PP
 List all available instances:
 .IP
-\fBtestcloud instance list\fR
+\fBtestcloud list\fR
 .PP
 Start an existing instance:
 .IP
-\fBtestcloud instance start <instance_name>\fR
+\fBtestcloud start <instance_name>\fR
 .PP
 Stop an existing instance:
 .IP
-\fBtestcloud instance stop <instance_name>\fR
+\fBtestcloud stop <instance_name>\fR
 .PP
 Remove a running instance:
 .IP
-\fBtestcloud instance remove -f <instance_name>\fR
+\fBtestcloud remove -f <instance_name>\fR
 
 .SH SEE ALSO
 
