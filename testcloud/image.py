@@ -133,7 +133,11 @@ class Image(object):
 
         try:
             with open(local_path + ".part", 'wb') as f:
-                file_size = int(u.headers['content-length'])
+
+                try:
+                    file_size = int(u.headers['content-length'])
+                except KeyError:
+                    raise TestcloudImageError('Network error during image download, aborting.')
 
                 log.info("Downloading {0} ({1} bytes)".format(self.name, file_size))
                 bytes_downloaded = 0
@@ -148,13 +152,13 @@ class Image(object):
 
                             bytes_downloaded += len(data)
                             f.write(data)
-                            bytes_remaining = float(bytes_downloaded) / file_size
+                            downloaded_coeff = float(bytes_downloaded) / file_size
                             if config_data.DOWNLOAD_PROGRESS:
                                 # TODO: Improve this progress indicator by making
                                 # it more readable and user-friendly.
                                 status = r"{0}/{1} [{2:.2%}]".format(bytes_downloaded,
                                                                      file_size,
-                                                                     bytes_remaining)
+                                                                     downloaded_coeff)
                                 status = status + chr(8) * (len(status) + 1)
                                 if config_data.DOWNLOAD_PROGRESS_VERBOSE:
                                     sys.stdout.write(status)
@@ -166,10 +170,14 @@ class Image(object):
                                         percent_last = percent
 
                     except TypeError:
+                        if downloaded_coeff != float(1.0):
+                            raise TestcloudImageError('Network error during image download, aborting.')
                         #  Rename the file since download has completed
                         os.rename(local_path + ".part", local_path)
                         log.info("Succeeded at downloading {0}".format(self.name))
                         break
+                    except Exception:
+                        raise TestcloudImageError('Network error during image download, aborting.')
 
         except OSError:
             # note: suppress inside exception warnings
