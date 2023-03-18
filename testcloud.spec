@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.8.2
-Release:        2%{?dist}
+Version:        0.9.0
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -125,6 +125,27 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Sat Mar 18 2023 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.0-1
+- image downloader: Try to detect failed downloads more aggressively
+- CLI: Support download image
+- CLI: Drop non-x86 warning
+- CLI: Drop instance subcommand
+- Rework images url handling
+- CentOS 7: Bump image
+- Vagrant: Support Fedora Boxes
+- cli: Tune down default logging
+- add disk_number param
+- pc model: use q35
+- memballoon: drop address spec
+- Use unversioned machine models
+- CentOS Stream: try to auto-detect the latest image
+- support TPM2 device
+- Prevent unbound url variable on failed Fedora rawhide/branched guess
+- add mac_address param
+- add qemu_cmds param for coreos testcases
+- support to pass ignition file on platforms that doesn't support FW CFG
+- Require libvirt-daemon-config-network as well
+
 * Sat Jan 21 2023 Fedora Release Engineering <releng@fedoraproject.org> - 0.8.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
 
