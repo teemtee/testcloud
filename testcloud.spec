@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.8.1
-Release:        3%{?dist}
+Version:        0.8.2
+Release:        2%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPLv2+
@@ -125,6 +125,14 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Sat Jan 21 2023 Fedora Release Engineering <releng@fedoraproject.org> - 0.8.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
+
+* Fri Dec 02 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.2-1
+- CentOS Stream {8,9}: bump image version
+- Leave boot drive address guessing to libvirt
+- Workaround libvirt/qemu PCI auto-assign issue
+
 * Fri Sep 09 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.8.1-3
 - Require libvirt-daemon-config-network as well
 
