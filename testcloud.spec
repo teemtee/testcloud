@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.9.0
+Version:        0.9.1
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -125,6 +125,11 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed Mar 22 2023 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.1-1
+- setup.py: Include distro_utils too
+- inherit from Exception instead of BaseException
+- get_image_url: return str of supported images instead of dict_keys in errors
+
 * Sat Mar 18 2023 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.0-1
 - image downloader: Try to detect failed downloads more aggressively
 - CLI: Support download image
