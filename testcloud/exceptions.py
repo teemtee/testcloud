@@ -8,7 +8,7 @@ Exceptions used with testcloud
 """
 
 
-class TestcloudException(BaseException):
+class TestcloudException(Exception):
     """Common ancestor for all Testcloud exceptions"""
     pass
 
@@ -25,7 +25,7 @@ class TestcloudInstanceError(TestcloudException):
     pass
 
 
-class DomainNotFoundError(BaseException):
+class DomainNotFoundError(Exception):
     """Exception to raise if the queried domain can't be found."""
 
     def __init__(self):
