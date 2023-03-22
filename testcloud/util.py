@@ -67,18 +67,21 @@ def get_image_url(distro_str:str, arch="x86_64", verify=True, additional_handles
         "oracle":        {"re": r'^o(racle)?(-|:)?(\d+)?$', "fn": get_oracle_image_url}
     }
 
+    MERGED_HANDLES = (SUPPORTED_HANDLES | additional_handles)
+    HELP_LIST = (', ').join(MERGED_HANDLES.keys())
+
     if not distro_str:
-        log.error("No url handle (distro or distro-version) passed, supported handles are: %s" % str(SUPPORTED_HANDLES.keys()))
+        log.error("No url handle (distro or distro-version) passed, supported handles are: %s" % HELP_LIST)
         raise exceptions.TestcloudImageError
 
     # regexp matching
-    for _, distro in (SUPPORTED_HANDLES | additional_handles).items():
+    for _, distro in MERGED_HANDLES.items():
         match = re.match(distro["re"], distro_str)
         if match:
             return (verify_url if verify else lambda x: x)(distro["fn"](version=match.group(3) or "latest", arch=arch))
 
 
-    log.error("Invalid url handle (distro or distro-version) passed, supported handles are: %s" % str(SUPPORTED_HANDLES.keys()))
+    log.error("Invalid url handle (distro or distro-version) passed, supported handles are: %s" % HELP_LIST)
     raise exceptions.TestcloudImageError
 
 
