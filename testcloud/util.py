@@ -67,7 +67,7 @@ def get_image_url(distro_str:str, arch="x86_64", verify=True, additional_handles
         "oracle":        {"re": r'^o(racle)?(-|:)?(\d+)?$', "fn": get_oracle_image_url}
     }
 
-    MERGED_HANDLES = (SUPPORTED_HANDLES | additional_handles)
+    MERGED_HANDLES = {**SUPPORTED_HANDLES, **additional_handles}
     HELP_LIST = (', ').join(MERGED_HANDLES.keys())
 
     if not distro_str:
