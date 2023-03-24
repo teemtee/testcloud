@@ -12,11 +12,7 @@ from testcloud.distro_utils.misc import parse_latest_qcow
 log = logging.getLogger('testcloud.util')
 config_data = config.get_config()
 
-def get_centos_image_url(version:str, stream:bool, arch:str) -> str:
-    # TODO: Remove this once https://github.com/teemtee/tmt/pull/1914 gets merged
-    return _get_centos_image_url(version=version, stream=stream, arch=arch)
-
-def get_centos_image_url_v2(version:str, arch:str) -> str:
+def get_centos_image_url(version:str, arch:str) -> str:
     return _get_centos_image_url(version=version, stream=False, arch=arch)
 
 def get_centos_stream_image_url(version:str, arch:str) -> str:
