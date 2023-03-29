@@ -13,14 +13,38 @@ from testcloud import exceptions
 log = logging.getLogger('testcloud.util')
 config_data = config.get_config()
 
-def get_coreos_image_url(version:str, arch:str) -> str:
+def _process_coreos_url(version:str, arch:str, platform:str) -> str:
+    """
+    Returns an CoreOS url in either qemu or openstack format
+    """
     if version == "latest":
         version = "stable"
-
     if version not in config_data.STREAM_LIST:
+        log.error("Unknown version (%s) requested for Fedora CoreOS." % version)
         raise exceptions.TestcloudImageError
+    if platform not in ["qemu", "openstack"]:
+        log.error("Invalid platform ( %s ) requested for Fedora CoreOS." % platform)
+        raise exceptions.TestcloudImageError
+    try:
+        result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
+    except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
+            log.error("Failed to fetch the image.")
+            raise exceptions.TestcloudImageError
+    return str(result['architectures'][arch]['artifacts'][platform]['formats']['qcow2.xz']['disk']['location'])
 
-    return get_fedora_image_url(version, arch)
+def get_coreos_image_url(version:str, arch:str) -> str:
+    """
+    Returns an image for Fedora CoreOS
+    Accepts one of STREAM_LIST (by default one of CoreOS stream names: 'testing', 'stable', 'next')
+    """
+    return _process_coreos_url(version, arch, "qemu")
+
+def get_fedora_openstack_image_url(version:str, arch:str) -> str:
+    """
+    Returns an image for Fedora CoreOS for OpenStack
+    Accepts one of STREAM_LIST (by default one of CoreOS stream names: 'testing', 'stable', 'next')
+    """
+    return _process_coreos_url(version, arch, "openstack")
 
 def get_fedora_image_url(version:str, arch:str) -> str:
     """
@@ -28,7 +52,6 @@ def get_fedora_image_url(version:str, arch:str) -> str:
         - latest (translates to the latest Fedora GA) or XX (where XX is fedora release number)
         - rawhide/branched (the latest successful nightly compose)
         - qa-matrix (nominated compose for testing, can result it either some rawhide nigthly or branched nightly)
-        - one of STREAM_LIST (by default one of CoreOS stream names: 'testing', 'stable', 'next')
     Returns url to Fedora Cloud qcow2
     """
     primary_arches = ["x86_64", "aarch64"]

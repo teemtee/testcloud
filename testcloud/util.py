@@ -18,7 +18,7 @@ import errno
 
 from testcloud import config
 from testcloud import exceptions
-from testcloud.distro_utils.fedora import get_fedora_image_url, get_coreos_image_url
+from testcloud.distro_utils.fedora import get_fedora_image_url, get_coreos_image_url, get_fedora_openstack_image_url
 from testcloud.distro_utils.centos import get_centos_image_url, get_centos_stream_image_url
 from testcloud.distro_utils.alma import get_alma_image_url
 from testcloud.distro_utils.rocky import get_rocky_image_url
@@ -55,16 +55,17 @@ def get_image_url(distro_str:str, arch="x86_64", verify=True, additional_handles
 
     # Position of handles affects program flow
     SUPPORTED_HANDLES = {
-        "fedora":        {"re": r'^f(edora)?(-|:)?(\d+|rawhide|qa-matrix|branched)?$', "fn": get_fedora_image_url},
-        "fedora-coreos": {"re": r'^f(edora-coreos)?(-|:)?(%s)?$' % COREOS, "fn": get_coreos_image_url},
-        "centos-stream": {"re": r'^c(entos-stream)?(-|:)?(\d+)?$', "fn": get_centos_stream_image_url},
-        "coreos":        {"re": r'^co(reos)?(-|:)?(%s)?$' % COREOS, "fn": get_coreos_image_url},
-        "centos":        {"re": r'^c(entos)?(-|:)?(\d+)?$', "fn": get_centos_image_url},
-        "ubuntu":        {"re": r'^u(buntu)?(-|:)?(\d+)?$', "fn": get_ubuntu_image_url},
-        "debian":        {"re": r'^d(ebian)?(-|:)?(\d+)?$', "fn": get_debian_image_url},
-        "alma":          {"re": r'^a(lma)?(-|:)?(\d+)?$', "fn": get_alma_image_url},
-        "rocky":         {"re": r'^r(ocky)?(-|:)?(\d+)?$', "fn": get_rocky_image_url},
-        "oracle":        {"re": r'^o(racle)?(-|:)?(\d+)?$', "fn": get_oracle_image_url}
+        "fedora":           {"re": r'^f(edora)?(-|:)?(\d+|rawhide|qa-matrix|branched)?$', "fn": get_fedora_image_url},
+        "fedora-coreos":    {"re": r'^f(edora-coreos)?(-|:)?(%s)?$' % COREOS, "fn": get_coreos_image_url},
+        "fedora-openstack": {"re": r'^f(edora-openstack)?(-|:)?(%s)?$' % COREOS, "fn": get_fedora_openstack_image_url},
+        "centos-stream":    {"re": r'^c(entos-stream)?(-|:)?(\d+)?$', "fn": get_centos_stream_image_url},
+        "coreos":           {"re": r'^co(reos)?(-|:)?(%s)?$' % COREOS, "fn": get_coreos_image_url},
+        "centos":           {"re": r'^c(entos)?(-|:)?(\d+)?$', "fn": get_centos_image_url},
+        "ubuntu":           {"re": r'^u(buntu)?(-|:)?(\d+)?$', "fn": get_ubuntu_image_url},
+        "debian":           {"re": r'^d(ebian)?(-|:)?(\d+)?$', "fn": get_debian_image_url},
+        "alma":             {"re": r'^a(lma)?(-|:)?(\d+)?$', "fn": get_alma_image_url},
+        "rocky":            {"re": r'^r(ocky)?(-|:)?(\d+)?$', "fn": get_rocky_image_url},
+        "oracle":           {"re": r'^o(racle)?(-|:)?(\d+)?$', "fn": get_oracle_image_url}
     }
 
     MERGED_HANDLES = {**SUPPORTED_HANDLES, **additional_handles}
