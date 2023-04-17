@@ -1,11 +1,11 @@
 # testcloud
 
-**testcloud** is a small helper script to download and boot cloud/coreos images
+**testcloud** is a small helper script to download and boot cloud/coreos VM images
 locally. Testcloud supports wide range of distributions, namely Fedora, Fedora CoreOS,
 CentOS, CentOS Stream, Red Hat Enterprise Linux, Debian and Ubuntu.
 
 **testcloud** can run either in system mode or in constrained user session mode,
-which is usefull for running it eg. in unprivileged containers.
+which is useful for running testcloud and its VMs in unprivileged containers.
 
 ## Installation
 
@@ -108,7 +108,7 @@ $ testcloud list
 Alternatively, the instances can also be viewed and manipulated using
 the **virt-manager** tool.
 
-### Creating an instance with speciffic architecture
+### Creating an instance with specific architecture
 
 Instances can be created with a different architecture than the host architecture. You'll need to have a proper
 qemu binary installed for this to work (eg. qemu-system-aarch64-core for aarch64 on x86_64 on Fedora). Supported
