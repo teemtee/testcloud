@@ -8,23 +8,15 @@ Representation of a Testcloud spawned (or to-be-spawned) virtual machine
 """
 
 import os
-import re
+
 import subprocess
 import logging
 import time
 
 import libvirt
 import shutil
-import uuid
-import jinja2
 import platform
 import socket
-import string
-
-try:
-    import guestfs
-except ImportError:
-    pass # We'll lose guest detection ( https://bugzilla.redhat.com/show_bug.cgi?id=1075594 )
 
 from testcloud import config
 from testcloud import util
@@ -213,26 +205,49 @@ class Instance(object):
     defined on the local system, using an existing :py:class:`Image`.
     """
 
+    name: str
+    image: str
+    connection: str
+    hostname: str
+    desired_arch: str
+    domain_configuration: Optional[DomainConfiguration]
+
     def __init__(
         self,
-        name,
+        name="",
         image=None,
-        connection='qemu:///system',
+        connection="qemu:///system",
         hostname=None,
         desired_arch=platform.machine(),
-        kvm=True
+        domain_configuration=None
     ):
 
-        self.name = name
-        self.desired_arch = desired_arch
+        # Compat block for api calls without domain_configuration prepared before
+        if domain_configuration:
+            self.name = domain_configuration.name
+            self.desired_arch = domain_configuration.system_architecture.arch
+            self.ram = domain_configuration.memory_size
+            self.vcpus = domain_configuration.cpu_count
+            self.path = domain_configuration.path
+            self.local_disk = domain_configuration.local_disk
+            self.seed_path = domain_configuration.seed_path
+            self.xml_path = domain_configuration.xml_path
+            self.config_path = domain_configuration.config_path
+
+        else:
+            self.name = name
+            self.desired_arch = desired_arch
+            self.ram = config_data.RAM
+            self.vcpus = config_data.VCPUS
+            self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
+            self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
+            self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
+            self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
+            self.config_path = "{}/{}.ign".format(self.path, self.name)
+
         self.kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
-        self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
         self.image = image
         self.connection = connection
-        self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
-        self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
-        self.ram = config_data.RAM
-        self.vcpus = config_data.VCPUS
         self.pci_net = None
         # desired size of disk, in GiB
         self.disk_size = config_data.DISK_SIZE
@@ -245,21 +260,21 @@ class Instance(object):
         self.mac_address = None
         self.tpm = False
         self.disk_number = 1
+
         # params for cloud instance
         self.meta_path = "{}/meta".format(self.path)
-        self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
         self.seed = None
         self.kernel = None
         self.initrd = None
+
         # params for coreos instance
-        self.config_path = "{}/{}.ign".format(self.path, self.name)
         self.bu_path = "{}/{}.bu".format(self.path, self.name)
         self.ssh_path = None
         self.bu_file = None
         self.ign_file = None
         self.coreos = False
         self.qemu_cmds = []
-        self.domain_configuration : DomainConfiguration | None = None
+        self.domain_configuration : DomainConfiguration | None = domain_configuration if domain_configuration else None
 
     def prepare(self):
 
@@ -393,10 +408,9 @@ class Instance(object):
 
     def _create_dirs(self):
         if not os.path.isdir(self.path):
-
             log.debug("Creating instance directories")
             os.makedirs(self.path)
-            if not self.coreos:
+        if not os.path.isdir(self.meta_path) and not self.coreos:
                 os.makedirs(self.meta_path)
 
     def _get_domain(self):
@@ -414,15 +428,6 @@ class Instance(object):
                                               self.name), 'w') as ip_file:
             ip_file.write(ip)
 
-    def create_port_file(self, port):
-        """Write the port address found before instance creation to a file
-           for easier management later. This is likely going to break
-           and need a better solution."""
-
-        with open("{}/instances/{}/port".format(config_data.DATA_DIR,
-                                              self.name), 'w') as port_file:
-            port_file.write(str(port))
-
     def get_instance_port(self):
         """
         Returns port of an instance
@@ -432,89 +437,6 @@ class Instance(object):
         with open("{}/instances/{}/port".format(config_data.DATA_DIR,
                                 self.name), 'r') as port_file:
             return int(port_file.readline())
-
-    def check_port_available(self, port):
-        """
-        Checks is a port is available for use
-        Returns True/False
-        """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex(('127.0.0.1', port))
-        if result != 0:
-            return True
-        return False
-
-    def find_next_usable_port(self):
-        """
-        Returns next usable port for user session vm, starting with SSH_USER_PORT_BASE
-        Tries to recycle freed ports from currently used interval
-        """
-        used_ports = []
-        for dir in os.listdir("{}/instances/".format(config_data.DATA_DIR)):
-            try:
-                with open("{}/instances/{}/port".format(config_data.DATA_DIR,
-                                                dir), 'r') as port_file:
-                    used_ports.append(int(port_file.readline()))
-            except FileNotFoundError:
-                continue
-
-        if len(used_ports) == 0:
-            used_ports.append(config_data.SSH_USER_PORT_BASE)
-        available_in_interval = [i for i in range(config_data.SSH_USER_PORT_BASE,max(used_ports))]
-        if len(available_in_interval) > 0:
-            i = 0
-            recycleable_ports = [item for item in available_in_interval if item not in used_ports]
-            length = len(recycleable_ports)
-            if length > 0:
-                while i < length:
-                    if self.check_port_available(recycleable_ports[i]):
-                        return recycleable_ports[i]
-                    else:
-                        i = i + 1
-
-        next_port = max(used_ports) + 1
-        while not self.check_port_available(next_port):
-            next_port = next_port + 1
-
-        return next_port
-
-    def _needs_legacy_net(self):
-        """
-        Returns True when the use of e1000 pci network adapter is required
-        Returns False when condition to use the legacy net is not met
-        Returns None when detection failed
-        Otherwise, usage of virtio-net-pci is a preferred choice
-        """
-        try:
-            guestfs
-        except NameError:
-            log.warning("Python libguestfs bindings are missing, guest detection won't work properly!")
-            # Try a bit harder
-            if not self.image.name:
-                # If, for some reason, we don't have image.name, we can't guess anything
-                return None
-            # el 7 in image name means we need legacy net
-            if re.search(r'(rhel|centos).*-7', self.image.name.lower()):
-                return True
-            # false otherwise
-            return False
-
-        g = guestfs.GuestFS(python_return_dict=True)
-        g.add_drive_opts(self.local_disk, readonly=1)
-
-        try:
-            g.launch()
-            roots = g.inspect_os()
-        except RuntimeError:
-            return None
-
-        if not roots:
-            return None
-
-        if g.inspect_get_distro(roots[0]) in ["rhel", "centos"] and g.inspect_get_major_version(roots[0]) == 7:
-            return True
-
-        return False
 
     def _create_local_disk(self):
         """Create a instance using the backing store provided by Image."""
@@ -554,226 +476,36 @@ class Instance(object):
                                          ]
                 subprocess.call(imgcreate_command_disk)
 
-
     def write_domain_xml(self):
-        """Load the default xml template, and populate it with the following:
-         - name
-         - uuid
-         - locations of disks
-         - network mac address
-        """
-
-        # Set up the jinja environment
-        jinjaLoader = jinja2.FileSystemLoader(searchpath=[config.DEFAULT_CONF_DIR,
-                                                          config_data.DATA_DIR])
-        jinjaEnv = jinja2.Environment(loader=jinjaLoader)
-
-        # Make a copy of qemu args from config_object so we don't get to a shitty state when creating a bunch of vms
-        qemu_args = config_data.CMD_LINE_ARGS.copy()
-
-        # Configuration for all supported architectures
-        model_map = {
-            "x86_64":
-                {
-                    "model": "q35",
-                    "cpu_kvm": '<cpu mode="host-passthrough" check="none" migratable="on"/>',
-                    "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu64</model></cpu>',
-                    "qemu": "qemu-system-x86_64",
-                    "extra_specs":
-                    """
-                        <features><acpi/><apic/><vmport state='off'/></features>
-                        <pm><suspend-to-mem enabled='no'/><suspend-to-disk enabled='no'/></pm>
-                        <memballoon model='virtio'></memballoon>
-                    """
-                },
-            "ppc64le":
-                {
-                    "model": "pseries",
-                    "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
-                    "cpu_qemu": '<cpu mode="custom" match="exact" check="none"><model fallback="forbid">POWER9</model></cpu>',
-                    "qemu": "qemu-system-ppc64",
-                    "extra_specs":
-                    """
-                        <memballoon model='virtio'></memballoon>
-                    """
-                },
-            "aarch64":
-                {
-                    "model": "virt",
-                    "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
-                    "cpu_qemu": '<cpu mode="custom" match="exact"><model>cortex-a57</model></cpu>',
-                    "qemu": "qemu-system-aarch64",
-                    "extra_specs":
-                    """
-                        <features><acpi/><gic/></features>
-                        <memballoon model='virtio'></memballoon>
-                    """
-                },
-            "s390x":
-                {
-                    "model": "s390-ccw-virtio",
-                    "cpu_kvm": '<cpu mode="host-passthrough" check="none"/>',
-                    "cpu_qemu": '<cpu mode="custom" match="exact"><model>qemu</model></cpu>',
-                    "qemu": "qemu-system-s390x",
-                    "extra_specs":
-                    """
-                    """
-                }
-        }
-
-        disk_string = """
-                      <disk type='file' device='disk'>
-                      <driver name='qemu' type='qcow2' cache='unsafe'/>
-                      <source file="%s"/>
-                      <target dev='vd%s' bus='virtio'/>
-                      </disk>
-                      """
-
-
-        if platform.machine() not in model_map:
-            log.error("Unsupported architecture, architectures supported by testcloud are: %s." % model_map.keys())
-            raise TestcloudInstanceError()
-
-        # We need to shuffle things around network setup a bit if we're running in qemu:///session instead of qemu:///system
-        if self.connection == "qemu:///session":
-            network_type = "user"
-            network_source = ""
-            ip_setup = "<ip family='ipv4' address='172.17.2.0' prefix='24'/>"
-            log.info("Adding another network device for ssh from host...")
-            lock = util.Filelock()
-            with lock:
-                port = self.find_next_usable_port()
-                self.create_port_file(port)
-            if self.pci_net:
-                device_type = self.pci_net
-            else:
-                device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
-            network_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
-                            "-device", "{},addr=1e.0,netdev=testcloud_net.{}".format(device_type, port)]
-            qemu_args.extend(network_args)
-        else:
-            network_type = "network"
-            network_source = "<source network='default'/>"
-            ip_setup = ""
-
-        # Stuff our values in a dict
-        args_envs = ""
-        instance_values = {'domain_name': self.name,
-                           'uuid': uuid.uuid4(),
-                           'memory': self.ram * 1024,  # MiB to KiB
-                           'vcpus': self.vcpus,
-                           'disk': self.local_disk,
-                           'mac_address': self.mac_address or util.generate_mac_address(),
-                           'uefi_loader': "",
-                           'emulator_path': "", # Required, will be determined later
-                           'arch': self.desired_arch,
-                           'virt_type': "kvm" if self.kvm else "qemu",
-                           'model': model_map[self.desired_arch]["model"],
-                           'cpu': model_map[self.desired_arch]["cpu_kvm"] if self.kvm else model_map[self.desired_arch]["cpu_qemu"],
-                           'extra_specs': model_map[self.desired_arch]["extra_specs"],
-                           'network_type': network_type,
-                           'network_source': network_source,
-                           "ip_setup": ip_setup,
-                           "additional_disks": ""}
-
-        instance_values["model"] = model_map[self.desired_arch]["model"]
-
-        xml_template = jinjaEnv.get_template(config_data.XML_TEMPLATE)
-        instance_values['seed'] = self.seed_path
-        if self.coreos:
-            if self.desired_arch == 'x86_64' or self.desired_arch == 'aarch64':
-                cmdline_args = [ '-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path, ]
-            else:
-                cmdline_args = ['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path, '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008']
-            for qemu_arg in cmdline_args:
-                args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
-
-            if config_data.CMD_LINE_ARGS_COREOS or config_data.CMD_LINE_ENVS_COREOS:
-                for qemu_env in config_data.CMD_LINE_ENVS_COREOS:
-                    args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS_COREOS[qemu_env])
-
-        if qemu_args or config_data.CMD_LINE_ENVS:
-            for qemu_arg in qemu_args:
-                args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
-
-            for qemu_env in config_data.CMD_LINE_ENVS:
-                args_envs += "    <qemu:env name='%s' value='%s'/>\n" % (qemu_env, config_data.CMD_LINE_ENVS[qemu_env])
-        for qemu_arg in self.qemu_cmds:
-            args_envs += "    <qemu:arg value='%s'/>\n" % qemu_arg
-        args_envs = "  <qemu:commandline>\n" + args_envs + " </qemu:commandline>"
-        instance_values["qemu_args"] = args_envs
-        if config_data.UEFI:
-            instance_values["uefi_loader"] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>"
-
-        if self.desired_arch == "aarch64":
-            instance_values["uefi_loader"] = "<loader readonly='yes' type='pflash'>/usr/share/edk2/aarch64/QEMU_EFI-silent-pflash.raw</loader>"
-
-        # Try to query usable qemu binaries for desired architecture
-        qemu_paths = ["/usr/bin/%s" % model_map[self.desired_arch]["qemu"], "/usr/libexec/%s" % model_map[self.desired_arch]["qemu"]]
-        instance_values["emulator_path"] = None
-
-        for path in qemu_paths:
-            instance_values["emulator_path"] = path if os.path.exists(path) else instance_values["emulator_path"]
-
-        # Some systems might only have qemu-kvm as the qemu binary, try that if everything else failed...
-        if not instance_values["emulator_path"] and self.kvm:
-            for path in ["/usr/bin/qemu-kvm", "/usr/libexec/qemu-kvm"]:
-                instance_values["emulator_path"] = path if os.path.exists(path) else instance_values["emulator_path"]
-
-        if not instance_values["emulator_path"]:
-            raise TestcloudInstanceError("No usable qemu binary exist, tried: %s" % qemu_paths)
-
-        if self.tpm:
-            instance_values["tpm"] = '''
-                                     <tpm model='tpm-tis'>
-                                     <backend type='emulator' version='2.0'/>
-                                     </tpm>
-                                     '''
-        if self.disk_number > 1:
-            for i in range(self.disk_number - 1):
-                name_str = "{}/{}-local{}.qcow2".format(self.path, self.name, i + 2)
-                instance_values['additional_disks'] += disk_string%(name_str, string.ascii_lowercase[i+2])
-       # Write out the final xml file for the domain
-        with open(self.xml_path, 'w') as dom_template:
-            dom_template.write(xml_template.render(instance_values))
-
-        return
-
-    def write_domain_xml_ng(self):
-        log.info("Experimental codepath: Instance.write_domain_xml_ng()")
         if self.domain_configuration:
             with open(self.xml_path, 'w') as domain_file:
                 domain_file.write(self.domain_configuration.generate())
+            return
 
-        domain_configuration = DomainConfiguration()
-        domain_configuration.name = self.name
+        domain_configuration = DomainConfiguration(self.name)
         domain_configuration.cpu_count = self.vcpus
         domain_configuration.memory_size = self.ram * 1024
 
-        match self.desired_arch:
-            case "x86_64":
-                domain_configuration.system_architecture = X86_64ArchitectureConfiguration(uefi=config_data.UEFI, kvm=self.kvm)
-            case "aarch64":
-                domain_configuration.system_architecture = AArch64ArchitectureConfiguration(kvm=self.kvm)
-            case "ppc64le":
-                domain_configuration.system_architecture = Ppc64leArchitectureConfiguration(kvm=self.kvm)
-            case "s390x":
-                domain_configuration.system_architecture = S390xArchitectureConfiguration(kvm=self.kvm)
-            case _:
-                raise TestcloudInstanceError("Unsupported arch")
+        if self.desired_arch == "x86_64":
+            domain_configuration.system_architecture = X86_64ArchitectureConfiguration(kvm=self.kvm, uefi=config_data.UEFI, model="q35")
+        elif self.desired_arch == "aarch64":
+            domain_configuration.system_architecture = AArch64ArchitectureConfiguration(kvm=self.kvm, uefi=True, model="virt")
+        elif self.desired_arch == "ppc64le":
+            domain_configuration.system_architecture = Ppc64leArchitectureConfiguration(kvm=self.kvm, uefi=False, model="pseries")
+        elif self.desired_arch == "s390x":
+            domain_configuration.system_architecture = S390xArchitectureConfiguration(kvm=self.kvm, uefi=False, model="s390-ccw-virtio")
+        else:
+            raise TestcloudInstanceError("Unsupported arch")
 
         mac_address = self.mac_address or util.generate_mac_address()
-        match self.connection:
-            case "qemu:///system":
-                domain_configuration.network_configuration = SystemNetworkConfiguration(mac_address=mac_address)
-            case "qemu:///session":
-                with util.Filelock():
-                    port = self.find_next_usable_port()
-                    self.create_port_file(port)
-                device_type = "virtio-net-pci" if not self._needs_legacy_net() else "e1000"
-                domain_configuration.network_configuration = UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
-            case _:
-                raise TestcloudInstanceError("Unsupported connection type")
+        if self.connection == "qemu:///system":
+            domain_configuration.network_configuration = SystemNetworkConfiguration(mac_address=mac_address)
+        elif self.connection == "qemu:///session":
+            port = util.spawn_instance_port_file(self.name)
+            device_type = "virtio-net-pci" if not util.needs_legacy_net(self.image.name) else "e1000"
+            domain_configuration.network_configuration = UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
+        else:
+            raise TestcloudInstanceError("Unsupported connection type")
 
         image = QCow2StorageDevice(self.local_disk)
         domain_configuration.storage_devices.append(image)
@@ -781,11 +513,6 @@ class Instance(object):
         if self.coreos:
             domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS_COREOS)
             domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS_COREOS)
-            if self.desired_arch in ["x86_64", "aarch64"]:
-                domain_configuration.qemu_args.extend(['-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path])
-            else:
-                domain_configuration.qemu_args.extend(['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path,
-                                                       '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008'])
         else:
             domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS)
             domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS)

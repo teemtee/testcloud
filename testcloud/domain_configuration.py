@@ -4,7 +4,8 @@ import xml.dom.minidom
 import os
 import uuid
 
-from .exceptions import TestcloudInstanceError
+from testcloud.exceptions import TestcloudInstanceError
+from testcloud import config
 
 
 class ArchitectureConfiguration():
@@ -20,9 +21,10 @@ class X86_64ArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-x86_64"
     arch = "x86_64"
     model = "q35"
-    def __init__(self, kvm=True, uefi=False) -> None:
+    def __init__(self, kvm=True, uefi=False, model="q35") -> None:
         self.kvm = kvm
         self.uefi = uefi
+        self.model = model
 
     def generate(self):
         return """
@@ -54,8 +56,10 @@ class AArch64ArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-aarch64"
     arch = "aarch64"
     model = "virt"
-    def __init__(self, kvm=True) -> None:
+    def __init__(self, kvm=True, uefi=True, model="virt") -> None:
         self.kvm = kvm
+        self.uefi = uefi
+        self.model = model
 
     def generate(self) -> str:
         return """
@@ -82,8 +86,10 @@ class Ppc64leArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-ppc64"
     arch = "ppc64le"
     model = "pseries"
-    def __init__(self, kvm=True) -> None:
+    def __init__(self, kvm=True, uefi=False, model="pseries") -> None:
         self.kvm = kvm
+        self.uefi = uefi
+        self.model = model
 
     def generate(self) -> str:
         return """
@@ -104,8 +110,10 @@ class S390xArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-s390x"
     arch = "s390x"
     model = "s390-ccw-virtio"
-    def __init__(self, kvm=True) -> None:
+    def __init__(self, kvm=True, uefi=False, model="s390-ccw-virtio") -> None:
         self.kvm = kvm
+        self.uefi = uefi
+        self.model = model
 
     def generate(self) -> str:
         return """
@@ -231,19 +239,26 @@ class TPMConfiguration():
 
 
 class DomainConfiguration():
-    name : str
-    cpu_count : int
-    memory_size : int
+    name: str
+    cpu_count: int
+    memory_size: int
     system_architecture: Optional[ArchitectureConfiguration]
     storage_devices: list[StorageDeviceConfiguration]
     network_configuration: Optional[NetworkConfiguration]
     tpm_configuration: Optional[TPMConfiguration]
     qemu_args: list[str]
     qemu_envs: dict[str, str]
+    coreos: Optional[bool]
 
-    def __init__(self) -> None:
+    def __init__(self, name) -> None:
+        config_data = config.get_config()
         self.uuid = uuid.uuid4()
-        self.name = ""
+        self.name = name
+        self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
+        self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
+        self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
+        self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
+        self.config_path = "{}/{}.ign".format(self.path, self.name) # CoreOS
         self.cpu_count = -1
         self.memory_size = -1
         self.system_architecture = None
@@ -252,6 +267,7 @@ class DomainConfiguration():
         self.tpm_configuration = None
         self.qemu_args = []
         self.qemu_envs = {}
+        self.coreos = False
 
     def generate_storage_devices(self) -> str:
         return "\n".join([device.generate() for device in self.storage_devices])
@@ -274,7 +290,14 @@ class DomainConfiguration():
 
     def get_qemu_args(self) -> str:
         assert self.network_configuration is not None
+        assert self.system_architecture is not None
         self.qemu_args.extend(self.network_configuration.additional_qemu_args)
+        if self.coreos:
+            if type(self.system_architecture) in [AArch64ArchitectureConfiguration, X86_64ArchitectureConfiguration]:
+                self.qemu_args.extend(['-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path])
+            else:
+                self.qemu_args.extend(['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path,
+                                        '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008'])
         return "\n".join(["<qemu:arg value='%s'/>" % qemu_arg for qemu_arg in self.qemu_args])
 
     def get_qemu_envs(self) -> str:

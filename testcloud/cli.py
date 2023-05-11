@@ -357,9 +357,8 @@ def _create_instance(args):
         log.error("Couldn't download the desired image (%s)..." % url)
         sys.exit(1)
 
+
     tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection, desired_arch=args.arch)
-    if args.future:
-        tc_instance.write_domain_xml = tc_instance.write_domain_xml_ng
 
     # Normal Cloud
     if not coreos:
@@ -392,6 +391,7 @@ def _create_instance(args):
         tc_instance.ssh_path = args.ssh_path
         tc_instance.bu_file = args.bu_file
         tc_instance.ign_file = args.ign_file
+
 
     tc_instance.qemu_cmds = args.qemu_cmds.split() if args.qemu_cmds else []
     tc_instance.mac_address = args.mac_address
@@ -646,10 +646,6 @@ def get_argparser():
                          "--connection",
                          default="qemu:///system",
                          help="libvirt connection url to use")
-    parser.add_argument("-x",
-                         "--future",
-                         help="use experimental codepaths",
-                         action="store_true")
 
     # instance list
     instarg_list = subparsers.add_parser("list", help="list all instances")
