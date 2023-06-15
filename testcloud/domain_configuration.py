@@ -327,18 +327,18 @@ class DomainConfiguration():
                 <emulator>{emulator_path}</emulator>
                 {storage_devices}
                 {network_configuraton}
+                <serial type='pty'>
+                    <target port='0'/>
+                </serial>
+                <console type='pty'>
+                    <target type='serial' port='0'/>
+                </console>
+                <input type="keyboard" bus="virtio"/>
+                <rng model='virtio'>
+                    <backend model='random'>/dev/urandom</backend>
+                </rng>
+                {tpm}
             </devices>
-            <serial type='pty'>
-                <target port='0'/>
-            </serial>
-            <console type='pty'>
-                <target type='serial' port='0'/>
-            </console>
-            <input type="keyboard" bus="virtio"/>
-            <rng model='virtio'>
-                <backend model='random'>/dev/urandom</backend>
-            </rng>
-            {tpm}
             <qemu:commandline>
                 {qemu_args}
                 {qemu_envs}

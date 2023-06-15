@@ -93,8 +93,8 @@ def find_next_usable_port():
 
 def spawn_instance_port_file(instance_name):
     with Filelock():
+        path = "{}/instances/{}".format(config_data.DATA_DIR, instance_name)
         if not os.path.isdir(path):
-            path = "{}/instances/{}".format(config_data.DATA_DIR, instance_name)
             os.makedirs(path)
         port = find_next_usable_port()
         create_port_file(instance_name, port)
