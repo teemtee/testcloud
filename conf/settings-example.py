@@ -7,10 +7,12 @@
 
 
 #DEBUG = False
-#DOWNLOAD_PROGRESS = True
-#DOWNLOAD_PROGRESS_VERBOSE = True
 #LOG_FILE = None
 
+# Downloader config
+#DOWNLOAD_PROGRESS = True
+#DOWNLOAD_PROGRESS_VERBOSE = True
+#DOWNLOAD_RETRIES = 2
 
 ## Directories for data and cached downloaded images ##
 

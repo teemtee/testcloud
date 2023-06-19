@@ -137,7 +137,8 @@ class Image(object):
                 try:
                     file_size = int(u.headers['content-length'])
                 except KeyError:
-                    raise TestcloudImageError('Network error during image download, aborting.')
+                    log.warn('Unknown download size.')
+                    file_size = -1
 
                 log.info("Downloading {0} ({1} bytes)".format(self.name, file_size))
                 bytes_downloaded = 0
@@ -160,17 +161,20 @@ class Image(object):
                                                                      file_size,
                                                                      downloaded_coeff)
                                 status = status + chr(8) * (len(status) + 1)
-                                if config_data.DOWNLOAD_PROGRESS_VERBOSE:
+                                if config_data.DOWNLOAD_PROGRESS_VERBOSE and file_size != -1:
                                     sys.stdout.write(status)
                                 else:
-                                    percent = int(bytes_downloaded / file_size * 100)
+                                    if file_size != -1:
+                                        percent = int(bytes_downloaded / file_size * 100)
+                                    else:
+                                        percent = bytes_downloaded
                                     if percent_last != percent:
-                                        sys.stdout.write("Downloaded %s %% ...\r" % percent)
+                                        sys.stdout.write("Downloaded %s %s ...\r" % (percent, "%" if file_size != -1 else "bytes"))
                                         sys.stdout.flush()
                                         percent_last = percent
 
                     except TypeError:
-                        if downloaded_coeff != float(1.0):
+                        if downloaded_coeff != float(1.0) and file_size != -1:
                             raise TestcloudImageError('Network error during image download, aborting.')
                         #  Rename the file since download has completed
                         os.rename(local_path + ".part", local_path)
@@ -284,7 +288,16 @@ class Image(object):
                 ) from None
         else:
             if not os.path.exists(self.local_path) and not os.path.exists(self.local_path.replace('.box', '.qcow2')):
-                self._download_remote_image(self.remote_path, self.local_path)
+
+                retried = 0
+                while True:
+                    try:
+                        self._download_remote_image(self.remote_path, self.local_path)
+                        break
+                    except TestcloudImageError:
+                        retried += 1
+                        if retried > config_data.DOWNLOAD_RETRIES:
+                            raise TestcloudImageError("Image download failed after %d attempts." % retried)
 
         self._adjust_image_selinux(self.local_path)
 

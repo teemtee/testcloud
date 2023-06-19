@@ -90,9 +90,12 @@ class ConfigData(object):
     '''
 
     DEBUG = False
+    LOG_FILE = None
+
+    # Downloader config
     DOWNLOAD_PROGRESS = True
     DOWNLOAD_PROGRESS_VERBOSE = True
-    LOG_FILE = None
+    DOWNLOAD_RETRIES = 2
 
     # Directories testcloud cares about
 
