@@ -511,6 +511,7 @@ class Instance(object):
         domain_configuration.storage_devices.append(image)
 
         if self.coreos:
+            domain_configuration.coreos = True
             domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS_COREOS)
             domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS_COREOS)
         else:
