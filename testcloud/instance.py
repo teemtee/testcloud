@@ -233,6 +233,7 @@ class Instance(object):
             self.seed_path = domain_configuration.seed_path
             self.xml_path = domain_configuration.xml_path
             self.config_path = domain_configuration.config_path
+            self.coreos = domain_configuration.coreos
 
         else:
             self.name = name
@@ -244,6 +245,7 @@ class Instance(object):
             self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
             self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
             self.config_path = "{}/{}.ign".format(self.path, self.name)
+            self.coreos = False
 
         self.kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
         self.image = image
@@ -272,7 +274,6 @@ class Instance(object):
         self.ssh_path = None
         self.bu_file = None
         self.ign_file = None
-        self.coreos = False
         self.qemu_cmds = []
         self.domain_configuration : DomainConfiguration | None = domain_configuration if domain_configuration else None
 
