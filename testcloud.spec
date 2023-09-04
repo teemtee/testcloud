@@ -1,10 +1,10 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
 Version:        0.9.2
-Release:        1%{?dist}
+Release:        3%{?dist}
 Summary:        Tool for running cloud images locally
 
-License:        GPLv2+
+License:        GPL-2.0-or-later
 URL:            https://pagure.io/testcloud
 Source0:        https://releases.pagure.org/testcloud/%{name}-%{version}.tar.gz
 
@@ -58,7 +58,7 @@ Python 3 interface to testcloud.
 getent group testcloud >/dev/null || groupadd testcloud
 
 %prep
-%setup -q -n %{name}-%{version}
+%autosetup -n %{name}-%{version} -p1
 # Drop coverage testing
 sed -i 's/ --cov-report=term-missing --cov testcloud//g' tox.ini
 
@@ -125,6 +125,12 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Sat Jul 22 2023 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.2-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
+
+* Wed Jun 14 2023 Python Maint <python-maint@redhat.com> - 0.9.2-2
+- Rebuilt for Python 3.12
+
 * Wed Mar 22 2023 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.2-1
 - Unbreak python <3.9
 
