@@ -234,6 +234,7 @@ class Instance(object):
             self.xml_path = domain_configuration.xml_path
             self.config_path = domain_configuration.config_path
             self.coreos = domain_configuration.coreos
+            self.disk_number = len(domain_configuration.storage_devices)
 
         else:
             self.name = name
@@ -246,13 +247,14 @@ class Instance(object):
             self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
             self.config_path = "{}/{}.ign".format(self.path, self.name)
             self.coreos = False
+            self.disk_number = 1
+            self.disk_size = config_data.DISK_SIZE
 
         self.kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
         self.image = image
         self.connection = connection
         self.pci_net = None
-        # desired size of disk, in GiB
-        self.disk_size = config_data.DISK_SIZE
+
         self.vnc = False
         self.graphics = False
         self.hostname = hostname if hostname else config_data.HOSTNAME
@@ -261,7 +263,6 @@ class Instance(object):
         self.backing_store = image.local_path if image else None
         self.mac_address = None
         self.tpm = False
-        self.disk_number = 1
 
         # params for cloud instance
         self.meta_path = "{}/meta".format(self.path)
@@ -462,6 +463,24 @@ class Instance(object):
                              ]
 
         # make sure to expand the resultant disk if the size is set
+        # Remove self.disk_size once consumers migrate to the new api
+        if self.domain_configuration and not hasattr(self, "disk_size"):
+            for disk in self.domain_configuration.storage_devices:
+                if type(disk) == RawStorageDevice:
+                    # Do not touch seed images
+                    continue
+
+                if disk.path == self.local_disk:
+                    # Seed backed image (boot drive) uses a different parameters
+                    imgcreate_command.append("{}G".format(disk.size))
+                    subprocess.call(imgcreate_command)
+                    continue
+
+                imgcreate_command_disk = ['qemu-img', 'create', '-qf', 'qcow2', disk.path, '{}G'.format(disk.size)]
+                subprocess.call(imgcreate_command_disk)
+            return
+
+        # Remove once consumers migrate to the new api
         if self.disk_size > 0:
             imgcreate_command.append("{}G".format(self.disk_size))
         subprocess.call(imgcreate_command)

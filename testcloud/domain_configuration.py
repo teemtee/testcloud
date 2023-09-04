@@ -163,8 +163,9 @@ class RawStorageDevice(StorageDeviceConfiguration):
 
 
 class QCow2StorageDevice(StorageDeviceConfiguration):
-    def __init__(self, path) -> None:
+    def __init__(self, path, size=0) -> None:
         self.path = path
+        self.size = size
 
     def generate(self):
         return """
