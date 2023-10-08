@@ -377,6 +377,7 @@ def _create_instance(args):
                                       ram=ram,
                                       disk_size=disk_size,
                                       disk_number=args.disk_number,
+                                      nic_number=args.nic_number,
                                       tpm=args.tpm,
                                       )
 
@@ -797,6 +798,10 @@ def get_argparser():
                                  action="store_true")
     instarg_create.add_argument("--disk_number",
                                 help="Desired disk number",
+                                type=int,
+                                default=1)
+    instarg_create.add_argument("--nic_number",
+                                help="Desired nic number",
                                 type=int,
                                 default=1)
     imgarg = subparsers.add_parser("image", help="help on image options")

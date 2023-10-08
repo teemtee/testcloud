@@ -221,7 +221,6 @@ class UserNetworkConfiguration(NetworkConfiguration):
         return """
         <interface type='user'>
             <mac address="{mac_address}"/>
-            <ip family='ipv4' address='172.17.2.0' prefix='24'/>
             <model type='virtio'/>
         </interface>
         """.format(
@@ -269,6 +268,7 @@ class DomainConfiguration():
         self.system_architecture = None
         self.storage_devices = []
         self.network_configuration = None
+        self.network_devices = []
         self.tpm_configuration = None
         self.qemu_args = []
         self.qemu_envs = {}
@@ -276,6 +276,10 @@ class DomainConfiguration():
 
     def generate_storage_devices(self) -> str:
         return "\n".join([device.generate() for device in self.storage_devices])
+
+    def generate_network_devices(self) -> str:
+        return "\n".join([device.generate() for device in self.network_devices + \
+                ([self.network_configuration ] if self.network_configuration else [])])
 
     def get_emulator(self) -> str:
         assert self.system_architecture is not None
@@ -294,9 +298,10 @@ class DomainConfiguration():
         raise TestcloudInstanceError("No usable qemu binary exist, tried: %s" % qemu_paths)
 
     def get_qemu_args(self) -> str:
-        assert self.network_configuration is not None
+        assert self.network_devices is not [] or self.network_configuration is not None
         assert self.system_architecture is not None
-        self.qemu_args.extend(self.network_configuration.additional_qemu_args)
+        for network_device in self.network_devices + ([self.network_configuration ] if self.network_configuration else []):
+            self.qemu_args.extend(network_device.additional_qemu_args)
         if self.coreos:
             if type(self.system_architecture) in [AArch64ArchitectureConfiguration, X86_64ArchitectureConfiguration]:
                 self.qemu_args.extend(['-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path])
@@ -310,7 +315,7 @@ class DomainConfiguration():
 
     def generate(self) -> str:
         assert self.system_architecture is not None
-        assert self.network_configuration is not None
+        assert self.network_devices is not [] or self.network_configuration is not None
 
         domain_xml = """
         <domain type='{virt_type}' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
@@ -358,7 +363,7 @@ class DomainConfiguration():
             system_architecture=self.system_architecture.generate(),
             emulator_path=self.get_emulator(),
             storage_devices=self.generate_storage_devices(),
-            network_configuraton=self.network_configuration.generate(),
+            network_configuraton=self.generate_network_devices(),
             tpm=self.tpm_configuration.generate() if self.tpm_configuration else "",
             qemu_args=self.get_qemu_args(),
             qemu_envs=self.get_qemu_envs(),
@@ -377,6 +382,7 @@ def _get_default_domain_conf(name=None,
                              coreos=False,
                              disk_number=1,
                              disk_size=0,
+                             nic_number=1,
                              image=None
                              ):
 
@@ -403,11 +409,19 @@ def _get_default_domain_conf(name=None,
         raise TestcloudInstanceError("Unsupported arch")
 
     if connection == "qemu:///system":
-        domain_configuration.network_configuration = SystemNetworkConfiguration(mac_address=mac_address)
+        domain_configuration.network_devices.append(SystemNetworkConfiguration(mac_address=mac_address))
+        for i in range(nic_number - 1):
+            mac_address = util.generate_mac_address()
+            domain_configuration.network_devices.append(SystemNetworkConfiguration(mac_address=mac_address))
+
     elif connection == "qemu:///session":
         port = util.spawn_instance_port_file(name)
         device_type = "virtio-net-pci" if not util.needs_legacy_net(image.name) else "e1000"
-        domain_configuration.network_configuration = UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
+        domain_configuration.network_devices.append(UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type))
+        for i in range(nic_number - 1):
+            mac_address = util.generate_mac_address()
+            domain_configuration.network_devices.append(UserNetworkConfiguration(mac_address=mac_address,\
+                    port=port, device_type=device_type))
     else:
         raise TestcloudInstanceError("Unsupported connection type")
 

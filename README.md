@@ -241,6 +241,10 @@ new instance using **testcloud**.
 
 : To provide disk number you want
 
+\--nic_number
+
+: To provide nic number you want
+
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.
 
