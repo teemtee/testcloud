@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
 Version:        0.9.10
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPL-2.0-or-later
