@@ -3,10 +3,13 @@ import string
 import xml.dom.minidom
 import os
 import uuid
+import platform
 
 from testcloud.exceptions import TestcloudInstanceError
 from testcloud import config
+from testcloud import util
 
+config_data = config.get_config()
 
 class ArchitectureConfiguration():
     qemu:str
@@ -361,3 +364,72 @@ class DomainConfiguration():
         )
         almost_pretty_xml = xml.dom.minidom.parseString(domain_xml).toprettyxml(indent="  ")
         return os.linesep.join([s for s in almost_pretty_xml.splitlines() if s.strip()])
+
+
+def _get_default_domain_conf(name=None,
+                             desired_arch=None,
+                             vcpus=None,
+                             ram=None,
+                             mac_address=None,
+                             connection=None,
+                             tpm=False,
+                             coreos=False,
+                             disk_number=1,
+                             disk_size=0,
+                             image=None
+                             ):
+
+    name = name
+    desired_arch = desired_arch or platform.machine()
+    vcpus = vcpus or config_data.VCPUS
+    ram = ram or config_data.RAM
+    mac_address = mac_address or util.generate_mac_address()
+    kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
+
+    domain_configuration = DomainConfiguration(name)
+    domain_configuration.cpu_count = vcpus
+    domain_configuration.memory_size = ram * 1024
+
+    if desired_arch == "x86_64":
+        domain_configuration.system_architecture = X86_64ArchitectureConfiguration(kvm=kvm, uefi=config_data.UEFI, model="q35")
+    elif desired_arch == "aarch64":
+        domain_configuration.system_architecture = AArch64ArchitectureConfiguration(kvm=kvm, uefi=True, model="virt")
+    elif desired_arch == "ppc64le":
+        domain_configuration.system_architecture = Ppc64leArchitectureConfiguration(kvm=kvm, uefi=False, model="pseries")
+    elif desired_arch == "s390x":
+        domain_configuration.system_architecture = S390xArchitectureConfiguration(kvm=kvm, uefi=False, model="s390-ccw-virtio")
+    else:
+        raise TestcloudInstanceError("Unsupported arch")
+
+    if connection == "qemu:///system":
+        domain_configuration.network_configuration = SystemNetworkConfiguration(mac_address=mac_address)
+    elif connection == "qemu:///session":
+        port = util.spawn_instance_port_file(name)
+        device_type = "virtio-net-pci" if not util.needs_legacy_net(image.name) else "e1000"
+        domain_configuration.network_configuration = UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
+    else:
+        raise TestcloudInstanceError("Unsupported connection type")
+
+    image = QCow2StorageDevice(domain_configuration.local_disk, disk_size)
+    domain_configuration.storage_devices.append(image)
+
+    if coreos:
+        domain_configuration.coreos = True
+        domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS_COREOS)
+        domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS_COREOS)
+    else:
+        domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS)
+        domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS)
+        seed_disk = RawStorageDevice(domain_configuration.seed_path)
+        domain_configuration.storage_devices.append(seed_disk)
+
+    if tpm:
+        domain_configuration.tpm_configuration = TPMConfiguration()
+
+    if disk_number > 1:
+        for i in range(disk_number - 1):
+            additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
+            domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path))
+
+    return domain_configuration
+

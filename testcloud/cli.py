@@ -23,6 +23,8 @@ from urllib.parse import urlparse
 from testcloud import config
 from testcloud import image
 from testcloud import instance
+
+from testcloud.domain_configuration import _get_default_domain_conf
 from testcloud.util import get_image_url
 from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
 
@@ -277,6 +279,7 @@ def _generate_name():
 
     return name
 
+
 def _download_image(args):
     if not args.url:
         log.error("Url wasn't specified.")
@@ -321,8 +324,7 @@ def _create_instance(args):
         log.error("You can use 'testcloud instance create -h' for additional help.")
         sys.exit(1)
 
-    existing_instance = instance.find_instance(args.name, image=None,
-                                               connection=args.connection)
+    existing_instance = instance.find_instance(args.name, connection=args.connection)
 
     # can't create existing instances
     if existing_instance is not None:
@@ -357,46 +359,43 @@ def _create_instance(args):
         log.error("Couldn't download the desired image (%s)..." % url)
         sys.exit(1)
 
-
-    tc_instance = instance.Instance(args.name, image=tc_image, connection=args.connection, desired_arch=args.arch)
-
-    # Normal Cloud
-    if not coreos:
-        log.info("create cloud instance %s" % args.name)
-        tc_instance.coreos = False
-
-        # set ram size
-        tc_instance.ram = config_data.RAM if args.ram == -1 else args.ram
-
-        # set disk size
-        tc_instance.disk_size = config_data.DISK_SIZE if args.disksize == -1 else args.disksize
-
-        # set vcpus
-        tc_instance.vcpus = args.vcpus
-
-    # CoreOS
+    # By default, unspecified arg value is -1, so we fall back to config_data, for normal cloud or coreos
+    # Zero means unlimited
+    if coreos:
+        ram = args.ram if args.ram != -1 else config_data.RAM_COREOS
+        disk_size = args.disksize if args.disksize != -1 else config_data.DISK_SIZE_COREOS
     else:
-        log.info("create coreos instance %s" % args.name)
-        tc_instance.coreos = True
+        ram = args.ram if args.ram != -1 else config_data.RAM
+        disk_size = args.disksize if args.disksize != -1 else config_data.DISK_SIZE
 
-        # set ram size
-        tc_instance.ram = config_data.RAM_COREOS if args.ram == -1 else args.ram
+    domain = _get_default_domain_conf(name=args.name,
+                                      desired_arch=args.arch,
+                                      connection=args.connection,
+                                      image=tc_image,
+                                      coreos=coreos,
+                                      vcpus=args.vcpus,
+                                      ram=ram,
+                                      disk_size=disk_size,
+                                      disk_number=args.disk_number,
+                                      tpm=args.tpm,
+                                      )
 
-        # set disk size
-        tc_instance.disk_size = config_data.DISK_SIZE_COREOS if args.disksize == -1 else args.disksize
+    tc_instance = instance.Instance(args.name,
+                                    image=tc_image,
+                                    connection=args.connection,
+                                    desired_arch=args.arch,
+                                    domain_configuration=domain
+                                    )
+    log.info("create %s instance %s" % ("coreos" if coreos else "cloud", args.name))
 
-        # set vcpus
-        tc_instance.vcpus = args.vcpus
-
+    if coreos:
         tc_instance.ssh_path = args.ssh_path
         tc_instance.bu_file = args.bu_file
         tc_instance.ign_file = args.ign_file
 
-
     tc_instance.qemu_cmds = args.qemu_cmds.split() if args.qemu_cmds else []
     tc_instance.mac_address = args.mac_address
-    tc_instance.tpm = args.tpm
-    tc_instance.disk_number = args.disk_number
+
     # prepare instance
     try:
         tc_instance.prepare()

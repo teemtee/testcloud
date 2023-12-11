@@ -19,7 +19,6 @@ import platform
 import socket
 
 from testcloud import config
-from testcloud import util
 from testcloud.exceptions import TestcloudInstanceError, TestcloudPermissionsError
 from testcloud.domain_configuration import *
 
@@ -137,7 +136,7 @@ def _prepare_domain_list(connection=None):
                 log.error("Connection to QEMU failed, check the connection url ( %s ) you've specified." % connection)
             return []
 
-def find_instance(name, image=None, connection='qemu:///system'):
+def find_instance(name, connection='qemu:///system'):
     """Find an instance using a given name and image, if it exists.
 
     Please note that ``connection`` is not taken into account when searching for the instance, but
@@ -145,7 +144,6 @@ def find_instance(name, image=None, connection='qemu:///system'):
     make sure the provided connection is valid for this instance.
 
     :param str name: name of instance to find
-    :param image: instance of :py:class:`testcloud.image.Image`
     :param str connection: name of libvirt connection uri
     :returns: :py:class:`Instance` if the instance exists, ``None`` if it doesn't
     """
@@ -153,7 +151,7 @@ def find_instance(name, image=None, connection='qemu:///system'):
     instances = _list_instances()
     for inst in instances:
         if inst['name'] == name:
-            return Instance(name, image, connection)
+            return Instance(name=name, connection=connection, domain_configuration=DomainConfiguration(name))
     return None
 
 
@@ -222,33 +220,17 @@ class Instance(object):
         domain_configuration=None
     ):
 
-        # Compat block for api calls without domain_configuration prepared before
-        if domain_configuration:
-            self.name = domain_configuration.name
-            self.desired_arch = domain_configuration.system_architecture.arch
-            self.ram = domain_configuration.memory_size
-            self.vcpus = domain_configuration.cpu_count
-            self.path = domain_configuration.path
-            self.local_disk = domain_configuration.local_disk
-            self.seed_path = domain_configuration.seed_path
-            self.xml_path = domain_configuration.xml_path
-            self.config_path = domain_configuration.config_path
-            self.coreos = domain_configuration.coreos
-            self.disk_number = len(domain_configuration.storage_devices)
-
-        else:
-            self.name = name
-            self.desired_arch = desired_arch
-            self.ram = config_data.RAM
-            self.vcpus = config_data.VCPUS
-            self.path = "{}/instances/{}".format(config_data.DATA_DIR, self.name)
-            self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
-            self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
-            self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
-            self.config_path = "{}/{}.ign".format(self.path, self.name)
-            self.coreos = False
-            self.disk_number = 1
-            self.disk_size = config_data.DISK_SIZE
+        self.name = domain_configuration.name
+        self.desired_arch = domain_configuration.system_architecture.arch if domain_configuration.system_architecture else None
+        self.ram = domain_configuration.memory_size
+        self.vcpus = domain_configuration.cpu_count
+        self.path = domain_configuration.path
+        self.local_disk = domain_configuration.local_disk
+        self.seed_path = domain_configuration.seed_path
+        self.xml_path = domain_configuration.xml_path
+        self.config_path = domain_configuration.config_path
+        self.coreos = domain_configuration.coreos
+        self.disk_number = len(domain_configuration.storage_devices)
 
         self.kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
         self.image = image
@@ -462,94 +444,28 @@ class Instance(object):
                              self.local_disk,
                              ]
 
-        # make sure to expand the resultant disk if the size is set
-        # Remove self.disk_size once consumers migrate to the new api
-        if self.domain_configuration and not hasattr(self, "disk_size"):
-            for disk in self.domain_configuration.storage_devices:
-                if type(disk) == RawStorageDevice:
-                    # Do not touch seed images
-                    continue
+        for disk in self.domain_configuration.storage_devices:
+            if type(disk) == RawStorageDevice:
+                # Do not touch seed images
+                continue
 
-                if disk.path == self.local_disk:
-                    # Seed backed image (boot drive) uses a different parameters
+            if disk.path == self.local_disk:
+                # Seed backed image (boot drive) uses a different parameters
+                if disk.size != 0:
                     imgcreate_command.append("{}G".format(disk.size))
-                    subprocess.call(imgcreate_command)
-                    continue
+                subprocess.call(imgcreate_command)
+                continue
 
-                imgcreate_command_disk = ['qemu-img', 'create', '-qf', 'qcow2', disk.path, '{}G'.format(disk.size)]
-                subprocess.call(imgcreate_command_disk)
+            if disk.size != 0:
+                # Rest of the requested disks
+                subprocess.call(['qemu-img', 'create', '-qf', 'qcow2', disk.path, '{}G'.format(disk.size)])
+            else:
+                subprocess.call(['qemu-img', 'create', '-qf', 'qcow2', disk.path])
             return
-
-        # Remove once consumers migrate to the new api
-        if self.disk_size > 0:
-            imgcreate_command.append("{}G".format(self.disk_size))
-        subprocess.call(imgcreate_command)
-        if self.disk_number > 1:
-            for i in range(self.disk_number - 1):
-                disk_path = "{}/{}-local{}.qcow2".format(self.path, self.name, i + 2)
-                imgcreate_command_disk = ['qemu-img',
-                                          'create',
-                                         '-qf',
-                                         'qcow2',
-                                         disk_path,
-                                          '{}G'.format(self.disk_size)
-                                         ]
-                subprocess.call(imgcreate_command_disk)
 
     def write_domain_xml(self):
-        if self.domain_configuration:
-            with open(self.xml_path, 'w') as domain_file:
-                domain_file.write(self.domain_configuration.generate())
-            return
-
-        domain_configuration = DomainConfiguration(self.name)
-        domain_configuration.cpu_count = self.vcpus
-        domain_configuration.memory_size = self.ram * 1024
-
-        if self.desired_arch == "x86_64":
-            domain_configuration.system_architecture = X86_64ArchitectureConfiguration(kvm=self.kvm, uefi=config_data.UEFI, model="q35")
-        elif self.desired_arch == "aarch64":
-            domain_configuration.system_architecture = AArch64ArchitectureConfiguration(kvm=self.kvm, uefi=True, model="virt")
-        elif self.desired_arch == "ppc64le":
-            domain_configuration.system_architecture = Ppc64leArchitectureConfiguration(kvm=self.kvm, uefi=False, model="pseries")
-        elif self.desired_arch == "s390x":
-            domain_configuration.system_architecture = S390xArchitectureConfiguration(kvm=self.kvm, uefi=False, model="s390-ccw-virtio")
-        else:
-            raise TestcloudInstanceError("Unsupported arch")
-
-        mac_address = self.mac_address or util.generate_mac_address()
-        if self.connection == "qemu:///system":
-            domain_configuration.network_configuration = SystemNetworkConfiguration(mac_address=mac_address)
-        elif self.connection == "qemu:///session":
-            port = util.spawn_instance_port_file(self.name)
-            device_type = "virtio-net-pci" if not util.needs_legacy_net(self.image.name) else "e1000"
-            domain_configuration.network_configuration = UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
-        else:
-            raise TestcloudInstanceError("Unsupported connection type")
-
-        image = QCow2StorageDevice(self.local_disk)
-        domain_configuration.storage_devices.append(image)
-
-        if self.coreos:
-            domain_configuration.coreos = True
-            domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS_COREOS)
-            domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS_COREOS)
-        else:
-            domain_configuration.qemu_args.extend(config_data.CMD_LINE_ARGS)
-            domain_configuration.qemu_envs.update(config_data.CMD_LINE_ENVS)
-            seed_disk = RawStorageDevice(self.seed_path)
-            domain_configuration.storage_devices.append(seed_disk)
-
-        if self.tpm:
-            domain_configuration.tpm_configuration = TPMConfiguration()
-
-        if self.disk_number > 1:
-            for i in range(self.disk_number - 1):
-                additional_disk_path = "{}/{}-local{}.qcow2".format(self.path, self.name, i + 2)
-                domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path))
-
         with open(self.xml_path, 'w') as domain_file:
-            domain_file.write(domain_configuration.generate())
+            domain_file.write(self.domain_configuration.generate())
 
     def spawn_vm(self):
         """Create and boot the instance, using prepared data."""
