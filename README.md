@@ -244,6 +244,9 @@ new instance using **testcloud**.
 \--nic_number
 
 : To provide nic number you want
+\--virtiofs
+
+: To specify a local directory to mount and mount target like <host path>:<guest path>
 
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.

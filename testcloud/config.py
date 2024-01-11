@@ -113,7 +113,7 @@ class ConfigData(object):
 
     META_DATA = """instance-id: iid-123456
 local-hostname: %s
-    """
+"""
     USER_DATA = """#cloud-config
 ssh_pwauth: true
 password: %s
@@ -142,7 +142,7 @@ runcmd:
   systemctl restart systemd-networkd; fi']
   - [sh, -c, 'if cat /etc/os-release | grep -q platform:el8; then systemctl restart sshd; fi']
   - [sh, -c, 'dhclient || :']
-    """
+"""
     COREOS_DATA = """variant: fcos
 version: 1.4.0
 passwd:
@@ -163,7 +163,7 @@ storage:
           # Enable it.
           # This file must sort before 40-disable-passwords.conf.
           PasswordAuthentication yes
-    """
+"""
 
     # Extra cmdline args for the qemu invocation.
     # Customize as needed :)

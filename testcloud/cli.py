@@ -349,6 +349,15 @@ def _create_instance(args):
     if "coreos" in url:
         coreos = True
 
+    if args.virtiofs:
+        virtiofs_split = args.virtiofs.split(":")
+        if len(virtiofs_split) != 2:
+            log.error("Invalid format of virtiofs specification, use <host path>:<guest path>")
+            sys.exit(1)
+        if args.connection == "qemu:///session":
+            log.error("virtiofs is unsupported in session mode by libvirt: https://gitlab.com/libvirt/libvirt/-/issues/535")
+            sys.exit(1)
+
     tc_image = image.Image(url)
     try:
         tc_image.prepare()
@@ -380,6 +389,8 @@ def _create_instance(args):
                                       nic_number=args.nic_number,
                                       tpm=args.tpm,
                                       serial=args.serial,
+                                      virtiofs_source=virtiofs_split[0],
+                                      virtiofs_target=virtiofs_split[1]
                                       )
 
     tc_instance = instance.Instance(args.name,
@@ -808,6 +819,9 @@ def get_argparser():
                                 help="Desired nic number",
                                 type=int,
                                 default=1)
+    instarg_create.add_argument("--virtiofs",
+                                 type=str,
+                                 help="specify a local directory to mount and mount target like <host path>:<guest path>")
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",
                                         description="Types of commands available",

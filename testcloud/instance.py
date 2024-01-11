@@ -293,6 +293,20 @@ class Instance(object):
         # deal with backing store
         self._create_local_disk()
 
+    def _adjust_mount_pts(self):
+        if not self.domain_configuration.virtiofs_configuration:
+            return ""
+
+        mounts_str = """mounts:\n"""
+        for virtiofs in self.domain_configuration.virtiofs_configuration:
+            mounts_str += " " * 4
+            mounts_str += '- [{tag}, {mnt_target}, "virtiofs", "defaults 0 2"]\n'.format(
+                tag=virtiofs.source[1:].replace("/", "-") + virtiofs.target[1:].replace("/", "-"),
+                mnt_target=virtiofs.target
+            )
+
+        return mounts_str
+
     def _create_user_data(self, password, overwrite=False):
         """Save the right  password to the 'user-data' file needed to
         emulate cloud-init. Default username on cloud images is "fedora"
@@ -307,6 +321,8 @@ class Instance(object):
         elif config_data.USER_DATA.count("%s") == 2:
             file_data = config_data.USER_DATA % (password, password)
 
+        # Adds potential virtiofs mounts
+        file_data += self._adjust_mount_pts()
         data_path = '{}/meta/user-data'.format(self.path)
 
         if (os.path.isfile(data_path) and overwrite) or not os.path.isfile(data_path):
@@ -470,7 +486,6 @@ class Instance(object):
         """Create and boot the instance, using prepared data."""
 
         self.write_domain_xml()
-
         with open(self.xml_path, 'r') as xml_file:
             domain_xml = ''.join([x for x in xml_file.readlines()])
         conn = libvirt.open(self.connection)

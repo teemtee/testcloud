@@ -244,6 +244,27 @@ class TPMConfiguration():
         """.format(version=self.version
         )
 
+class VIRTIOFSConfiguration():
+    def __init__(self, source, target) -> None:
+        super().__init__()
+        self.source = source
+        self.target = target
+
+    def generate(self):
+        # Verify the source exists
+        if not os.path.isdir(self.source):
+            raise TestcloudInstanceError("Requested virtiofs mount: {source} doesn't exist.")
+        return """
+        <filesystem type="mount">
+            <source dir="{source}"/>
+            <target dir="{tag}"/>
+            <driver type="virtiofs"/>
+        </filesystem>
+        """.format(
+            source=self.source,
+            tag=self.source[1:].replace("/", "-") + self.target[1:].replace("/", "-")
+        )
+
 
 class DomainConfiguration():
     name: str
@@ -253,6 +274,7 @@ class DomainConfiguration():
     storage_devices: list[StorageDeviceConfiguration]
     network_configuration: Optional[NetworkConfiguration]
     tpm_configuration: Optional[TPMConfiguration]
+    virtiofs_configuration: list[VIRTIOFSConfiguration]
     qemu_args: list[str]
     qemu_envs: dict[str, str]
     coreos: Optional[bool]
@@ -273,9 +295,21 @@ class DomainConfiguration():
         self.network_configuration = None
         self.network_devices = []
         self.tpm_configuration = None
+        self.virtiofs_configuration = []
         self.qemu_args = []
         self.qemu_envs = {}
         self.coreos = False
+
+    def generate_virtiofs_mounts(self) -> str:
+        return "\n".join([virtiofs_mount.generate() for virtiofs_mount in self.virtiofs_configuration])
+
+    def generate_virtiofs_head(self) -> str:
+        return """
+        <memoryBacking>
+            <access mode="shared"/>
+            <source type="memfd"/>
+        </memoryBacking>
+        """
 
     def generate_storage_devices(self) -> str:
         return "\n".join([device.generate() for device in self.storage_devices])
@@ -336,6 +370,7 @@ class DomainConfiguration():
             <on_poweroff>destroy</on_poweroff>
             <on_reboot>restart</on_reboot>
             <on_crash>restart</on_crash>
+            {virtiofs_head}
             <devices>
                 <emulator>{emulator_path}</emulator>
                 {storage_devices}
@@ -351,6 +386,7 @@ class DomainConfiguration():
                     <backend model='random'>/dev/urandom</backend>
                 </rng>
                 {tpm}
+                {virtiofs_device}
             </devices>
             <qemu:commandline>
                 {qemu_args}
@@ -368,6 +404,8 @@ class DomainConfiguration():
             storage_devices=self.generate_storage_devices(),
             network_configuraton=self.generate_network_devices(),
             tpm=self.tpm_configuration.generate() if self.tpm_configuration else "",
+            virtiofs_head=self.generate_virtiofs_head() if self.virtiofs_configuration else "",
+            virtiofs_device=self.generate_virtiofs_mounts() if self.virtiofs_configuration else "",
             qemu_args=self.get_qemu_args(),
             qemu_envs=self.get_qemu_envs(),
         )
@@ -387,7 +425,9 @@ def _get_default_domain_conf(name=None,
                              disk_size=0,
                              nic_number=1,
                              serial=False,
-                             image=None
+                             image=None,
+                             virtiofs_source=None,
+                             virtiofs_target=None
                              ):
 
     name = name
@@ -450,6 +490,9 @@ def _get_default_domain_conf(name=None,
         additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
         serial_str = "testcloud-{}".format(i + 1) if serial else ''
         domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size, serial_str))
+
+    if virtiofs_source and virtiofs_target:
+        domain_configuration.virtiofs_configuration.append(VIRTIOFSConfiguration(virtiofs_source, virtiofs_target))
 
     return domain_configuration
 

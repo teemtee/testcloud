@@ -43,7 +43,7 @@
 #    - name: cloud-user
 #      ssh_authorized_keys:
 #        - %s
-#    """
+#"""
 
 ## Extra cmdline args for the qemu invocation ##
 ## Customize as needed :)
