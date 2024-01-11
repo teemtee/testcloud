@@ -61,24 +61,24 @@ def _handle_connection_tip(ip, port, vagrant=False):
     if "#cloud-config\nssh_pwauth: true\npassword: %s\nchpasswd:\n  expire: false\n" not in config_data.USER_DATA:
         config_altered = True
 
-    print("-"*60)
+    print("-"*80)
     if config_altered:
         print("To connect to the VM, use the following command:")
         if port == 22:
-            print("ssh %s" % ip)
+            print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null %s" % ip)
         else:
-            print("ssh %s -p %d" % (ip, port))
+            print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null %s -p %d" % (ip, port))
     else:
         if kind in ["Fedora", "CentOS", "Ubuntu", "Debian"]:
             print("To connect to the VM, use the following command (password is '%s'):" % config_data.PASSWORD)
         elif kind == "CoreOS":
             print("To connect to the VM, use the following command :")
         if port == 22:
-            print("ssh cloud-user@%s" % ip)
+            print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null cloud-user@%s" % ip)
         else:
-            print("ssh cloud-user@%s -p %d" % (ip, port))
+            print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null cloud-user@%s -p %d" % (ip, port))
 
-    print("-"*60)
+    print("-"*80)
 
     if port != 22:
         print("Due to limitations of tescloud's user session VMs and bugs in some systems,"
