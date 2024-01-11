@@ -226,20 +226,21 @@ class UserNetworkConfiguration(NetworkConfiguration):
         </interface>
         """.format(
             mac_address=self.mac_address,
-
         )
 
 
 class TPMConfiguration():
-    def __init__(self) -> None:
-        pass
+    def __init__(self, version="2.0") -> None:
+        super().__init__()
+        self.version = version
 
     def generate(self):
         return """
         <tpm model='tpm-tis'>
-            <backend type='emulator' version='2.0'/>
+            <backend type='emulator' version='{version}'/>
         </tpm>
-        """
+        """.format(version=self.version
+        )
 
 
 class DomainConfiguration():
