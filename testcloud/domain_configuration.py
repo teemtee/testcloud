@@ -430,7 +430,7 @@ def _get_default_domain_conf(name=None,
     if disk_number > 1:
         for i in range(disk_number - 1):
             additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
-            domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path))
+            domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size))
 
     return domain_configuration
 

@@ -461,7 +461,6 @@ class Instance(object):
                 subprocess.call(['qemu-img', 'create', '-qf', 'qcow2', disk.path, '{}G'.format(disk.size)])
             else:
                 subprocess.call(['qemu-img', 'create', '-qf', 'qcow2', disk.path])
-            return
 
     def write_domain_xml(self):
         with open(self.xml_path, 'w') as domain_file:
