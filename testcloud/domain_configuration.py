@@ -420,8 +420,9 @@ def _get_default_domain_conf(name=None,
         domain_configuration.network_devices.append(UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type))
         for i in range(nic_number - 1):
             mac_address = util.generate_mac_address()
-            domain_configuration.network_devices.append(UserNetworkConfiguration(mac_address=mac_address,\
-                    port=port, device_type=device_type))
+            domain_configuration.network_devices.append(
+                UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
+            )
     else:
         raise TestcloudInstanceError("Unsupported connection type")
 
