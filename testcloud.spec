@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.9.10
-Release:        3%{?dist}
+Version:        0.9.11
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPL-2.0-or-later
@@ -126,6 +126,14 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Tue Feb 27 2024 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.11-1
+- virtiofs integration
+- add serial param (lnie)
+- add nic_number param (lnie)
+- cli: Add StrictHostKeyChecking=no and UserKnownHostsFile=/dev/null to the suggested cmdline
+- tpm: Support version 1.2 too in the api
+- cli: Convert to domain_api/v2, drop v1 codepaths
+
 * Sat Jan 27 2024 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.10-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
 
