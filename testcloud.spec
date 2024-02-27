@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
 Version:        0.9.10
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPL-2.0-or-later
@@ -44,7 +44,6 @@ Requires:       libvirt-daemon
 Requires:       libvirt-daemon-config-network
 Requires:       libvirt-daemon-driver-qemu
 Requires:       libvirt-daemon-driver-storage-core
-Requires:       qemu-kvm-core
 Requires:       python3-requests
 Requires:       python3-libvirt
 Requires:       python3-jinja2
@@ -127,6 +126,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Sat Jan 27 2024 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.10-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
+
 * Mon Dec 11 2023 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.10-2
 - Require libvirt-daemon as it's no longer pulled in indirectly
 
