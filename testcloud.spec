@@ -1,6 +1,6 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.9.11
+Version:        0.9.12
 Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
@@ -126,6 +126,9 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Thu Feb 29 2024 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.12-1
+- Fixup cli
+
 * Tue Feb 27 2024 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.11-1
 - virtiofs integration
 - add serial param (lnie)

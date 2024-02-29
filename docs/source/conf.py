@@ -55,7 +55,7 @@ copyright = u'2016-2023, testCloud devs'
 # built documents.
 #
 # The short X.Y version.
-version = '0.9.11'
+version = '0.9.12'
 # The full version, including alpha/beta/rc tags.
 release = version
 
