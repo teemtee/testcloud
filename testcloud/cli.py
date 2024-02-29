@@ -79,7 +79,6 @@ def _handle_connection_tip(ip, port, vagrant=False):
             print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null cloud-user@%s -p %d" % (ip, port))
 
     print("-"*80)
-
     if port != 22:
         print("Due to limitations of tescloud's user session VMs and bugs in some systems,"
               " the ssh connection may not be available immediately...")
@@ -349,8 +348,8 @@ def _create_instance(args):
     if "coreos" in url:
         coreos = True
 
+    virtiofs_split = args.virtiofs.split(":") if args.virtiofs else [None, None]
     if args.virtiofs:
-        virtiofs_split = args.virtiofs.split(":")
         if len(virtiofs_split) != 2:
             log.error("Invalid format of virtiofs specification, use <host path>:<guest path>")
             sys.exit(1)
