@@ -143,6 +143,7 @@ storage_device_name = storage_device_name_generator()
 
 class StorageDeviceConfiguration():
     path: str
+    host_device_path: str
     def __init__(self) -> None:
         pass
 
@@ -153,6 +154,7 @@ class StorageDeviceConfiguration():
 class RawStorageDevice(StorageDeviceConfiguration):
     def __init__(self, path) -> None:
         self.path = path
+        self.host_device_path = next(storage_device_name)
 
     def generate(self):
         return """
@@ -163,7 +165,7 @@ class RawStorageDevice(StorageDeviceConfiguration):
         </disk>
         """ % (
             self.path,
-            next(storage_device_name),
+            self.host_device_path,
         )
 
 
@@ -172,6 +174,7 @@ class QCow2StorageDevice(StorageDeviceConfiguration):
         self.path = path
         self.size = size
         self.serial_str = serial_str
+        self.host_device_path = next(storage_device_name)
 
     def generate(self):
         return """
@@ -183,7 +186,7 @@ class QCow2StorageDevice(StorageDeviceConfiguration):
         </disk>
         """ % (
             self.path,
-            next(storage_device_name),
+            self.host_device_path,
             self.serial_str,
         )
 
