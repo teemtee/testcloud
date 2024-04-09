@@ -8,6 +8,7 @@ import platform
 from testcloud.exceptions import TestcloudInstanceError
 from testcloud import config
 from testcloud import util
+from testcloud import image
 
 config_data = config.get_config()
 
@@ -413,24 +414,23 @@ class DomainConfiguration():
         return os.linesep.join([s for s in almost_pretty_xml.splitlines() if s.strip()])
 
 
-def _get_default_domain_conf(name=None,
-                             desired_arch=None,
-                             vcpus=None,
-                             ram=None,
-                             mac_address=None,
-                             connection=None,
-                             tpm=False,
-                             coreos=False,
-                             disk_number=1,
-                             disk_size=0,
-                             nic_number=1,
-                             serial=False,
-                             image=None,
-                             virtiofs_source=None,
-                             virtiofs_target=None
+def _get_default_domain_conf(name: str,
+                             backingstore_image: image.Image,
+                             mac_address: Optional[str] = None,
+                             use_disk_serial: bool = False,
+                             disk_size: int = 0,
+                             disk_count: int = 1,
+                             nic_count: int = 1,
+                             tpm: bool = False,
+                             coreos: bool = False,
+                             connection: str = "qemu:///system",
+                             vcpus: Optional[int] = None,
+                             ram: Optional[int] = None,
+                             desired_arch: Optional[str] = None,
+                             virtiofs_source: Optional[str] = None,
+                             virtiofs_target: Optional[str] = None,
                              ):
 
-    name = name
     desired_arch = desired_arch or platform.machine()
     vcpus = vcpus or config_data.VCPUS
     ram = ram or config_data.RAM
@@ -454,15 +454,15 @@ def _get_default_domain_conf(name=None,
 
     if connection == "qemu:///system":
         domain_configuration.network_devices.append(SystemNetworkConfiguration(mac_address=mac_address))
-        for i in range(nic_number - 1):
+        for i in range(nic_count - 1):
             mac_address = util.generate_mac_address()
             domain_configuration.network_devices.append(SystemNetworkConfiguration(mac_address=mac_address))
 
     elif connection == "qemu:///session":
         port = util.spawn_instance_port_file(name)
-        device_type = "virtio-net-pci" if not util.needs_legacy_net(image.name) else "e1000"
+        device_type = "virtio-net-pci" if not util.needs_legacy_net(backingstore_image.name) else "e1000"
         domain_configuration.network_devices.append(UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type))
-        for i in range(nic_number - 1):
+        for i in range(nic_count - 1):
             mac_address = util.generate_mac_address()
             domain_configuration.network_devices.append(
                 UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
@@ -486,9 +486,9 @@ def _get_default_domain_conf(name=None,
     if tpm:
         domain_configuration.tpm_configuration = TPMConfiguration()
 
-    for i in range(disk_number - 1):
+    for i in range(disk_count - 1):
         additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
-        serial_str = "testcloud-{}".format(i + 1) if serial else ''
+        serial_str = "testcloud-{}".format(i + 1) if use_disk_serial else ''
         domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size, serial_str))
 
     if virtiofs_source and virtiofs_target:
