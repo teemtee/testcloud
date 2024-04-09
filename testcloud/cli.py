@@ -392,11 +392,10 @@ def _create_instance(args):
                                       virtiofs_target=virtiofs_split[1]
                                       )
 
-    tc_instance = instance.Instance(args.name,
+    tc_instance = instance.Instance(domain_configuration=domain,
                                     image=tc_image,
                                     connection=args.connection,
                                     desired_arch=args.arch,
-                                    domain_configuration=domain
                                     )
     log.info("create %s instance %s" % ("coreos" if coreos else "cloud", args.name))
 

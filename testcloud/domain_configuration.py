@@ -142,6 +142,7 @@ storage_device_name = storage_device_name_generator()
 
 
 class StorageDeviceConfiguration():
+    path: str
     def __init__(self) -> None:
         pass
 

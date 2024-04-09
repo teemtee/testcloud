@@ -19,6 +19,7 @@ import platform
 import socket
 
 from testcloud import config
+from testcloud.image import Image
 from testcloud.exceptions import TestcloudInstanceError, TestcloudPermissionsError
 from testcloud.domain_configuration import *
 
@@ -134,7 +135,7 @@ def _prepare_domain_list(connection=None):
             if connection not in ["qemu:///system", "qemu:///session"]:
                 # We don't need logging of failures for standard qemu uris
                 log.error("Connection to QEMU failed, check the connection url ( %s ) you've specified." % connection)
-            return []
+            return {}
 
 def find_instance(name, connection='qemu:///system'):
     """Find an instance using a given name and image, if it exists.
@@ -151,7 +152,7 @@ def find_instance(name, connection='qemu:///system'):
     instances = _list_instances()
     for inst in instances:
         if inst['name'] == name:
-            return Instance(name=name, connection=connection, domain_configuration=DomainConfiguration(name))
+            return Instance(connection=connection, domain_configuration=DomainConfiguration(name))
     return None
 
 
@@ -204,24 +205,23 @@ class Instance(object):
     """
 
     name: str
-    image: str
+    image: Optional[str]
     connection: str
     hostname: str
     desired_arch: str
-    domain_configuration: Optional[DomainConfiguration]
+    domain_configuration: DomainConfiguration
 
     def __init__(
         self,
-        name="",
+        domain_configuration,
         image=None,
         connection="qemu:///system",
         hostname=None,
         desired_arch=platform.machine(),
-        domain_configuration=None
     ):
 
         self.name = domain_configuration.name
-        self.desired_arch = domain_configuration.system_architecture.arch if domain_configuration.system_architecture else None
+        self.desired_arch = domain_configuration.system_architecture
         self.ram = domain_configuration.memory_size
         self.vcpus = domain_configuration.cpu_count
         self.path = domain_configuration.path
@@ -233,7 +233,7 @@ class Instance(object):
         self.disk_number = len(domain_configuration.storage_devices)
 
         self.kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
-        self.image = image
+        self.backingstore_image: Optional[Image] = image
         self.connection = connection
         self.pci_net = None
 
@@ -258,7 +258,7 @@ class Instance(object):
         self.bu_file = None
         self.ign_file = None
         self.qemu_cmds = []
-        self.domain_configuration : DomainConfiguration | None = domain_configuration if domain_configuration else None
+        self.domain_configuration = domain_configuration
 
     def prepare(self):
 
@@ -293,7 +293,7 @@ class Instance(object):
         # deal with backing store
         self._create_local_disk()
 
-    def _adjust_mount_pts(self):
+    def _adjust_mount_pts(self) -> str:
         if not self.domain_configuration.virtiofs_configuration:
             return ""
 
@@ -313,6 +313,9 @@ class Instance(object):
 
         Will not overwrite an existing user-data file unless
         the overwrite kwarg is set to True."""
+
+        # to silence pylance
+        file_data: str = ""
 
         # Wait for tmt-1.10, replace the ugly down there with
         # file_data = config_data.USER_DATA.format(user_password=password)
@@ -441,12 +444,12 @@ class Instance(object):
     def _create_local_disk(self):
         """Create a instance using the backing store provided by Image."""
 
-        if self.image is None:
+        if self.backingstore_image is None:
             raise TestcloudInstanceError("attempted to access image "
                                          "information for instance {} but "
                                          "that information was not supplied "
                                          "at creation time".format(self.name))
-
+        assert self.backingstore_image is not None
         imgcreate_command = ['qemu-img',
                              'create',
                              '-qf',
@@ -454,7 +457,7 @@ class Instance(object):
                              '-F',
                              'qcow2',
                              '-b',
-                             self.image.local_path,
+                             self.backingstore_image.local_path,
                              '-o',
                              'lazy_refcounts=on',
                              self.local_disk,
@@ -464,6 +467,7 @@ class Instance(object):
             if type(disk) == RawStorageDevice:
                 # Do not touch seed images
                 continue
+            assert isinstance(disk, QCow2StorageDevice)
 
             if disk.path == self.local_disk:
                 # Seed backed image (boot drive) uses a different parameters

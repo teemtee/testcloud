@@ -59,8 +59,10 @@ class Image(object):
     downloading images from remote systems (http, https supported) or copying
     from mounted local filesystems.
     """
+    local_path:str
+    remote_path:str
 
-    def __init__(self, uri=None):
+    def __init__(self, uri:str):
         """Create a new Image object for Testcloud
 
         :param uri: URI for the image to be represented. this URI must be of a
