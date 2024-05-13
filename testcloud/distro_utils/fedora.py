@@ -9,6 +9,7 @@ import requests
 
 from testcloud import config
 from testcloud import exceptions
+from testcloud.distro_utils.misc import get_requests_session
 
 log = logging.getLogger('testcloud.util')
 config_data = config.get_config()
@@ -17,6 +18,8 @@ def _process_coreos_url(version:str, arch:str, platform:str) -> str:
     """
     Returns an CoreOS url in either qemu or openstack format
     """
+    session = get_requests_session()
+
     if version == "latest":
         version = "stable"
     if version not in config_data.STREAM_LIST:
@@ -26,7 +29,7 @@ def _process_coreos_url(version:str, arch:str, platform:str) -> str:
         log.error("Invalid platform ( %s ) requested for Fedora CoreOS." % platform)
         raise exceptions.TestcloudImageError
     try:
-        result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
+        result = session.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
     except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
             log.error("Failed to fetch the image.")
             raise exceptions.TestcloudImageError
@@ -57,10 +60,12 @@ def get_fedora_image_url(version:str, arch:str) -> str:
     primary_arches = ["x86_64", "aarch64"]
     url = ""
 
+    session = get_requests_session()
+
     # get coreos url
     if version in config_data.STREAM_LIST:
         try:
-            result = requests.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
+            result = session.get("https://builds.coreos.fedoraproject.org/streams/%s.json"%version).json()
         except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
               log.error("Failed to fetch the image.")
               raise exceptions.TestcloudImageError
@@ -69,7 +74,7 @@ def get_fedora_image_url(version:str, arch:str) -> str:
 
     #get Fedora Cloud url
     try:
-        oraculum_releases = requests.get('https://packager-dashboard.fedoraproject.org/api/v1/releases').json()
+        oraculum_releases = session.get('https://packager-dashboard.fedoraproject.org/api/v1/releases').json()
     except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
         log.error("Couldn't fetch Fedora releases from oraculum...")
         raise exceptions.TestcloudImageError
@@ -89,6 +94,7 @@ def get_fedora_image_url(version:str, arch:str) -> str:
             log.error("non-x86_64 architecture is not supported with Fedora qa-matrix.")
             raise exceptions.TestcloudImageError
         try:
+            # Never cache this one
             nominated_response = requests.get("https://fedoraproject.org/wiki/Test_Results:Current_Installation_Test")
             return str(re.findall(r'href=\"(.*.%s.qcow2)\"' % arch, nominated_response.text)[0])
         except (ConnectionError, IndexError):
@@ -98,7 +104,7 @@ def get_fedora_image_url(version:str, arch:str) -> str:
     if version == "rawhide" or version == "branched":
         stamp = 0
         try:
-            releases = requests.get('https://openqa.fedoraproject.org/nightlies.json').json()
+            releases = session.get('https://openqa.fedoraproject.org/nightlies.json').json()
         except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
             log.error("Failed to fetch the image.")
             raise exceptions.TestcloudImageError
@@ -116,7 +122,7 @@ def get_fedora_image_url(version:str, arch:str) -> str:
         version = str(oraculum_releases["fedora"]["stable"])
 
     try:
-        releases = requests.get('https://getfedora.org/releases.json').json()
+        releases = session.get('https://getfedora.org/releases.json').json()
     except (ConnectionError, requests.exceptions.JSONDecodeError):
         log.error("Couldn't fetch Fedora releases list...")
         raise exceptions.TestcloudImageError

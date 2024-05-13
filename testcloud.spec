@@ -47,6 +47,8 @@ Requires:       libvirt-daemon-driver-storage-core
 Requires:       python3-requests
 Requires:       python3-libvirt
 Requires:       python3-jinja2
+Requires:       python3-packaging
+Recommends:     python3-requests-cache
 Recommends:     butane
 Suggests:       python3-libguestfs
 Suggests:       libguestfs-tools-c

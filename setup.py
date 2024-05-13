@@ -54,5 +54,7 @@ setup(name='testcloud',
           'Jinja2',
           'libvirt-python',
           'requests',
+          'packaging'
       ],
+      extras_require={"image_resolve_caching": ["requests_cache>=1.2"]}
       )

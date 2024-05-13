@@ -67,6 +67,12 @@
 # 0 = unlimited
 BACKINGSTORE_SIZE = 4
 
+# Is reusing the local image url cache an option?
+#CACHE_IMAGES = True
+
+# # How old can a local image url cache be to take it as viable
+#TRUST_DEADLINE = 7 # Days
+
 # ram size, in MiB
 #RAM = 768
 #RAM_COREOS = 2048

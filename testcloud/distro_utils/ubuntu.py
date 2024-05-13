@@ -8,13 +8,16 @@ import requests
 
 from testcloud import config
 from testcloud import exceptions
+from testcloud.distro_utils.misc import get_requests_session
 
 log = logging.getLogger('testcloud.util')
 config_data = config.get_config()
 
 def get_ubuntu_releases() -> dict:
+    session = get_requests_session()
+
     try:
-        releases_resp = requests.get(config_data.UBUNTU_RELEASES_API).json()
+        releases_resp = session.get(config_data.UBUNTU_RELEASES_API).json()
     except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
         log.error("Failed to fetch Ubuntu releases list.")
         raise exceptions.TestcloudImageError

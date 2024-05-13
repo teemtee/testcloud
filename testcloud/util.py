@@ -121,7 +121,7 @@ def verify_url(url:str) -> str:
         log.error("The generated url ( %s ) for known image doesn't work." % url)
         raise exceptions.TestcloudImageError
 
-def get_image_url(distro_str:str, arch="x86_64", verify=True, additional_handles={}) -> str:
+def get_image_url(distro_str:str, arch="x86_64", verify=False, additional_handles={}) -> str:
     distro_str = distro_str.lower()
     COREOS = "|".join(d for d in config_data.STREAM_LIST)
 
