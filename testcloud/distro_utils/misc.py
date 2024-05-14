@@ -26,11 +26,11 @@ def parse_latest_qcow(rule:str, url:str) -> str:
 
 
 def get_requests_session():
-    if not config_data.CACHE_IMAGES:
-        return requests.Session()
     try:
+        assert config_data.CACHE_IMAGES
         import requests_cache
         assert Version(requests_cache.__version__) >= Version("1.2")
+
         log.debug("Using local image url cache...")
         return requests_cache.CachedSession(
             cache_name="{}/testcloud_image_resolve_cache".format(config_data.DATA_DIR),
@@ -39,5 +39,5 @@ def get_requests_session():
             expire_after=config_data.TRUST_DEADLINE * 60 * 60 * 24
         )
     except (ImportError, AssertionError):
-        log.debug("Not using local image url cache due to unmet dependencies...")
+        log.debug("Not using local image url cache due to config or unmet dependencies...")
         return requests.Session()
