@@ -333,14 +333,10 @@ def _create_instance(args):
              )
         sys.exit(1)
 
-    url = None
-
     try:
         url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
-    except TestcloudImageError:
-        pass
-
-    if not url:
+        assert url
+    except (TestcloudImageError, AssertionError):
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
 
