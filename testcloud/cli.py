@@ -334,7 +334,6 @@ def _create_instance(args):
         sys.exit(1)
 
     url = None
-    coreos = False
 
     try:
         url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
@@ -345,8 +344,7 @@ def _create_instance(args):
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
 
-    if "coreos" in url:
-        coreos = True
+    coreos = bool(re.search('coreos|rhcos', url.lower()))
 
     virtiofs_split = args.virtiofs.split(":") if args.virtiofs else [None, None]
     if args.virtiofs:
