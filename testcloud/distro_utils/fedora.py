@@ -129,7 +129,7 @@ def get_fedora_image_url(version:str, arch:str) -> str:
 
     url = ""
     for release in releases:
-        if release["version"] == version and release["variant"] == "Cloud" and release["link"].endswith(".qcow2"):
+        if release["version"] == version and release["subvariant"] == "Cloud_Base" and release["link"].endswith(".qcow2"):
             # There are links only to primary architecutres in releases.json... much fun
             if arch in primary_arches and release["arch"] == arch:
                 url = release["link"]
