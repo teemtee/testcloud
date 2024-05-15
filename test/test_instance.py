@@ -9,8 +9,14 @@ import os
 
 from unittest import mock
 
-from testcloud import instance, image, config
+from testcloud import instance, image, config, domain_configuration
 
+class dotdict(dict):
+    # https://stackoverflow.com/a/23689767
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 class TestInstance:
 
@@ -59,6 +65,10 @@ class TestFindInstance(object):
         stub_listdir = mock.Mock()
         stub_listdir.return_value = [ref_name]
         monkeypatch.setattr(os, 'listdir', stub_listdir)
+
+        stub_data_dir = mock.Mock()
+        stub_data_dir.return_value = dotdict({"DATA_DIR": self.conf.DATA_DIR})
+        monkeypatch.setattr(config, 'get_config', stub_data_dir)
 
         test_instance = instance.find_instance(ref_name, ref_image)
 
