@@ -412,6 +412,10 @@ def _create_instance(args):
         else:
             tc_instance._remove_from_disk()
 
+    if args.dry:
+        tc_instance._remove_from_disk()
+        sys.exit(0)
+
     # create instance domain
     try:
         tc_instance.spawn_vm()
@@ -781,6 +785,9 @@ def get_argparser():
                                 default=-1)
     instarg_create.add_argument("--keep",
                                 help="Don't remove instance from disk when something fails, useful for debugging",
+                                action="store_true")
+    instarg_create.add_argument("--dry",
+                                help="Don't spawn an actual instance, useful for debugging",
                                 action="store_true")
     instarg_create.add_argument("--ssh_path",
                                 help="specify your ssh pubkey path",
