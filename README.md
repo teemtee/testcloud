@@ -248,6 +248,10 @@ new instance using **testcloud**.
 \--virtiofs
 : To specify a local directory to mount and mount target like <host path>:<guest path>
 
+\--iommu
+
+: To provide virtual iommu device
+
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.
 

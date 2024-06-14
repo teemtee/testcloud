@@ -50,6 +50,7 @@
     <rng model='virtio'>
       <backend model='random'>/dev/urandom</backend>
     </rng>
+    {{ iommu }}
   </devices>
   {{ qemu_args }}
 </domain>

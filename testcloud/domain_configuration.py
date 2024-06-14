@@ -270,6 +270,15 @@ class VIRTIOFSConfiguration():
             tag=self.source[1:].replace("/", "-") + self.target[1:].replace("/", "-")
         )
 
+class IOMMUConfiguration():
+    def __init__(self, model="virtio") -> None:
+        super().__init__()
+        self.model = model
+
+    def generate(self):
+        return """
+        <iommu model='{model}'/>
+        """.format(model=self.model)
 
 class DomainConfiguration():
     name: str
@@ -280,6 +289,7 @@ class DomainConfiguration():
     network_configuration: Optional[NetworkConfiguration]
     tpm_configuration: Optional[TPMConfiguration]
     virtiofs_configuration: list[VIRTIOFSConfiguration]
+    iommu_configuration: Optional[IOMMUConfiguration]
     qemu_args: list[str]
     qemu_envs: dict[str, str]
     coreos: Optional[bool]
@@ -301,6 +311,7 @@ class DomainConfiguration():
         self.network_devices = []
         self.tpm_configuration = None
         self.virtiofs_configuration = []
+        self.iommu_configuration = None
         self.qemu_args = []
         self.qemu_envs = {}
         self.coreos = False
@@ -392,6 +403,7 @@ class DomainConfiguration():
                 </rng>
                 {tpm}
                 {virtiofs_device}
+                {iommu}
             </devices>
             <qemu:commandline>
                 {qemu_args}
@@ -411,6 +423,7 @@ class DomainConfiguration():
             tpm=self.tpm_configuration.generate() if self.tpm_configuration else "",
             virtiofs_head=self.generate_virtiofs_head() if self.virtiofs_configuration else "",
             virtiofs_device=self.generate_virtiofs_mounts() if self.virtiofs_configuration else "",
+            iommu=self.iommu_configuration.generate() if self.iommu_configuration else "",
             qemu_args=self.get_qemu_args(),
             qemu_envs=self.get_qemu_envs(),
         )
@@ -433,6 +446,7 @@ def _get_default_domain_conf(name: str,
                              desired_arch: Optional[str] = None,
                              virtiofs_source: Optional[str] = None,
                              virtiofs_target: Optional[str] = None,
+                             iommu: bool = False,
                              ):
 
     desired_arch = desired_arch or platform.machine()
@@ -497,6 +511,9 @@ def _get_default_domain_conf(name: str,
 
     if virtiofs_source and virtiofs_target:
         domain_configuration.virtiofs_configuration.append(VIRTIOFSConfiguration(virtiofs_source, virtiofs_target))
+
+    if iommu:
+        domain_configuration.iommu_configuration = IOMMUConfiguration()
 
     return domain_configuration
 

@@ -245,6 +245,7 @@ class Instance(object):
         self.backing_store = image.local_path if image else None
         self.mac_address = None
         self.tpm = False
+        self.iommu = False
 
         # params for cloud instance
         self.meta_path = "{}/meta".format(self.path)

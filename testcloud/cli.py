@@ -351,6 +351,12 @@ def _create_instance(args):
             log.error("virtiofs is unsupported in session mode by libvirt: https://gitlab.com/libvirt/libvirt/-/issues/535")
             sys.exit(1)
 
+    # See the iommu support status at https://libvirt.org/formatdomain.html#iommu-devices
+    if args.iommu:
+        if args.arch not in ["x86_64", "aarch64"]:
+            log.error("iommu is not support for the architecture {0}, use x86_64 or aarch64".format(args.arch))
+            sys.exit(1)
+
     tc_image = image.Image(url)
     try:
         tc_image.prepare()
@@ -381,6 +387,7 @@ def _create_instance(args):
                                       disk_count=args.disk_number,
                                       nic_count=args.nic_number,
                                       tpm=args.tpm,
+                                      iommu=args.iommu,
                                       use_disk_serial=args.serial,
                                       virtiofs_source=virtiofs_split[0],
                                       virtiofs_target=virtiofs_split[1]
@@ -821,6 +828,9 @@ def get_argparser():
     instarg_create.add_argument("--virtiofs",
                                  type=str,
                                  help="specify a local directory to mount and mount target like <host path>:<guest path>")
+    instarg_create.add_argument("--iommu",
+                                help="add iommu device",
+                                action="store_true")
     imgarg = subparsers.add_parser("image", help="help on image options")
     imgarg_subp = imgarg.add_subparsers(title="subcommands",
                                         description="Types of commands available",
