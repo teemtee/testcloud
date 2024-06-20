@@ -18,10 +18,13 @@ import shutil
 import platform
 import socket
 
+from string import Template
+
 from testcloud import config
 from testcloud.image import Image
 from testcloud.exceptions import TestcloudInstanceError, TestcloudPermissionsError
 from testcloud.domain_configuration import *
+from testcloud.workarounds import Workarounds
 
 config_data = config.get_config()
 
@@ -210,6 +213,7 @@ class Instance(object):
     hostname: str
     desired_arch: str
     domain_configuration: DomainConfiguration
+    workarounds: Optional[Workarounds]
 
     def __init__(
         self,
@@ -218,6 +222,7 @@ class Instance(object):
         connection="qemu:///system",
         hostname=None,
         desired_arch=platform.machine(),
+        workarounds=None
     ):
 
         self.name = domain_configuration.name
@@ -252,6 +257,7 @@ class Instance(object):
         self.seed = None
         self.kernel = None
         self.initrd = None
+        self.workarounds = workarounds if workarounds else Workarounds(defaults=True)
 
         # params for coreos instance
         self.bu_path = "{}/{}.bu".format(self.path, self.name)
@@ -294,19 +300,16 @@ class Instance(object):
         # deal with backing store
         self._create_local_disk()
 
-    def _adjust_mount_pts(self) -> str:
+    def _adjust_mount_pts(self, workarounds:Workarounds):
         if not self.domain_configuration.virtiofs_configuration:
-            return ""
+            return
 
-        mounts_str = """mounts:\n"""
+        i = 0
         for virtiofs in self.domain_configuration.virtiofs_configuration:
-            mounts_str += " " * 4
-            mounts_str += '- [{tag}, {mnt_target}, "virtiofs", "defaults 0 2"]\n'.format(
-                tag=virtiofs.source[1:].replace("/", "-") + virtiofs.target[1:].replace("/", "-"),
-                mnt_target=virtiofs.target
-            )
-
-        return mounts_str
+            # We aren't using cloud-init's mounting here since mkdirs are taking place after fstab
+            workarounds.add("mkdir -p %s || :" % virtiofs.target)
+            workarounds.add("mount -t virtiofs virtiofs-{count} {target}".format(count=i,target=virtiofs.target))
+            i += 1
 
     def _create_user_data(self, password, overwrite=False):
         """Save the right  password to the 'user-data' file needed to
@@ -315,18 +318,20 @@ class Instance(object):
         Will not overwrite an existing user-data file unless
         the overwrite kwarg is set to True."""
 
-        # to silence pylance
-        file_data: str = ""
+        file_data: str|Template = config_data.USER_DATA
 
-        # Wait for tmt-1.10, replace the ugly down there with
-        # file_data = config_data.USER_DATA.format(user_password=password)
-        if config_data.USER_DATA.count("%s") == 1:
-            file_data = config_data.USER_DATA % password
-        elif config_data.USER_DATA.count("%s") == 2:
-            file_data = config_data.USER_DATA % (password, password)
+        # Wait for tmt, then remove the ugly down there
+        if file_data.count("%s") == 1:
+            file_data = file_data % password
 
         # Adds potential virtiofs mounts
-        file_data += self._adjust_mount_pts()
+        self._adjust_mount_pts(self.workarounds)
+
+        runcommands = self.workarounds.generate_cloud_init_cmd_list()
+
+        file_data = Template(file_data).safe_substitute(runcommands=runcommands,
+                                                        password=password)
+
         data_path = '{}/meta/user-data'.format(self.path)
 
         if (os.path.isfile(data_path) and overwrite) or not os.path.isfile(data_path):

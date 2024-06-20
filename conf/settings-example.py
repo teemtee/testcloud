@@ -31,9 +31,18 @@
 ## Read http://cloudinit.readthedocs.io/en/latest/topics/examples.html to see
 ## what options you can use here.
 #USER_DATA = """#cloud-config
-#password: %s
-#chpasswd: { expire: False }
-#ssh_pwauth: True
+#ssh_pwauth: true
+#password: ${password}
+#chpasswd:
+#  expire: false
+#users:
+#  - default
+#  - name: cloud-user
+#    plain_text_passwd: ${password}
+#    sudo: ALL=(ALL) NOPASSWD:ALL
+#    lock_passwd: false
+#runcmd:
+#${runcommands}
 #"""
 
 #COREOS_DATA = """variant: fcos

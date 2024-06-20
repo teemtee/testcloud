@@ -26,6 +26,7 @@ from testcloud import instance
 
 from testcloud.domain_configuration import _get_default_domain_conf
 from testcloud.util import get_image_url
+from testcloud.workarounds import Workarounds
 from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
 
 
@@ -58,7 +59,7 @@ def _handle_connection_tip(ip, port, vagrant=False):
     config_altered = False
     kind = ""
 
-    if "#cloud-config\nssh_pwauth: true\npassword: %s\nchpasswd:\n  expire: false\n" not in config_data.USER_DATA:
+    if "#cloud-config\nssh_pwauth: true\npassword: ${password}\nchpasswd:\n  expire: false\n" not in config_data.USER_DATA:
         config_altered = True
 
     print("-"*80)
@@ -397,6 +398,7 @@ def _create_instance(args):
                                     image=tc_image,
                                     connection=args.connection,
                                     desired_arch=args.arch,
+                                    workarounds=Workarounds(defaults=True)
                                     )
     log.info("create %s instance %s" % ("coreos" if coreos else "cloud", args.name))
 

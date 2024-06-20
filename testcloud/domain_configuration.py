@@ -250,10 +250,11 @@ class TPMConfiguration():
         )
 
 class VIRTIOFSConfiguration():
-    def __init__(self, source, target) -> None:
+    def __init__(self, source, target, count) -> None:
         super().__init__()
         self.source = source
         self.target = target
+        self.count = count
 
     def generate(self):
         # Verify the source exists
@@ -267,7 +268,7 @@ class VIRTIOFSConfiguration():
         </filesystem>
         """.format(
             source=self.source,
-            tag=self.source[1:].replace("/", "-") + self.target[1:].replace("/", "-")
+            tag="virtiofs-%d" % self.count
         )
 
 class IOMMUConfiguration():
@@ -510,7 +511,7 @@ def _get_default_domain_conf(name: str,
         domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size, serial_str))
 
     if virtiofs_source and virtiofs_target:
-        domain_configuration.virtiofs_configuration.append(VIRTIOFSConfiguration(virtiofs_source, virtiofs_target))
+        domain_configuration.virtiofs_configuration.append(VIRTIOFSConfiguration(virtiofs_source, virtiofs_target, 0))
 
     if iommu:
         domain_configuration.iommu_configuration = IOMMUConfiguration()
