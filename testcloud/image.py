@@ -205,7 +205,8 @@ class Image(object):
             if source_path.endswith('.box'):
                 dest_path = dest_path.replace('.qcow2', '.box')
             if copy:
-                shutil.copy(source_path, dest_path)
+                # We use `cp` since shutil.copy doesn't do reflinks: https://github.com/python/cpython/issues/81338
+                subprocess.check_call(['cp', '-f', source_path, dest_path])
             else:
                 subprocess.check_call(['ln', '-s', '-f', source_path, dest_path])
             if source_path.endswith('.xz'):
