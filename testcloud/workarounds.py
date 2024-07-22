@@ -26,6 +26,11 @@ class Workarounds():
                            'systemctl restart systemd-networkd',
                            key="net_restart")
         self.add_os('platform:el8', 'systemctl restart sshd', key='el8_net')
+        self.add_os('CentOS Linux 7',
+                    ["sed '/mirrorlist/d' -i /etc/yum.repos.d/*repo",
+                     "sed 's|#baseurl=http://mirror.centos.org/centos/\\$releasever|baseurl=https://vault.centos.org/7.9.2009|' -i /etc/yum.repos.d/*repo"
+                    ],
+                    key='el7_vault_repos')
         self.add('dhclient || :', key='dhclient')
 
     def _generate_key(self) -> str:
@@ -54,7 +59,7 @@ class Workarounds():
         self.add(sh_condition_string % (condition, cmd), key=key)
 
     def add_os(self, os:str, cmd:Union[str,list[str]], key:Optional[str]=None) -> None:
-        condition = "cat /etc/os-release | grep -q " + os
+        condition = "cat /etc/os-release | grep -q '%s'" % os
         self.add_condition(condition, cmd, key)
 
     def remove(self, key:str):
