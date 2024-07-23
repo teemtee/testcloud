@@ -283,15 +283,14 @@ def _download_image(args):
         sys.exit(1)
 
     try:
+        # FIXME maybe change to smth like   ... if args.url[:4] not in ["http", "file"]
         url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
     except TestcloudImageError:
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
 
-    tc_image = image.Image(url)
-
     try:
-        tc_image._download_remote_image(url, os.path.join(args.dest_path, os.path.basename(urlparse(url).path)))
+       image.Image._download_remote_image(url, os.path.join(args.dest_path, os.path.basename(urlparse(url).path)))
     except TestcloudImageError:
         log.error("Couldn't download the requested image due to an error.")
         sys.exit(1)
@@ -625,7 +624,6 @@ def _list_image(args):
     for img in images:
         print("  {}".format(img))
 
-
 def _remove_image(args):
     """Handler for 'image remove' command. Expects the following elements in args:
         * name(str)
@@ -838,6 +836,7 @@ def get_argparser():
     # image list
     imgarg_list = imgarg_subp.add_parser("list", help="list images")
     imgarg_list.set_defaults(func=_list_image)
+
 
     # image remove
     imgarg_remove = imgarg_subp.add_parser('remove', help="remove image")

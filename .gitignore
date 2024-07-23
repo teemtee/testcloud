@@ -16,6 +16,7 @@ conf/settings.py
 
 # virtualenv
 /env*/
+/.env*/
 
 # unit testing
 /.coverage

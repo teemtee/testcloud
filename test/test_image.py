@@ -52,6 +52,44 @@ class TestImageUriProcess(object):
         assert test_data['name'] == self.image_name
         assert test_data['path'] == ref_path
 
+#    def test_http_ur1_params(self):
+#        ref_type = 'http'
+#        ref_path = 'localhost/images/{}'.format(self.image_name)
+#        ref_uri = '{}://{}?url_param=value'.format(ref_type, ref_path)
+#
+#        test_image = image.Image(ref_uri)
+#        test_data = test_image._process_uri(ref_uri)
+#
+#        assert test_data['type'] == ref_type
+#        assert test_data['name'] == self.image_name
+#        assert test_data['path'] == ref_path
+#
+#    def test_http_ur1_anchor(self):
+#        ref_type = 'http'
+#        ref_path = 'localhost/images/{}'.format(self.image_name)
+#        ref_uri = '{}://{}#anchor'.format(ref_type, ref_path)
+#
+#        test_image = image.Image(ref_uri)
+#        test_data = test_image._process_uri(ref_uri)
+#
+#        assert test_data['type'] == ref_type
+#        assert test_data['name'] == self.image_name
+#        assert test_data['path'] == ref_path
+#
+#
+#    def test_http_ur1_url_quoted(self):
+#        ref_type = 'http'
+#        ref_path = 'localhost/images/image%20name.img'
+#        ref_uri = '{}://{}'.format(ref_type, ref_path)
+#
+#        test_image = image.Image(ref_uri)
+#        test_data = test_image._process_uri(ref_uri)
+#
+#        assert test_data['type'] == ref_type
+#        assert test_data['name'] == "image name.img"
+#        assert test_data['path'] == ref_path
+
+
     def test_https_uri(self):
         ref_type = 'https'
         ref_path = 'localhost/images/{}'.format(self.image_name)
@@ -77,6 +115,20 @@ class TestImageUriProcess(object):
         assert test_data['type'] == ref_type
         assert test_data['name'] == self.image_name
         assert test_data['path'] == ref_path
+
+#    def test_box(self):
+#        ref_uri = "http://local.host/file.box"
+#        test_image = image.Image(ref_uri)
+#        test_data = test_image._process_uri(ref_uri)
+#        assert test_data['name'] == "file.qcow2"
+#
+#
+#    def test_xz(self):
+#        ref_uri = "http://local.host/file.iso.xz"
+#        test_image = image.Image(ref_uri)
+#        test_data = test_image._process_uri(ref_uri)
+#        assert test_data['name'] == "file.iso"
+
 
     def test_invalid_uri_type(self):
         ref_type = 'ftp'

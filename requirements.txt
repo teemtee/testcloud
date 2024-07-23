@@ -4,6 +4,8 @@
 Jinja2
 libvirt-python
 requests
+# FIXME - add peewee to specfile
+peewee
 #guestfs - after it is on pypi ( https://bugzilla.redhat.com/show_bug.cgi?id=1075594 )
 
 # Test suite requirements

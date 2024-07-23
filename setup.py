@@ -53,6 +53,7 @@ setup(name='testcloud',
       install_requires=[
           'Jinja2',
           'libvirt-python',
+          'peewee',
           'requests',
           'packaging'
       ],
