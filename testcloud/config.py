@@ -259,8 +259,8 @@ storage:
         "latest": "9"
     }
 
-    DEBIAN_RELEASE_MAP = {"10": "buster","11": "bullseye"}
-    DEBIAN_LATEST = "11"
+    DEBIAN_RELEASE_MAP = {"10": "buster","11": "bullseye", "12": "bookworm"}
+    DEBIAN_LATEST = "12"
     DEBIAN_IMG_URL = "https://cloud.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2"
 
     UBUNTU_RELEASES_API = "https://api.launchpad.net/devel/ubuntu/series"
