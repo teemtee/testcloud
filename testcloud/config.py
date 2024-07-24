@@ -102,10 +102,6 @@ class ConfigData(object):
     DATA_DIR = "/var/lib/testcloud"
     STORE_DIR = "/var/lib/testcloud/backingstores"
 
-    # libvirt domain XML Template
-    # This lives either in the DEFAULT_CONF_DIR or DATA_DIR
-    XML_TEMPLATE = "domain-template.jinja"
-
     # Data for cloud-init
 
     PASSWORD = 'passw0rd'
