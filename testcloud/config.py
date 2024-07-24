@@ -264,7 +264,7 @@ storage:
     DEBIAN_IMG_URL = "https://cloud.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2"
 
     UBUNTU_RELEASES_API = "https://api.launchpad.net/devel/ubuntu/series"
-    UBUNTU_IMG_URL = "https://cloud-images.ubuntu.com/%s/current/%s-server-cloudimg-%s-disk-kvm.img"
+    UBUNTU_IMG_URL = "https://cloud-images.ubuntu.com/%s/current/%s-server-cloudimg-%s.img"
 
     def merge_object(self, obj):
         '''Overwrites default values with values from a python object which have

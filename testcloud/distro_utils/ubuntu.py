@@ -35,8 +35,6 @@ def get_ubuntu_image_url(version:str, arch:str) -> str:
         log.error("Requested architecture is not supported by testcloud for Ubuntu.")
         raise exceptions.TestcloudImageError
 
-    if arch != "x86_64":
-        config_data.UBUNTU_IMG_URL = config_data.UBUNTU_IMG_URL.replace("-disk-kvm.img", ".img")
     releases = get_ubuntu_releases()
     if len(releases) == 0:
         raise exceptions.TestcloudImageError
