@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
 Version:        0.9.12
-Release:        1%{?dist}
+Release:        3%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPL-2.0-or-later
@@ -47,8 +47,6 @@ Requires:       libvirt-daemon-driver-storage-core
 Requires:       python3-requests
 Requires:       python3-libvirt
 Requires:       python3-jinja2
-Requires:       python3-packaging
-Recommends:     python3-requests-cache
 Recommends:     butane
 Suggests:       python3-libguestfs
 Suggests:       libguestfs-tools-c
@@ -128,6 +126,12 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Sat Jul 20 2024 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.12-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_41_Mass_Rebuild
+
+* Mon Jun 10 2024 Python Maint <python-maint@redhat.com> - 0.9.12-2
+- Rebuilt for Python 3.13
+
 * Thu Feb 29 2024 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.12-1
 - Fixup cli
 
