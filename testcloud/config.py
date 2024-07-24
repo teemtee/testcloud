@@ -225,36 +225,37 @@ storage:
     # Used to try to auto-fetch the latest qcow2
     CENTOS_STREAM_URL_PREFIX = "https://cloud.centos.org/centos/{0}-stream/{1}/images/"
     CENTOS_STREAM_VERSIONS = {
-        "8":      "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20220913.0.{0}.qcow2",
-        "9":      "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20230307.0.{0}.qcow2",
+        "8":      "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20240603.0.{0}.qcow2",
+        "9":      "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20240715.0.{0}.qcow2",
         "10":     "https://odcs.stream.centos.org/stream-10/production/CentOS-Stream-10-20240709.0/compose/BaseOS/{0}/images/CentOS-Stream-GenericCloud-10-20240709.0.{0}.qcow2",
         "latest": "9"
     }
 
     ROCKY_URL_PREFIX = "https://download.rockylinux.org/pub/rocky/{0}/images/{1}/"
     ROCKY_VERSIONS = {
-        "8":      "https://download.rockylinux.org/pub/rocky/8/images/{0}/Rocky-8-GenericCloud-Base-8.7-20230215.0.{0}.qcow2",
-        "9":      "https://download.rockylinux.org/pub/rocky/9/images/{0}/Rocky-9-GenericCloud-Base-9.1-20230215.0.{0}.qcow2",
+        "8":      "https://download.rockylinux.org/pub/rocky/8/images/{0}/Rocky-8-GenericCloud-Base-8.10-20240528.0.{0}.qcow2",
+        "9":      "https://download.rockylinux.org/pub/rocky/9/images/{0}/Rocky-9-GenericCloud-Base-9.4-20240609.1.{0}.qcow2",
         "latest": "9"
     }
 
-    ALMA_URL_PREFIX = "https://ftp.linux.cz/pub/linux/almalinux/{0}/cloud/{1}/images/"
+    ALMA_URL_PREFIX = "https://repo.almalinux.org/almalinux/{0}/cloud/{1}/images/"
     ALMA_VERSIONS = {
-        "8":      "https://ftp.sh.cvut.cz/almalinux/8/cloud/{0}/images/AlmaLinux-8-GenericCloud-8.7-20221111.{0}.qcow2",
-        "9":      "https://ftp.sh.cvut.cz/almalinux/9/cloud/{0}/images/AlmaLinux-9-GenericCloud-9.1-20221118.{0}.qcow2",
+        "8":      "https://repo.almalinux.org/almalinux/8/cloud/{0}/images/AlmaLinux-8-GenericCloud-8.10-20240530.{0}.qcow2",
+        "9":      "https://repo.almalinux.org/almalinux/9/cloud/{0}/images/AlmaLinux-9-GenericCloud-9.4-20240507.{0}.qcow2",
         "latest": "9"
     }
 
+    # https://yum.oracle.com/oracle-linux-templates.html
     ORACLE_VERSIONS = {
-        "7":      "https://yum.oracle.com/templates/OracleLinux/OL7/u9/x86_64/OL7U9_x86_64-kvm-b145.qcow",
-        "8":      "https://yum.oracle.com/templates/OracleLinux/OL8/u7/x86_64/OL8U7_x86_64-kvm-b148.qcow",
-        "9":      "https://yum.oracle.com/templates/OracleLinux/OL9/u1/x86_64/OL9U1_x86_64-kvm-b158.qcow",
+        "7":      "https://yum.oracle.com/templates/OracleLinux/OL7/u9/x86_64/OL7U9_x86_64-kvm-b218.qcow2",
+        "8":      "https://yum.oracle.com/templates/OracleLinux/OL8/u10/x86_64/OL8U10_x86_64-kvm-b237.qcow2",
+        "9":      "https://yum.oracle.com/templates/OracleLinux/OL9/u4/x86_64/OL9U4_x86_64-kvm-b234.qcow2",
         "latest": "9"
     }
 
     ORACLE_A64_VERSIONS = {
-        "8":      "https://yum.oracle.com/templates/OracleLinux/OL8/u7/aarch64/OL8U7_aarch64-kvm-cloud-b11.qcow",
-        "9":      "https://yum.oracle.com/templates/OracleLinux/OL9/u1/aarch64/OL9U1_aarch64-kvm-cloud-b14.qcow",
+        "8":      "https://yum.oracle.com/templates/OracleLinux/OL8/u10/aarch64/OL8U10_aarch64-kvm-cloud-b100.qcow2",
+        "9":      "https://yum.oracle.com/templates/OracleLinux/OL9/u4/aarch64/OL9U4_aarch64-kvm-cloud-b90.qcow2",
         "latest": "9"
     }
 
