@@ -24,8 +24,12 @@ def _get_centos_image_url(version:str, stream:bool, arch:str) -> str:
         if version == "latest":
             version = config_data.CENTOS_STREAM_VERSIONS["latest"]
 
+        # TODO: Until CentOS 10 starts syncing to the main mirror
+        if version == "10":
+            STREAM_URL_PREFIX = "https://odcs.stream.centos.org/stream-10/production/latest-CentOS-Stream/compose/BaseOS/{0}/images/".format(arch)
         # Try to dynamically get the latest at first
-        STREAM_URL_PREFIX = config_data.CENTOS_STREAM_URL_PREFIX.format(version, arch)
+        else:
+            STREAM_URL_PREFIX = config_data.CENTOS_STREAM_URL_PREFIX.format(version, arch)
         IMG_NAME = r'CentOS-Stream-GenericCloud-{0}-[0-9.]+.{1}.qcow2'.format(version, arch)
         try:
             return parse_latest_qcow(IMG_NAME, STREAM_URL_PREFIX)
