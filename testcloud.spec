@@ -1,7 +1,7 @@
 Name:           testcloud
 # Update also version in testcloud/__init__.py and docs/source/conf.py when changing this!
-Version:        0.9.12
-Release:        3%{?dist}
+Version:        0.9.13
+Release:        1%{?dist}
 Summary:        Tool for running cloud images locally
 
 License:        GPL-2.0-or-later
@@ -122,6 +122,28 @@ rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
 %{python3_sitelib}/*.egg-info
 
 %changelog
+* Wed Jul 24 2024 Frantisek Zatloukal <fzatlouk@redhat.com> - 0.9.13-1
+- _get_default_domain_conf polishing (lbrabec)
+- fixing typing errors (lbrabec)
+- add host_device_path to StorageDevice (lbrabec)
+- Allow skipping downloads
+- Adjust verification around image resolve caching
+- Fedora image finder: look for subvariant instead of variant
+- cli: Identify rhcos as coreos too
+- cli: Refactor url checking a bit
+- Band aid tests fixup
+- cli: Add dry option
+- Fix the issue of indentation for the docs of --virtiofs (hhan)
+- image: Use reflinks if available (walters)
+- add virtual iommu device (hhan)
+- Workarounds API (lbrabec, fzatlouk)
+- CentOS 7: Workaround to point repositories to the vault
+- CentOS Stream: Support preliminary CentOS Stream 10 images
+- Refresh baked in fallback image urls
+- Ubuntu: Fixup image finder
+- Debian: Support bookworm release
+- Purge domain-template.jinja
+
 * Sat Jul 20 2024 Fedora Release Engineering <releng@fedoraproject.org> - 0.9.12-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_41_Mass_Rebuild
 
