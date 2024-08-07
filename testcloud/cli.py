@@ -80,9 +80,6 @@ def _handle_connection_tip(ip, port, vagrant=False):
             print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null cloud-user@%s -p %d" % (ip, port))
 
     print("-"*80)
-    if port != 22:
-        print("Due to limitations of tescloud's user session VMs and bugs in some systems,"
-              " the ssh connection may not be available immediately...")
     if vagrant:
         print("Due to limited support for images without cloud-init pre installed,"
               "it may take up to 2 minutes for connection to be ready...")

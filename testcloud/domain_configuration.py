@@ -222,7 +222,8 @@ class UserNetworkConfiguration(NetworkConfiguration):
     def __init__(self, mac_address, port=6666, device_type="virtio-net-pci") -> None:
         super().__init__()
         self.mac_address = mac_address
-        self.additional_qemu_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22".format(port, port),
+        self.additional_qemu_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22,hostfwd=tcp::{}-:10022".format(
+                                    port, port, (port-1000)),
                                      "-device", "{},addr=1e.0,netdev=testcloud_net.{}".format(device_type, port)]
 
     def generate(self):

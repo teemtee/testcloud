@@ -17,6 +17,7 @@ import libvirt
 import shutil
 import platform
 import socket
+import requests
 
 from string import Template
 
@@ -327,6 +328,14 @@ class Instance(object):
         # Adds potential virtiofs mounts
         self._adjust_mount_pts(self.workarounds)
 
+        # Spawn http listener to signal readiness of the instance
+        if self.connection == "qemu:///session":
+            self.workarounds.add("python3 -m http.server {0} 2>/dev/null 1>&2 || "
+                                 "python -m http.server {0} 2>/dev/null 1>&2 || "
+                                 "/usr/libexec/platform-python -m http.server {0} 2>/dev/null 1>&2 || "
+                                 "python2 -m SimpleHTTPServer {0} 2>/dev/null 1>&2 || "
+                                 "python -m SimpleHTTPServer {0} 2>/dev/null 1>&2 &".format(10022), key="spawn_cloud_init_flag")
+
         runcommands = self.workarounds.generate_cloud_init_cmd_list()
 
         file_data = Template(file_data).safe_substitute(runcommands=runcommands,
@@ -555,7 +564,15 @@ class Instance(object):
         poll_tick = 0.5
         timeout_ticks = timeout / poll_tick
         count = 0
-        port_open = 1
+        port_open = 0
+        domif = {}
+        port = self.get_instance_port()
+
+        if self.connection not in ["qemu:///system", "qemu:///session"]:
+            # We dont know what to do with other connection types yet! TODO: Find out, refactor
+            raise TestcloudInstanceError("We currently don't support connections other than"
+                                         "qemu:///system and qemu:///session")
+
 
         # poll libvirt for domain interfaces, returning when an interface is
         # found, indicating that the boot process is post-cloud-init
@@ -563,15 +580,16 @@ class Instance(object):
             if self.connection == "qemu:///system":
                 domif = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
             elif self.connection == "qemu:///session":
-                domif = {}
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                port_open = sock.connect_ex(('127.0.0.1',self.get_instance_port()))
-            else:
-                # We dont know what to do with other connection types yet! TODO: Find out, refactor
-                raise TestcloudInstanceError("We currently don't support connections other than"
-                                             "qemu:///system and qemu:///session")
+                try:
+                    log.debug("Checking if cloud-init has finished its job...")
+                    requests.head("http://127.0.0.1:%d" % (port - 1000), timeout=1).raise_for_status()
+                    port_open = 1
+                except Exception:
+                    time.sleep(poll_tick * 4) # Larger value to prevent SYN flood
+                    count += 4
+                    continue
 
-            if len(domif) > 0 or timeout_ticks == 0 or port_open == 0:
+            if len(domif) > 0 or port_open == 1:
                 log.info("Successfully booted instance {}".format(self.name))
                 return
 
