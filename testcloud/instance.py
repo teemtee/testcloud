@@ -321,10 +321,6 @@ class Instance(object):
 
         file_data: str|Template = config_data.USER_DATA
 
-        # Wait for tmt, then remove the ugly down there
-        if file_data.count("%s") == 1:
-            file_data = file_data % password
-
         # Adds potential virtiofs mounts
         self._adjust_mount_pts(self.workarounds)
 
