@@ -93,9 +93,6 @@ def _handle_permissions_error_cli(error):
     print("su - $USER")
     sys.exit(1)
 
-def _bail_from_legacy_cli(args):
-    log.error("instance subcommand was removed from testcloud. For instance operations, omit the 'instance' keyword.")
-
 def _list_instance(args):
     """Handler for 'list' command. Expects the following elements in args:
         * name(str)
@@ -637,6 +634,7 @@ def _remove_image(args):
 
     if tc_image is None:
         log.error("image {} not found, cannot remove".format(args.name))
+        return
 
     tc_image.remove()
 
@@ -646,13 +644,6 @@ def get_argparser():
     subparsers = parser.add_subparsers(title="Command Types",
                                        description="Types of commands available",
                                        help="<command> --help")
-
-    instarg_legacy = subparsers.add_parser("instance", help="help on instance options")
-    instarg_legacy.set_defaults(func=_bail_from_legacy_cli)
-
-    instarg_legacy.add_argument("anything",
-                                type=str,
-                                nargs='*')
 
     parser.add_argument("-c",
                          "--connection",
