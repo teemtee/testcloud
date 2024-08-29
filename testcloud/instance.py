@@ -560,7 +560,7 @@ class Instance(object):
         poll_tick = 0.5
         timeout_ticks = timeout / poll_tick
         count = 0
-        port_open = 0
+        port_open = -1
         domif = {}
         port = self.get_instance_port()
 
@@ -575,17 +575,21 @@ class Instance(object):
         while count <= timeout_ticks:
             if self.connection == "qemu:///system":
                 domif = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
-            elif self.connection == "qemu:///session":
+            elif self.connection == "qemu:///session" and not self.coreos:
                 try:
                     log.debug("Checking if cloud-init has finished its job...")
                     requests.head("http://127.0.0.1:%d" % (port - 1000), timeout=1).raise_for_status()
-                    port_open = 1
+                    port_open = 0
                 except Exception:
                     time.sleep(poll_tick * 4) # Larger value to prevent SYN flood
                     count += 4
                     continue
+            elif self.connection == "qemu:///session" and self.coreos:
+                domif = {}
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                port_open = sock.connect_ex(('127.0.0.1',self.get_instance_port()))
 
-            if len(domif) > 0 or port_open == 1:
+            if len(domif) > 0 or port_open == 0:
                 log.info("Successfully booted instance {}".format(self.name))
                 return
 
