@@ -380,7 +380,7 @@ class Image(object):
                     break
 
                 i += 1
-                if i >= 3600: # FIXME - make configurable
+                if i >= config_data.IMAGE_DOWNLOAD_TIMEOUT:
                     raise TestcloudImageError("Propare process for {} appears stuck".format(self.remote_path))
 
             if config_data.DOWNLOAD_PROGRESS:

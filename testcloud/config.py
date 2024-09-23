@@ -157,6 +157,8 @@ storage:
     CMD_LINE_ENVS_COREOS = {}
     # timeout, in seconds for instance boot process
     BOOT_TIMEOUT = 160
+    # timeout after which we should kill unfinished downloads of images
+    IMAGE_DOWNLOAD_TIMEOUT = 1800
 
     # Maximum space (in GiB) that unused images can occupy in /var/lib/testcloud/backingstores directory
     # Once the limit is reached, testcloud will attempt to remove oldest files
