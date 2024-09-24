@@ -21,6 +21,18 @@ else:
     DB = pw.SqliteDatabase(":memory:")
 
 
+# Peewee does not support datetimes with tzinfo...
+class DateTimeTzField(pw.Field):
+    field_type = 'TEXT'
+
+    def db_value(self, value: datetime) -> str:
+        if value:
+            return value.isoformat()
+
+    def python_value(self, value: str) -> datetime:
+        if value:
+            return datetime.fromisoformat(value)
+
 def utcnow():
     return datetime.now(timezone.utc)
 
@@ -31,7 +43,7 @@ class DBImage(pw.Model):
     status = pw.CharField(default="unknown")
     remote_path = pw.CharField()
     local_path = pw.CharField()
-    last_used = pw.DateTimeField(default=utcnow)
+    last_used = DateTimeTzField(default=utcnow)
 
     class Meta:
         database = DB

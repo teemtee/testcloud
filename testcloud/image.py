@@ -15,11 +15,12 @@ import shutil
 import logging
 import peewee
 import requests
+import random
 import time
 
 from testcloud import config
 from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError
-from testcloud.sql import DB, DBImage
+from testcloud.sql import DB, DBImage, utcnow
 
 config_data = config.get_config()
 
@@ -195,7 +196,7 @@ class Image(object):
         return {'type': uri_type, 'name': image_name, 'path': uri_path}
 
     @classmethod
-    def _download_remote_image(cls, remote_url, local_path):
+    def _download_remote_image(cls, remote_url, local_path, progress_callback=None):
         """Download a remote image to the local system, outputting download
         progress as it's downloaded.
 
@@ -207,6 +208,9 @@ class Image(object):
         u = requests.get(remote_url, stream=True)
         if u.status_code == 404:
             raise TestcloudImageError('Image not found at the given URL: {}'.format(remote_url))
+
+        if progress_callback:
+            progress_callback(0, 0)
 
         try:
             with open(local_path + ".part", 'wb') as f:
@@ -230,6 +234,9 @@ class Image(object):
                             bytes_downloaded += len(data)
                             f.write(data)
                             downloaded_coeff = float(bytes_downloaded) / file_size
+                            if progress_callback:
+                                progress_callback(bytes_downloaded, downloaded_coeff)
+
                             if config_data.DOWNLOAD_PROGRESS:
                                 # TODO: Improve this progress indicator by making
                                 # it more readable and user-friendly.
@@ -299,6 +306,11 @@ class Image(object):
             log.error('Error while changing SELinux context on '
                       'image {}'.format(image_path))
 
+
+    def _download_callback(self, bts, coef):
+        if (utcnow() - self.last_used).total_seconds() > 2:
+            self.last_used = utcnow()
+
     def download(self):
         if os.path.exists(self.local_path):
             log.debug(f"Image is already present at: {self.local_path}")
@@ -330,7 +342,7 @@ class Image(object):
             retries = 0
             while True:
                 try:
-                    Image._download_remote_image(self.remote_path, raw_local_path)
+                    Image._download_remote_image(self.remote_path, raw_local_path, self._download_callback)
                     break
                 except TestcloudImageError:
                     retries += 1
@@ -365,25 +377,34 @@ class Image(object):
 
             log.info("Image is already being prepared by another process. Waiting for it to be ready.")
             while True:
-                time.sleep(1)
+                slp = random.uniform(0.5, 1.5)
+                i += slp
+                time.sleep(slp)
 
-                if config_data.DOWNLOAD_PROGRESS:
+                if config_data.DOWNLOAD_PROGRESS_VERBOSE:
                     print(".", end="", flush=True)
 
-                self.sqldata = DBImage.select().where(DBImage.id == self.sqldata.id).get()
 
-                if self.status == "ready":
-                    return self.local_path
+                with DB.atomic('EXCLUSIVE'):
+                    self.sqldata = DBImage.select().where(DBImage.id == self.sqldata.id).get()
 
-                if self.status in ["missing", "unknown", "failed"]:
-                    self.status = "preparing"
-                    break
+                    if self.status == "ready":
+                        return self.local_path
 
-                i += 1
+                    if self.status in ["missing", "unknown", "failed"]:
+                        self.status = "preparing"
+                        break
+
+                    if self.status == "preparing" and (utcnow() - self.last_used).total_seconds() > 30:
+                        log.info("Download appears to be stalled, taking over")
+                        self.status = "preparing"
+                        self.last_used = utcnow()
+                        break
+
                 if i >= config_data.IMAGE_DOWNLOAD_TIMEOUT:
                     raise TestcloudImageError("Propare process for {} appears stuck".format(self.remote_path))
 
-            if config_data.DOWNLOAD_PROGRESS:
+            if config_data.DOWNLOAD_PROGRESS_VERBOSE:
                 print("\n", flush=True)
 
             log.info("Done waiting")
