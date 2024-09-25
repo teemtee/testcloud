@@ -312,7 +312,7 @@ To install **testcloud** for development purposes:
 1. Install the dependencies for **testcloud**.
 
        ```
-       $ sudo dnf install libvirt python3-libvirt libguestfs libguestfs-tools python3-requests python3-jinja2
+       $ sudo dnf builddep testcloud
        ```
 
 2. Start **libvirtd**.

@@ -11,8 +11,8 @@ Prerequisites
 #. Install the dependencies for testcloud.
 
     .. code-block:: bash
-            
-        $ sudo dnf install libvirt python3-libvirt libguestfs libguestfs-tools python3-requests python3-jinja2
+
+        $ sudo dnf builddep testcloud
 
 #. Start ``libvirtd``.
 
@@ -59,7 +59,7 @@ Installation
 
 #. Change ownership on these directories to enable their use with testcloud.
 
-    .. code-block:: bash 
+    .. code-block:: bash
 
         $ sudo chown qemu:testcloud /var/lib/testcloud
 
@@ -79,7 +79,7 @@ Running testcloud
 
 #. Navigate to your testcloud git repository.
 
-    .. code-block:: bash 
+    .. code-block:: bash
 
         $ cd testcloud
 

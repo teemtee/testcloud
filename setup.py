@@ -51,7 +51,6 @@ setup(name='testcloud',
       cmdclass={'test': PyTest},
       entry_points=dict(console_scripts=["testcloud=testcloud.cli:main", "t7d=testcloud.cli:main"]),
       install_requires=[
-          'Jinja2',
           'libvirt-python',
           'peewee',
           'requests',
