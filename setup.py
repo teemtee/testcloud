@@ -50,6 +50,7 @@ setup(name='testcloud',
       include_package_data=True,
       cmdclass={'test': PyTest},
       entry_points=dict(console_scripts=["testcloud=testcloud.cli:main", "t7d=testcloud.cli:main"]),
+      data_files = [('share/man/man1', ['manpages/testcloud.1']), ('share/bash-completion/completions', ['conf/testcloud'])],
       install_requires=[
           'libvirt-python',
           'peewee',
