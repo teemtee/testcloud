@@ -17,6 +17,7 @@ import peewee
 import requests
 import random
 import time
+from urllib.parse import urlparse
 
 from testcloud import config
 from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError
@@ -171,29 +172,20 @@ class Image(object):
         :raise TestcloudImageError: if the URI is invalid or uses an unsupported transport
         """
 
-        # FIXME - This will fail on url-encoded characters
-        type_match = re.search(r'(http|https|file)://([\w./-]+)', uri)
+        prsd = urlparse(uri)
+        if prsd.scheme not in ("http", "https", "file"):
+            raise TestcloudImageError('invalid uri: only http, https and file schemes are supported: {}'.format(uri))
 
-        if not type_match:
-            raise TestcloudImageError('invalid uri: only http, https and file uris'
-                                      ' are supported: {}'.format(uri))
-
-        uri_type = type_match.group(1)
-        uri_path = type_match.group(2)
-
-        # FIXME - this will fail on any URLs with query params or anchors
-        #   Maybe just use the urllib.parse instead of a custom solution?
-        name_match = re.findall(r'([\w.-]+)', uri)
-
-        if not name_match:
+        image_name = os.path.split(prsd.path)[-1]
+        if not image_name:
             raise TestcloudImageError('invalid uri: could not find image name: {}'.format(uri))
 
-        image_name = name_match[-1]
-        if image_name.endswith('.xz'):
-            image_name = image_name.replace('.xz', '')
-        if image_name.endswith('.box'):
-            image_name = image_name.replace('.box', '.qcow2')
-        return {'type': uri_type, 'name': image_name, 'path': uri_path}
+        if image_name.lower().endswith('.xz'):
+            image_name = image_name[:-3]
+        if image_name.lower().endswith('.box'):
+            image_name = f"{image_name[:-4]}.qcow2"
+
+        return {'type': prsd.scheme, 'name': image_name, 'path': prsd.netloc + prsd.path}
 
     @classmethod
     def _download_remote_image(cls, remote_url, local_path, progress_callback=None):
