@@ -36,7 +36,7 @@ def needs_legacy_net(image_name) -> bool:
     Performs a simple regexp that tries to detect presence of el6/7 image name pattern
     Return True in such cases, False otherwise
     """
-    return True if re.search(r"(rhel|centos)\D+(6\.|7\.).*", image_name.lower()) else False
+    return True if re.search(r"(rhel|centos)\D+(6|7).*", image_name.lower()) else False
 
 
 def create_port_file(instance_name, port):

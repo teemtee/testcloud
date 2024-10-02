@@ -500,7 +500,10 @@ def _get_default_domain_conf(
     domain_configuration.memory_size = ram * 1024
 
     if desired_arch == "x86_64":
-        domain_configuration.system_architecture = X86_64ArchitectureConfiguration(kvm=kvm, uefi=config_data.UEFI, model="q35")
+        domain_configuration.system_architecture = X86_64ArchitectureConfiguration(
+            kvm=kvm,
+            uefi=config_data.UEFI,
+            model="q35" if not util.needs_legacy_net(backingstore_image.name) else "pc")
     elif desired_arch == "aarch64":
         domain_configuration.system_architecture = AArch64ArchitectureConfiguration(kvm=kvm, uefi=True, model="virt")
     elif desired_arch == "ppc64le":
