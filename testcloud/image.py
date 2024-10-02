@@ -79,6 +79,7 @@ class Image(object):
             uri_data = self._process_uri(uri)
             try:
                 self.sqldata = DBImage.select().where(DBImage.name == uri_data['name']).get()
+                self.remote_path = uri
             except peewee.DoesNotExist:
                 local_path = os.path.join(config_data.STORE_DIR, uri_data['name'])
                 status = "missing"
@@ -314,7 +315,7 @@ class Image(object):
         if rpls.endswith(".xz"):
             raw_local_path += ".xz"
         if rpls.endswith(".box"):
-            raw_local_path.replace(".qcow2", ".box")
+            raw_local_path = raw_local_path.replace(".qcow2", ".box")
 
         if rpls.startswith("file://"):
             source_path = self.remote_path[len('file://'):]
@@ -428,6 +429,8 @@ class Image(object):
                 except ValueError:
                     raise TestcloudImageError('Failed to unpack {}'.format(raw_local_path))
                 os.remove(raw_local_path)
+                os.remove(os.path.join(local_dir, "Vagrantfile"))
+                os.remove(os.path.join(local_dir, "metadata.json"))
                 os.rename(os.path.join(local_dir, "box.img"), self.local_path)
 
             Image._adjust_image_selinux(self.local_path)
