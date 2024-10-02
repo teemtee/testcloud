@@ -10,8 +10,9 @@ from testcloud import config
 from testcloud import exceptions
 from testcloud.distro_utils.misc import get_requests_session
 
-log = logging.getLogger('testcloud.util')
+log = logging.getLogger("testcloud.util")
 config_data = config.get_config()
+
 
 def get_ubuntu_releases() -> dict:
     session = get_requests_session()
@@ -23,12 +24,12 @@ def get_ubuntu_releases() -> dict:
         raise exceptions.TestcloudImageError
 
     return {
-        "latest":  [entry["name"] for entry in releases_resp["entries"] if entry["active"] and "Dev" not in entry["status"]][0],
-        "entries": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and float(entry["version"]) >= 20]
+        "latest": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and "Dev" not in entry["status"]][0],
+        "entries": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and float(entry["version"]) >= 20],
     }
 
 
-def get_ubuntu_image_url(version:str, arch:str) -> str:
+def get_ubuntu_image_url(version: str, arch: str) -> str:
     arch_map = {"x86_64": "amd64", "aarch64": "arm64", "ppc64le": "ppc64el", "s390x": "s390x"}
 
     if arch not in arch_map:
@@ -44,5 +45,5 @@ def get_ubuntu_image_url(version:str, arch:str) -> str:
     elif version in releases["entries"]:
         return config_data.UBUNTU_IMG_URL % (version, version, arch_map[arch])
     else:
-        log.error("Unknown Ubuntu release, valid releases are: latest, %s" % ', '.join(releases["entries"]))
+        log.error("Unknown Ubuntu release, valid releases are: latest, %s" % ", ".join(releases["entries"]))
         raise exceptions.TestcloudImageError

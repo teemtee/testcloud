@@ -8,10 +8,11 @@ import logging
 from testcloud import config
 from testcloud import exceptions
 
-log = logging.getLogger('testcloud.util')
+log = logging.getLogger("testcloud.util")
 config_data = config.get_config()
 
-def get_oracle_image_url(version:str, arch:str) -> str:
+
+def get_oracle_image_url(version: str, arch: str) -> str:
     if arch not in ["x86_64", "aarch64"]:
         log.error("Oracle Enterprise Linux supports only x86_64 and aarch64.")
         raise exceptions.TestcloudImageError

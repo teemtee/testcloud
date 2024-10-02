@@ -25,7 +25,7 @@ from testcloud.sql import DB, DBImage, utcnow
 
 config_data = config.get_config()
 
-log = logging.getLogger('testcloud.image')
+log = logging.getLogger("testcloud.image")
 
 
 def list_images():
@@ -35,7 +35,7 @@ def list_images():
     """
 
     image_dir = config_data.STORE_DIR
-    images = [i for i in os.listdir(image_dir) if not i.endswith('.part')]
+    images = [i for i in os.listdir(image_dir) if not i.endswith(".part")]
 
     return images
 
@@ -54,7 +54,7 @@ def find_image(name, uri=None):
         log.warning("find_image - uri parameter is deprecated and ignored")
 
     if name in images:
-        uri = 'file://{}/{}'.format(config_data.STORE_DIR, name)
+        uri = "file://{}/{}".format(config_data.STORE_DIR, name)
         return Image(uri)
     else:
         return None
@@ -66,7 +66,7 @@ class Image(object):
     from mounted local filesystems.
     """
 
-    def __init__(self, uri:str):
+    def __init__(self, uri: str):
         """Create a new Image object for Testcloud
 
         :param uri: URI for the image to be represented. this URI must be of a
@@ -75,18 +75,17 @@ class Image(object):
         """
 
         # Check/create in exclusive transaction to prevent some races
-        with DB.atomic('EXCLUSIVE'):
+        with DB.atomic("EXCLUSIVE"):
             uri_data = self._process_uri(uri)
             try:
-                self.sqldata = DBImage.select().where(DBImage.name == uri_data['name']).get()
+                self.sqldata = DBImage.select().where(DBImage.name == uri_data["name"]).get()
                 self.remote_path = uri
             except peewee.DoesNotExist:
-                local_path = os.path.join(config_data.STORE_DIR, uri_data['name'])
+                local_path = os.path.join(config_data.STORE_DIR, uri_data["name"])
                 status = "missing"
                 if os.path.isfile(local_path):
-                    status="ready"
-                self.sqldata = DBImage.create(name=uri_data['name'], status=status, remote_path=uri, local_path=local_path)
-
+                    status = "ready"
+                self.sqldata = DBImage.create(name=uri_data["name"], status=status, remote_path=uri, local_path=local_path)
 
     @property
     def name(self):
@@ -98,7 +97,6 @@ class Image(object):
             self.sqldata.name = value
             self.sqldata.save()
 
-
     @property
     def status(self):
         return self.sqldata.status
@@ -108,7 +106,6 @@ class Image(object):
         if value != self.sqldata.status:
             self.sqldata.status = value
             self.sqldata.save()
-
 
     @property
     def last_used(self):
@@ -120,7 +117,6 @@ class Image(object):
             self.sqldata.last_used = value
             self.sqldata.save()
 
-
     @property
     def remote_path(self):
         return self.sqldata.remote_path
@@ -130,7 +126,6 @@ class Image(object):
         if value != self.sqldata.remote_path:
             self.sqldata.remote_path = value
             self.sqldata.save()
-
 
     # FIXME - keeping uri for compatibility, get rid of it later
     @property
@@ -143,7 +138,6 @@ class Image(object):
             self.sqldata.remote_path = value
             self.sqldata.save()
 
-
     @property
     def local_path(self):
         return self.sqldata.local_path
@@ -154,15 +148,13 @@ class Image(object):
             self.sqldata.local_path = value
             self.sqldata.save()
 
-
     # FIXME - keeping uri_type for compatibility, get rid of it later
     @property
     def uri_type(self):
         try:
-            return self.sqldata.remote_path.split('://', 1)[0]
+            return self.sqldata.remote_path.split("://", 1)[0]
         except (IndexError, AttributeError):
-            return 'unknown'
-
+            return "unknown"
 
     def _process_uri(self, uri):
         """Process the URI given to find the type, path and imagename contained
@@ -175,18 +167,18 @@ class Image(object):
 
         prsd = urlparse(uri)
         if prsd.scheme not in ("http", "https", "file"):
-            raise TestcloudImageError('invalid uri: only http, https and file schemes are supported: {}'.format(uri))
+            raise TestcloudImageError("invalid uri: only http, https and file schemes are supported: {}".format(uri))
 
         image_name = os.path.split(prsd.path)[-1]
         if not image_name:
-            raise TestcloudImageError('invalid uri: could not find image name: {}'.format(uri))
+            raise TestcloudImageError("invalid uri: could not find image name: {}".format(uri))
 
-        if image_name.lower().endswith('.xz'):
+        if image_name.lower().endswith(".xz"):
             image_name = image_name[:-3]
-        if image_name.lower().endswith('.box'):
+        if image_name.lower().endswith(".box"):
             image_name = f"{image_name[:-4]}.qcow2"
 
-        return {'type': prsd.scheme, 'name': image_name, 'path': prsd.netloc + prsd.path}
+        return {"type": prsd.scheme, "name": image_name, "path": prsd.netloc + prsd.path}
 
     @classmethod
     def _download_remote_image(cls, remote_url, local_path, progress_callback=None):
@@ -200,18 +192,18 @@ class Image(object):
 
         u = requests.get(remote_url, stream=True)
         if u.status_code == 404:
-            raise TestcloudImageError('Image not found at the given URL: {}'.format(remote_url))
+            raise TestcloudImageError("Image not found at the given URL: {}".format(remote_url))
 
         if progress_callback:
             progress_callback(0, 0)
 
         try:
-            with open(local_path + ".part", 'wb') as f:
+            with open(local_path + ".part", "wb") as f:
 
                 try:
-                    file_size = int(u.headers['content-length'])
+                    file_size = int(u.headers["content-length"])
                 except KeyError:
-                    log.warn('Unknown download size.')
+                    log.warn("Unknown download size.")
                     file_size = -1
 
                 log.info("Downloading {0} ({1} bytes)".format(local_path, file_size))
@@ -233,9 +225,7 @@ class Image(object):
                             if config_data.DOWNLOAD_PROGRESS:
                                 # TODO: Improve this progress indicator by making
                                 # it more readable and user-friendly.
-                                status = r"{0}/{1} [{2:.2%}]".format(bytes_downloaded,
-                                                                     file_size,
-                                                                     downloaded_coeff)
+                                status = r"{0}/{1} [{2:.2%}]".format(bytes_downloaded, file_size, downloaded_coeff)
                                 status = status + chr(8) * (len(status) + 1)
                                 if config_data.DOWNLOAD_PROGRESS_VERBOSE and file_size != -1:
                                     sys.stdout.write(status)
@@ -251,21 +241,17 @@ class Image(object):
 
                     except TypeError:
                         if downloaded_coeff != float(1.0) and file_size != -1:
-                            raise TestcloudImageError('Network error during image download, aborting.')
+                            raise TestcloudImageError("Network error during image download, aborting.")
                         #  Rename the file since download has completed
                         os.rename(local_path + ".part", local_path)
                         log.info("Succeeded at downloading {0}".format(local_path))
                         break
                     except Exception:
-                        raise TestcloudImageError('Network error during image download, aborting.')
+                        raise TestcloudImageError("Network error during image download, aborting.")
 
         except OSError:
             # note: suppress inside exception warnings
-            raise TestcloudPermissionsError(
-                'Problem writing to {}. Are you in group testcloud?'.format(local_path)
-            ) from None
-
-
+            raise TestcloudPermissionsError("Problem writing to {}. Are you in group testcloud?".format(local_path)) from None
 
     @classmethod
     def _adjust_image_selinux(cls, image_path):
@@ -276,29 +262,21 @@ class Image(object):
         """
 
         try:
-            selinux_active = subprocess.call(['selinuxenabled'])
+            selinux_active = subprocess.call(["selinuxenabled"])
         except FileNotFoundError:
             logging.debug("selinuxenabled is not present (libselinux-utils package missing?)")
             logging.debug("Assuming selinux is not installed and therefore disabled")
             selinux_active = 1
 
         if selinux_active != 0:
-            log.debug('SELinux not enabled, not changing context of'
-                      'image {}'.format(image_path))
+            log.debug("SELinux not enabled, not changing context of" "image {}".format(image_path))
             return
 
-        image_context = subprocess.call(['chcon',
-                                         '-h',
-                                         '-u', 'system_u',
-                                         '-t', 'virt_content_t',
-                                         image_path])
+        image_context = subprocess.call(["chcon", "-h", "-u", "system_u", "-t", "virt_content_t", image_path])
         if image_context == 0:
-            log.debug('successfully changed SELinux context for '
-                      'image {}'.format(image_path))
+            log.debug("successfully changed SELinux context for " "image {}".format(image_path))
         else:
-            log.error('Error while changing SELinux context on '
-                      'image {}'.format(image_path))
-
+            log.error("Error while changing SELinux context on " "image {}".format(image_path))
 
     def _download_callback(self, bts, coef):
         if (utcnow() - self.last_used).total_seconds() > 2:
@@ -318,18 +296,16 @@ class Image(object):
             raw_local_path = raw_local_path.replace(".qcow2", ".box")
 
         if rpls.startswith("file://"):
-            source_path = self.remote_path[len('file://'):]
+            source_path = self.remote_path[len("file://") :]
 
             if not os.path.exists(source_path):
-                raise FileNotFoundError('Specified image path {} does not exist.'.format(source_path))
+                raise FileNotFoundError("Specified image path {} does not exist.".format(source_path))
 
             try:
-                subprocess.check_call(['cp', '-f', source_path, raw_local_path])
+                subprocess.check_call(["cp", "-f", source_path, raw_local_path])
             except OSError:
                 # note: suppress inside exception warnings
-                raise TestcloudPermissionsError(
-                    'Problem writing to {}. Are you in group testcloud?'.format(self.local_path)
-                ) from None
+                raise TestcloudPermissionsError("Problem writing to {}. Are you in group testcloud?".format(self.local_path)) from None
 
         elif rpls.startswith("http://") or rpls.startswith("https://"):
             retries = 0
@@ -346,7 +322,6 @@ class Image(object):
 
         return raw_local_path
 
-
     def prepare(self, copy=True):
         """Prepare the image for local use by either downloading the image from
         a remote location or copying/linking it into the image store from a locally
@@ -355,7 +330,6 @@ class Image(object):
         :param copy: if true image will be copied to backingstores else symlink is created
                      in backingstores instead of copying. Only for file:// type of urls.
         """
-
 
         if copy != True:
             log.warning("The `copy` parameter is deprecated, has no effect, and will be removed in future release")
@@ -377,8 +351,7 @@ class Image(object):
                 if config_data.DOWNLOAD_PROGRESS_VERBOSE:
                     print(".", end="", flush=True)
 
-
-                with DB.atomic('EXCLUSIVE'):
+                with DB.atomic("EXCLUSIVE"):
                     self.sqldata = DBImage.select().where(DBImage.id == self.sqldata.id).get()
 
                     if self.status == "ready":
@@ -404,16 +377,15 @@ class Image(object):
 
         self.status = "preparing"
 
-        log.debug("Local downloads will be stored in {}.".format(
-            config_data.STORE_DIR))
+        log.debug("Local downloads will be stored in {}.".format(config_data.STORE_DIR))
 
         try:
             raw_local_path = self.download()
 
-            if raw_local_path.endswith('.xz'):
+            if raw_local_path.endswith(".xz"):
                 subprocess.call("unxz %s" % raw_local_path, shell=True)
 
-            if raw_local_path.endswith('.box'):
+            if raw_local_path.endswith(".box"):
                 # For Vagrant boxes we need to:
                 # - unpack the .box file (a .tar.gz really)
                 # - remove the .box file
@@ -427,7 +399,7 @@ class Image(object):
                     #  the file to the "final" location?
                     shutil.unpack_archive(raw_local_path, extract_dir=local_dir, format="gztar")
                 except ValueError:
-                    raise TestcloudImageError('Failed to unpack {}'.format(raw_local_path))
+                    raise TestcloudImageError("Failed to unpack {}".format(raw_local_path))
                 os.remove(raw_local_path)
                 os.remove(os.path.join(local_dir, "Vagrantfile"))
                 os.remove(os.path.join(local_dir, "metadata.json"))
@@ -442,15 +414,14 @@ class Image(object):
         return self.local_path
 
     def remove(self):
-        """Remove the image from disk. This operation cannot be undone.
-        """
+        """Remove the image from disk. This operation cannot be undone."""
 
         log.debug("removing image {}".format(self.local_path))
         os.remove(self.local_path)
         self.sqldata.delete_instance()
 
     def destroy(self):
-        '''A deprecated method. Please call :meth:`remove` instead.'''
+        """A deprecated method. Please call :meth:`remove` instead."""
 
-        log.debug('DEPRECATED: destroy() method was deprecated. Please use remove()')
+        log.debug("DEPRECATED: destroy() method was deprecated. Please use remove()")
         self.remove()

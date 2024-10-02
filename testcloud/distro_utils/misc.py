@@ -11,9 +11,10 @@ from testcloud import exceptions, config
 from packaging.version import Version
 
 config_data = config.get_config()
-log = logging.getLogger('testcloud.util')
+log = logging.getLogger("testcloud.util")
 
-def parse_latest_qcow(rule:str, url:str) -> str:
+
+def parse_latest_qcow(rule: str, url: str) -> str:
     session = get_requests_session()
 
     try:
@@ -29,6 +30,7 @@ def get_requests_session():
     try:
         assert config_data.CACHE_IMAGES
         import requests_cache
+
         assert Version(requests_cache.__version__) >= Version("1.2")
 
         log.debug("Using local image url cache...")
@@ -36,7 +38,7 @@ def get_requests_session():
             cache_name="{}/testcloud_image_resolve_cache".format(config_data.DATA_DIR),
             backend="sqlite",
             stale_if_error=True,
-            expire_after=config_data.TRUST_DEADLINE * 60 * 60 * 24
+            expire_after=config_data.TRUST_DEADLINE * 60 * 60 * 24,
         )
     except (ImportError, AssertionError):
         log.debug("Not using local image url cache due to config or unmet dependencies...")

@@ -9,16 +9,19 @@ from testcloud import config
 from testcloud import exceptions
 from testcloud.distro_utils.misc import parse_latest_qcow
 
-log = logging.getLogger('testcloud.util')
+log = logging.getLogger("testcloud.util")
 config_data = config.get_config()
 
-def get_centos_image_url(version:str, arch:str) -> str:
+
+def get_centos_image_url(version: str, arch: str) -> str:
     return _get_centos_image_url(version=version, stream=False, arch=arch)
 
-def get_centos_stream_image_url(version:str, arch:str) -> str:
+
+def get_centos_stream_image_url(version: str, arch: str) -> str:
     return _get_centos_image_url(version=version, stream=True, arch=arch)
 
-def _get_centos_image_url(version:str, stream:bool, arch:str) -> str:
+
+def _get_centos_image_url(version: str, stream: bool, arch: str) -> str:
     if stream:
         # CentOS Stream
         if version == "latest":
@@ -26,11 +29,13 @@ def _get_centos_image_url(version:str, stream:bool, arch:str) -> str:
 
         # TODO: Until CentOS 10 starts syncing to the main mirror
         if version == "10":
-            STREAM_URL_PREFIX = "https://odcs.stream.centos.org/stream-10/production/latest-CentOS-Stream/compose/BaseOS/{0}/images/".format(arch)
+            STREAM_URL_PREFIX = (
+                "https://odcs.stream.centos.org/stream-10/production/latest-CentOS-Stream/compose/BaseOS/{0}/images/".format(arch)
+            )
         # Try to dynamically get the latest at first
         else:
             STREAM_URL_PREFIX = config_data.CENTOS_STREAM_URL_PREFIX.format(version, arch)
-        IMG_NAME = r'CentOS-Stream-GenericCloud-{0}-[0-9.]+.{1}.qcow2'.format(version, arch)
+        IMG_NAME = r"CentOS-Stream-GenericCloud-{0}-[0-9.]+.{1}.qcow2".format(version, arch)
         try:
             return parse_latest_qcow(IMG_NAME, STREAM_URL_PREFIX)
         except:

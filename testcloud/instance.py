@@ -29,18 +29,19 @@ from testcloud.workarounds import Workarounds
 
 config_data = config.get_config()
 
-log = logging.getLogger('testcloud.instance')
+log = logging.getLogger("testcloud.instance")
 
 #: mapping domain state constants from libvirt to a known set of strings
-DOMAIN_STATUS_ENUM = {libvirt.VIR_DOMAIN_NOSTATE: 'no state',
-                      libvirt.VIR_DOMAIN_RUNNING: 'running',
-                      libvirt.VIR_DOMAIN_BLOCKED: 'blocked',
-                      libvirt.VIR_DOMAIN_PAUSED:  'paused',
-                      libvirt.VIR_DOMAIN_SHUTDOWN: 'shutdown',
-                      libvirt.VIR_DOMAIN_SHUTOFF: 'shutoff',
-                      libvirt.VIR_DOMAIN_CRASHED: 'crashed',
-                      libvirt.VIR_DOMAIN_PMSUSPENDED: 'suspended'
-                      }
+DOMAIN_STATUS_ENUM = {
+    libvirt.VIR_DOMAIN_NOSTATE: "no state",
+    libvirt.VIR_DOMAIN_RUNNING: "running",
+    libvirt.VIR_DOMAIN_BLOCKED: "blocked",
+    libvirt.VIR_DOMAIN_PAUSED: "paused",
+    libvirt.VIR_DOMAIN_SHUTDOWN: "shutdown",
+    libvirt.VIR_DOMAIN_SHUTOFF: "shutoff",
+    libvirt.VIR_DOMAIN_CRASHED: "crashed",
+    libvirt.VIR_DOMAIN_PMSUSPENDED: "suspended",
+}
 
 
 def _list_instances():
@@ -51,23 +52,23 @@ def _list_instances():
 
     instance_list = []
 
-    instance_dir = os.listdir('{}/instances'.format(config_data.DATA_DIR))
+    instance_dir = os.listdir("{}/instances".format(config_data.DATA_DIR))
     for dir in instance_dir:
         instance_details = {}
-        instance_details['name'] = dir
+        instance_details["name"] = dir
         try:
-            with open("{}/instances/{}/ip".format(config_data.DATA_DIR, dir), 'r') as inst:
-                instance_details['ip'] = inst.readline().strip()
+            with open("{}/instances/{}/ip".format(config_data.DATA_DIR, dir), "r") as inst:
+                instance_details["ip"] = inst.readline().strip()
 
         except IOError:
-            instance_details['ip'] = None
+            instance_details["ip"] = None
 
         try:
-            with open("{}/instances/{}/port".format(config_data.DATA_DIR, dir), 'r') as inst:
-                instance_details['port'] = inst.readline().strip()
+            with open("{}/instances/{}/port".format(config_data.DATA_DIR, dir), "r") as inst:
+                instance_details["port"] = inst.readline().strip()
 
         except IOError:
-            instance_details['port'] = 22
+            instance_details["port"] = 22
 
         instance_list.append(instance_details)
 
@@ -101,13 +102,13 @@ def _list_domains(connection):
 
 
 def _find_domain(name, connection):
-    '''Find whether a domain exists and get its state.
+    """Find whether a domain exists and get its state.
 
     :param str name: name of the domain to find
     :param str connection: name of libvirt connection uri
     :returns: domain state from ``DOMAIN_STATUS_ENUM`` if domain exists, or ``None`` if it doesn't
     :rtype: str or None
-    '''
+    """
 
     conn = libvirt.openReadOnly(connection)
     try:
@@ -115,10 +116,11 @@ def _find_domain(name, connection):
         return DOMAIN_STATUS_ENUM[domain.state()[0]]
     except libvirt.libvirtError as e:
         if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                # no such domain
-                return None
+            # no such domain
+            return None
         else:
             raise e
+
 
 def _prepare_domain_list(connection=None):
     """
@@ -141,7 +143,8 @@ def _prepare_domain_list(connection=None):
                 log.error("Connection to QEMU failed, check the connection url ( %s ) you've specified." % connection)
             return {}
 
-def find_instance(name, connection='qemu:///system'):
+
+def find_instance(name, connection="qemu:///system"):
     """Find an instance using a given name and image, if it exists.
 
     Please note that ``connection`` is not taken into account when searching for the instance, but
@@ -155,7 +158,7 @@ def find_instance(name, connection='qemu:///system'):
 
     instances = _list_instances()
     for inst in instances:
-        if inst['name'] == name:
+        if inst["name"] == name:
             return Instance(connection=connection, domain_configuration=DomainConfiguration(name))
     return None
 
@@ -173,20 +176,21 @@ def list_instances(connection=None):
     instances = []
 
     for instance in all_instances:
-        if instance['name'] not in domains.keys():
-            log.warn("{} is not registered, might want to delete it via 'testcloud instance clean'.".format(instance['name']))
-            instance['state'] = 'de-sync'
+        if instance["name"] not in domains.keys():
+            log.warn("{} is not registered, might want to delete it via 'testcloud instance clean'.".format(instance["name"]))
+            instance["state"] = "de-sync"
 
             instances.append(instance)
 
         else:
 
             # Add the state of the instance
-            instance['state'] = domains[instance['name']]
+            instance["state"] = domains[instance["name"]]
 
             instances.append(instance)
 
     return instances
+
 
 def clean_instances(connection=None):
     """
@@ -196,12 +200,13 @@ def clean_instances(connection=None):
     all_instances = _list_instances()
 
     for instance in all_instances:
-        if instance['name'] not in domains.keys():
-            log.debug("Removing de-synced instance {}".format(instance['name']))
-            instance_path = "{}/instances/{}".format(config_data.DATA_DIR, instance['name'])
+        if instance["name"] not in domains.keys():
+            log.debug("Removing de-synced instance {}".format(instance["name"]))
+            instance_path = "{}/instances/{}".format(config_data.DATA_DIR, instance["name"])
 
             # remove from disk
             shutil.rmtree(instance_path)
+
 
 class Instance(object):
     """Handles creating, starting, stopping and removing virtual machines
@@ -223,7 +228,7 @@ class Instance(object):
         connection="qemu:///system",
         hostname=None,
         desired_arch=platform.machine(),
-        workarounds=None
+        workarounds=None,
     ):
 
         self.name = domain_configuration.name
@@ -269,9 +274,7 @@ class Instance(object):
         self.domain_configuration = domain_configuration
 
     def prepare(self):
-
-        """Create local directories needed to spawn the instance
-        """
+        """Create local directories needed to spawn the instance"""
         # create the dirs needed for this instance
         try:
             self._create_dirs()
@@ -285,13 +288,13 @@ class Instance(object):
             self._generate_seed_image()
         else:
             # Create a dummy seed
-            open(self.seed_path, 'a').close()
+            open(self.seed_path, "a").close()
 
             if self.ign_file:
                 shutil.copy(self.ign_file, self.config_path)
             else:
                 self._generate_config_file()
-            chcon_command = subprocess.call("chcon -t svirt_home_t %s"%self.config_path, shell=True)
+            chcon_command = subprocess.call("chcon -t svirt_home_t %s" % self.config_path, shell=True)
             if chcon_command == 0:
                 log.info("chcon command succeed ")
             else:
@@ -301,7 +304,7 @@ class Instance(object):
         # deal with backing store
         self._create_local_disk()
 
-    def _adjust_mount_pts(self, workarounds:Workarounds):
+    def _adjust_mount_pts(self, workarounds: Workarounds):
         if not self.domain_configuration.virtiofs_configuration:
             return
 
@@ -309,7 +312,7 @@ class Instance(object):
         for virtiofs in self.domain_configuration.virtiofs_configuration:
             # We aren't using cloud-init's mounting here since mkdirs are taking place after fstab
             workarounds.add("mkdir -p %s || :" % virtiofs.target)
-            workarounds.add("mount -t virtiofs virtiofs-{count} {target}".format(count=i,target=virtiofs.target))
+            workarounds.add("mount -t virtiofs virtiofs-{count} {target}".format(count=i, target=virtiofs.target))
             i += 1
 
     def _create_user_data(self, password, overwrite=False):
@@ -319,33 +322,34 @@ class Instance(object):
         Will not overwrite an existing user-data file unless
         the overwrite kwarg is set to True."""
 
-        file_data: str|Template = config_data.USER_DATA
+        file_data: str | Template = config_data.USER_DATA
 
         # Adds potential virtiofs mounts
         self._adjust_mount_pts(self.workarounds)
 
         # Spawn http listener to signal readiness of the instance
         if self.connection == "qemu:///session":
-            self.workarounds.add("python3 -m http.server {0} 2>/dev/null 1>&2 || "
-                                 "python -m http.server {0} 2>/dev/null 1>&2 || "
-                                 "/usr/libexec/platform-python -m http.server {0} 2>/dev/null 1>&2 || "
-                                 "python2 -m SimpleHTTPServer {0} 2>/dev/null 1>&2 || "
-                                 "python -m SimpleHTTPServer {0} 2>/dev/null 1>&2 &".format(10022), key="spawn_cloud_init_flag")
+            self.workarounds.add(
+                "python3 -m http.server {0} 2>/dev/null 1>&2 || "
+                "python -m http.server {0} 2>/dev/null 1>&2 || "
+                "/usr/libexec/platform-python -m http.server {0} 2>/dev/null 1>&2 || "
+                "python2 -m SimpleHTTPServer {0} 2>/dev/null 1>&2 || "
+                "python -m SimpleHTTPServer {0} 2>/dev/null 1>&2 &".format(10022),
+                key="spawn_cloud_init_flag",
+            )
 
         runcommands = self.workarounds.generate_cloud_init_cmd_list()
 
-        file_data = Template(file_data).safe_substitute(runcommands=runcommands,
-                                                        password=password)
+        file_data = Template(file_data).safe_substitute(runcommands=runcommands, password=password)
 
-        data_path = '{}/meta/user-data'.format(self.path)
+        data_path = "{}/meta/user-data".format(self.path)
 
         if (os.path.isfile(data_path) and overwrite) or not os.path.isfile(data_path):
-            with open(data_path, 'w') as user_file:
+            with open(data_path, "w") as user_file:
                 user_file.write(file_data)
             log.debug("Generated user-data for instance {}".format(self.name))
         else:
-            log.debug("user-data file already exists for instance {}. Not"
-                      " regerating.".format(self.name))
+            log.debug("user-data file already exists for instance {}. Not" " regerating.".format(self.name))
 
     def _create_meta_data(self, hostname, overwrite=False):
         """Save the required hostname data to the 'meta-data' file needed to
@@ -358,13 +362,12 @@ class Instance(object):
 
         meta_path = "{}/meta-data".format(self.meta_path)
         if (os.path.isfile(meta_path) and overwrite) or not os.path.isfile(meta_path):
-            with open(meta_path, 'w') as meta_data_file:
+            with open(meta_path, "w") as meta_data_file:
                 meta_data_file.write(file_data)
 
             log.debug("Generated meta-data for instance {}".format(self.name))
         else:
-            log.debug("meta-data file already exists for instance {}. Not"
-                      " regerating.".format(self.name))
+            log.debug("meta-data file already exists for instance {}. Not" " regerating.".format(self.name))
 
     def _generate_seed_image(self):
         """Create a virtual filesystem needed for boot with genisoimgage on a
@@ -372,15 +375,22 @@ class Instance(object):
 
         log.debug("creating seed image {}".format(self.seed_path))
 
-        make_image = subprocess.call(['genisoimage',
-                                      '--input-charset', 'utf-8',
-                                      '--volid', 'cidata',
-                                      '--joliet',
-                                      '--rock',
-                                      '--quiet',
-                                      '--output', self.seed_path,
-                                      '.',
-                                      ], cwd=self.meta_path)
+        make_image = subprocess.call(
+            [
+                "genisoimage",
+                "--input-charset",
+                "utf-8",
+                "--volid",
+                "cidata",
+                "--joliet",
+                "--rock",
+                "--quiet",
+                "--output",
+                self.seed_path,
+                ".",
+            ],
+            cwd=self.meta_path,
+        )
 
         # Check the subprocess.call return value for success
         if make_image == 0:
@@ -395,7 +405,7 @@ class Instance(object):
             shutil.copy(self.bu_file, self.bu_path)
         else:
             if self.ssh_path:
-                with open(self.ssh_path, 'r') as inst:
+                with open(self.ssh_path, "r") as inst:
                     key_content = inst.readline().strip()
             else:
                 key_content = None
@@ -404,14 +414,14 @@ class Instance(object):
                 bu_data = config_data.COREOS_DATA % key_content
             except TypeError:
                 bu_data = config_data.COREOS_DATA
-            with open(self.bu_path, 'w') as user_file:
+            with open(self.bu_path, "w") as user_file:
                 user_file.write(bu_data)
 
         log.debug("creating config file {}".format(self.config_path))
-        if not os.path.exists('/usr/bin/butane'):
+        if not os.path.exists("/usr/bin/butane"):
             log.error("butane package is necessary to operate with CoreOS images")
             raise TestcloudInstanceError("butane missing")
-        create_config = subprocess.call("butane --pretty --strict < %s > %s"%(self.bu_path, self.config_path), shell=True)
+        create_config = subprocess.call("butane --pretty --strict < %s > %s" % (self.bu_path, self.config_path), shell=True)
 
         # Check the subprocess.call return value for success
         if create_config == 0:
@@ -425,7 +435,7 @@ class Instance(object):
             log.debug("Creating instance directories")
             os.makedirs(self.path)
         if not os.path.isdir(self.meta_path) and not self.coreos:
-                os.makedirs(self.meta_path)
+            os.makedirs(self.meta_path)
 
     def _get_domain(self):
         """Create the connection to libvirt to control instance lifecycle.
@@ -435,11 +445,10 @@ class Instance(object):
 
     def create_ip_file(self, ip):
         """Write the ip address found after instance creation to a file
-           for easier management later. This is likely going to break
-           and need a better solution."""
+        for easier management later. This is likely going to break
+        and need a better solution."""
 
-        with open("{}/instances/{}/ip".format(config_data.DATA_DIR,
-                                              self.name), 'w') as ip_file:
+        with open("{}/instances/{}/ip".format(config_data.DATA_DIR, self.name), "w") as ip_file:
             ip_file.write(ip)
 
     def get_instance_port(self):
@@ -447,32 +456,34 @@ class Instance(object):
         Returns port of an instance
         """
         if self.connection == "qemu:///system":
-            return 22 # Default SSH Port
-        with open("{}/instances/{}/port".format(config_data.DATA_DIR,
-                                self.name), 'r') as port_file:
+            return 22  # Default SSH Port
+        with open("{}/instances/{}/port".format(config_data.DATA_DIR, self.name), "r") as port_file:
             return int(port_file.readline())
 
     def _create_local_disk(self):
         """Create a instance using the backing store provided by Image."""
 
         if self.backingstore_image is None:
-            raise TestcloudInstanceError("attempted to access image "
-                                         "information for instance {} but "
-                                         "that information was not supplied "
-                                         "at creation time".format(self.name))
+            raise TestcloudInstanceError(
+                "attempted to access image "
+                "information for instance {} but "
+                "that information was not supplied "
+                "at creation time".format(self.name)
+            )
         assert self.backingstore_image is not None
-        imgcreate_command = ['qemu-img',
-                             'create',
-                             '-qf',
-                             'qcow2',
-                             '-F',
-                             'qcow2',
-                             '-b',
-                             self.backingstore_image.local_path,
-                             '-o',
-                             'lazy_refcounts=on',
-                             self.local_disk,
-                             ]
+        imgcreate_command = [
+            "qemu-img",
+            "create",
+            "-qf",
+            "qcow2",
+            "-F",
+            "qcow2",
+            "-b",
+            self.backingstore_image.local_path,
+            "-o",
+            "lazy_refcounts=on",
+            self.local_disk,
+        ]
 
         for disk in self.domain_configuration.storage_devices:
             if type(disk) == RawStorageDevice:
@@ -489,20 +500,20 @@ class Instance(object):
 
             if disk.size != 0:
                 # Rest of the requested disks
-                subprocess.call(['qemu-img', 'create', '-qf', 'qcow2', disk.path, '{}G'.format(disk.size)])
+                subprocess.call(["qemu-img", "create", "-qf", "qcow2", disk.path, "{}G".format(disk.size)])
             else:
-                subprocess.call(['qemu-img', 'create', '-qf', 'qcow2', disk.path])
+                subprocess.call(["qemu-img", "create", "-qf", "qcow2", disk.path])
 
     def write_domain_xml(self):
-        with open(self.xml_path, 'w') as domain_file:
+        with open(self.xml_path, "w") as domain_file:
             domain_file.write(self.domain_configuration.generate())
 
     def spawn_vm(self):
         """Create and boot the instance, using prepared data."""
 
         self.write_domain_xml()
-        with open(self.xml_path, 'r') as xml_file:
-            domain_xml = ''.join([x for x in xml_file.readlines()])
+        with open(self.xml_path, "r") as xml_file:
+            domain_xml = "".join([x for x in xml_file.readlines()])
         conn = libvirt.open(self.connection)
         conn.defineXML(domain_xml)
 
@@ -510,10 +521,7 @@ class Instance(object):
         """Expand the storage for a qcow image. Currently unused."""
 
         log.info("expanding qcow2 image {}".format(self.image_path))
-        subprocess.call(['qemu-img',
-                         'resize',
-                         self.image_path,
-                         size])
+        subprocess.call(["qemu-img", "resize", self.image_path, size])
 
         log.info("Resized image...")
         return
@@ -521,8 +529,7 @@ class Instance(object):
     def boot(self, timeout=config_data.BOOT_TIMEOUT):
         """Deprecated alias for :py:meth:`start`"""
 
-        log.warn("instance.boot has been depricated and will be removed in a "
-                 "future release, use instance.start instead")
+        log.warn("instance.boot has been depricated and will be removed in a " "future release, use instance.start instead")
 
         self.start(timeout)
 
@@ -552,9 +559,7 @@ class Instance(object):
         # return code to verify that the boot process was successful from
         # libvirt's POV
         if create_status != 0:
-            raise TestcloudInstanceError("Instance {} did not start "
-                                         "successfully, see libvirt logs for "
-                                         "details".format(self.name))
+            raise TestcloudInstanceError("Instance {} did not start " "successfully, see libvirt logs for " "details".format(self.name))
         log.info("Polling instance for active network interface")
 
         poll_tick = 0.5
@@ -566,9 +571,7 @@ class Instance(object):
 
         if self.connection not in ["qemu:///system", "qemu:///session"]:
             # We dont know what to do with other connection types yet! TODO: Find out, refactor
-            raise TestcloudInstanceError("We currently don't support connections other than"
-                                         "qemu:///system and qemu:///session")
-
+            raise TestcloudInstanceError("We currently don't support connections other than" "qemu:///system and qemu:///session")
 
         # poll libvirt for domain interfaces, returning when an interface is
         # found, indicating that the boot process is post-cloud-init
@@ -581,13 +584,13 @@ class Instance(object):
                     requests.head("http://127.0.0.1:%d" % (port - 1000), timeout=1).raise_for_status()
                     port_open = 0
                 except Exception:
-                    time.sleep(poll_tick * 4) # Larger value to prevent SYN flood
+                    time.sleep(poll_tick * 4)  # Larger value to prevent SYN flood
                     count += 4
                     continue
             elif self.connection == "qemu:///session" and self.coreos:
                 domif = {}
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                port_open = sock.connect_ex(('127.0.0.1',self.get_instance_port()))
+                port_open = sock.connect_ex(("127.0.0.1", self.get_instance_port()))
 
             if len(domif) > 0 or port_open == 0:
                 log.info("Successfully booted instance {}".format(self.name))
@@ -597,8 +600,7 @@ class Instance(object):
             time.sleep(poll_tick)
 
         # If we get here, the boot process has timed out
-        raise TestcloudInstanceError("Instance {} has failed to boot in {} "
-                                     "seconds".format(self.name, timeout))
+        raise TestcloudInstanceError("Instance {} has failed to boot in {} " "seconds".format(self.name, timeout))
 
     def stop(self, soft=False):
         """Stop the instance
@@ -615,8 +617,8 @@ class Instance(object):
         if domain_state is None:
             raise TestcloudInstanceError("Instance doesn't exist: {}".format(self.name))
 
-        if domain_state == 'shutoff':
-            log.debug('Instance already shut off, not stopping: {}'.format(self.name))
+        if domain_state == "shutoff":
+            log.debug("Instance already shut off, not stopping: {}".format(self.name))
             return
 
         retries = config_data.STOP_RETRIES
@@ -633,8 +635,9 @@ class Instance(object):
                         self._get_domain().shutdown()
                         time.sleep(5)
                     if _find_domain(self.name, self.connection) != "shutoff":
-                        raise TestcloudInstanceError('Failed to shutdown the guest gracfully after {} attempts.'
-                                                    .format(config_data.STOP_RETRIES))
+                        raise TestcloudInstanceError(
+                            "Failed to shutdown the guest gracfully after {} attempts.".format(config_data.STOP_RETRIES)
+                        )
                 return
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_SYSTEM_ERROR:
@@ -644,8 +647,7 @@ class Instance(object):
                     log.debug("Domain stopped between attempts, ignoring error: {}".format(e))
                     return
                 else:
-                    raise TestcloudInstanceError('Error while stopping instance {}: {}'
-                                                 .format(self.name, e))
+                    raise TestcloudInstanceError("Error while stopping instance {}: {}".format(self.name, e))
 
             retries -= 1
             time.sleep(config_data.STOP_RETRY_WAIT)
@@ -673,8 +675,10 @@ class Instance(object):
             log.debug("Unregistering instance from libvirt.")
             self._get_domain().undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
         else:
-            log.warn('Instance "{}" not found in libvirt "{}". Was it removed already? Should '
-                     'you have used a different connection?'.format(self.name, self.connection))
+            log.warn(
+                'Instance "{}" not found in libvirt "{}". Was it removed already? Should '
+                "you have used a different connection?".format(self.name, self.connection)
+            )
 
     def remove(self, autostop=True):
         """Remove an already stopped instance
@@ -690,25 +694,26 @@ class Instance(object):
         # libvirt connections
         domain_state = _find_domain(self.name, self.connection)
 
-        if domain_state == 'running':
+        if domain_state == "running":
             if autostop:
                 self.stop()
             else:
                 raise TestcloudInstanceError(
                     "Cannot remove running instance {}. Please stop the "
-                    "instance before removing or use '-f' parameter.".format(self.name))
+                    "instance before removing or use '-f' parameter.".format(self.name)
+                )
 
         self._remove_from_libvirt()
         self._remove_from_disk()
 
     def destroy(self):
-        '''A deprecated method. Please call :meth:`remove` instead.'''
+        """A deprecated method. Please call :meth:`remove` instead."""
 
-        log.debug('DEPRECATED: destroy() method was deprecated. Please use remove()')
+        log.debug("DEPRECATED: destroy() method was deprecated. Please use remove()")
         self.remove()
 
     def get_ip(self, timeout=60, domain=None):
-        '''Retrieve IP address of the instance (the first one, if there are
+        """Retrieve IP address of the instance (the first one, if there are
         multiple).
 
         :param int timeout: how long to wait if IP address is not yet ready
@@ -720,7 +725,7 @@ class Instance(object):
         :rtype: str
         :raises TestcloudInstanceError: when time runs out and no IP is
             assigned
-        '''
+        """
 
         domain = domain or self._get_domain()
         counter = 0
@@ -729,8 +734,7 @@ class Instance(object):
         while counter <= timeout:
             try:
                 if self.connection == "qemu:///system":
-                    output = domain.interfaceAddresses(
-                        libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+                    output = domain.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
                 else:
                     # Return early for qemu user session
                     return "127.0.0.1"
@@ -738,9 +742,7 @@ class Instance(object):
                 # {'vnet0': {'addrs': [{'addr': '192.168.11.33', 'prefix': 24, 'type': 0}],
                 #  'hwaddr': '52:54:00:54:4b:b4'}}
                 if output:
-                    addrs = [ addr['addr'] for iface in output.values()
-                              for addr in iface.get('addrs', [])
-                              if 'addr' in addr ]
+                    addrs = [addr["addr"] for iface in output.values() for addr in iface.get("addrs", []) if "addr" in addr]
                     if addrs:
                         return addrs[0]
             except libvirt.libvirtError as e:
@@ -752,13 +754,12 @@ class Instance(object):
             counter += sleep_interval
             time.sleep(sleep_interval)
 
-        msg = "Couldn't find IP for %s before %s second timeout" % (domain,
-              timeout)
+        msg = "Couldn't find IP for %s before %s second timeout" % (domain, timeout)
         log.warn(msg)
         raise TestcloudInstanceError(msg)
 
     def prepare_vagrant_init(self, prepare_command):
-        log.warn('Support for images without cloud-init in testcloud is not reliable. You have been warned...')
+        log.warn("Support for images without cloud-init in testcloud is not reliable. You have been warned...")
         if self.connection == "qemu:///session":
             log.info("Giving the VM some time (%s seconds) to boot up..." % config_data.VAGRANT_USER_SESSION_WAIT)
             time.sleep(config_data.VAGRANT_USER_SESSION_WAIT)

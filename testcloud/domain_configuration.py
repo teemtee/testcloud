@@ -12,11 +12,13 @@ from testcloud import image
 
 config_data = config.get_config()
 
-class ArchitectureConfiguration():
-    qemu:str
-    arch:str
-    model:str
+
+class ArchitectureConfiguration:
+    qemu: str
+    arch: str
+    model: str
     kvm: bool
+
     def generate(self) -> str:
         raise NotImplementedError()
 
@@ -25,6 +27,7 @@ class X86_64ArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-x86_64"
     arch = "x86_64"
     model = "q35"
+
     def __init__(self, kvm=True, uefi=False, model="q35") -> None:
         self.kvm = kvm
         self.uefi = uefi
@@ -52,7 +55,11 @@ class X86_64ArchitectureConfiguration(ArchitectureConfiguration):
             arch=self.arch,
             model=self.model,
             uefi_loader="<loader readonly='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>" if self.uefi else "",
-            cpu="<cpu mode='host-passthrough' check='none' migratable='on'/>" if self.kvm else "<cpu mode='custom' match='exact'><model>qemu64</model></cpu>",
+            cpu=(
+                "<cpu mode='host-passthrough' check='none' migratable='on'/>"
+                if self.kvm
+                else "<cpu mode='custom' match='exact'><model>qemu64</model></cpu>"
+            ),
         )
 
 
@@ -60,6 +67,7 @@ class AArch64ArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-aarch64"
     arch = "aarch64"
     model = "virt"
+
     def __init__(self, kvm=True, uefi=True, model="virt") -> None:
         self.kvm = kvm
         self.uefi = uefi
@@ -82,7 +90,11 @@ class AArch64ArchitectureConfiguration(ArchitectureConfiguration):
             arch=self.arch,
             model=self.model,
             uefi_loader="<loader readonly='yes' type='pflash'>/usr/share/edk2/aarch64/QEMU_EFI-silent-pflash.raw</loader>",
-            cpu="<cpu mode='host-passthrough' check='none'/>" if self.kvm else "<cpu mode='custom' match='exact'><model>cortex-a57</model></cpu>",
+            cpu=(
+                "<cpu mode='host-passthrough' check='none'/>"
+                if self.kvm
+                else "<cpu mode='custom' match='exact'><model>cortex-a57</model></cpu>"
+            ),
         )
 
 
@@ -90,6 +102,7 @@ class Ppc64leArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-ppc64"
     arch = "ppc64le"
     model = "pseries"
+
     def __init__(self, kvm=True, uefi=False, model="pseries") -> None:
         self.kvm = kvm
         self.uefi = uefi
@@ -106,7 +119,11 @@ class Ppc64leArchitectureConfiguration(ArchitectureConfiguration):
         """.format(
             arch=self.arch,
             model=self.model,
-            cpu="<cpu mode='host-passthrough' check='none'/>" if self.kvm else "<cpu mode='custom' match='exact' check='none'><model fallback='forbid'>POWER9</model></cpu>"
+            cpu=(
+                "<cpu mode='host-passthrough' check='none'/>"
+                if self.kvm
+                else "<cpu mode='custom' match='exact' check='none'><model fallback='forbid'>POWER9</model></cpu>"
+            ),
         )
 
 
@@ -114,6 +131,7 @@ class S390xArchitectureConfiguration(ArchitectureConfiguration):
     qemu = "qemu-system-s390x"
     arch = "s390x"
     model = "s390-ccw-virtio"
+
     def __init__(self, kvm=True, uefi=False, model="s390-ccw-virtio") -> None:
         self.kvm = kvm
         self.uefi = uefi
@@ -129,21 +147,23 @@ class S390xArchitectureConfiguration(ArchitectureConfiguration):
         """.format(
             arch=self.arch,
             model=self.model,
-            cpu="<cpu mode='host-passthrough' check='none'/>" if self.kvm else "<cpu mode='custom' match='exact'><model>qemu</model></cpu>"
+            cpu="<cpu mode='host-passthrough' check='none'/>" if self.kvm else "<cpu mode='custom' match='exact'><model>qemu</model></cpu>",
         )
-
 
 
 def storage_device_name_generator():
     prefix = "vd"
     for i in range(26):
         yield prefix + string.ascii_lowercase[i]
+
+
 storage_device_name = storage_device_name_generator()
 
 
-class StorageDeviceConfiguration():
+class StorageDeviceConfiguration:
     path: str
     host_device_path: str
+
     def __init__(self) -> None:
         pass
 
@@ -170,7 +190,7 @@ class RawStorageDevice(StorageDeviceConfiguration):
 
 
 class QCow2StorageDevice(StorageDeviceConfiguration):
-    def __init__(self, path, size=0, serial_str='') -> None:
+    def __init__(self, path, size=0, serial_str="") -> None:
         self.path = path
         self.size = size
         self.serial_str = serial_str
@@ -191,12 +211,14 @@ class QCow2StorageDevice(StorageDeviceConfiguration):
         )
 
 
-class NetworkConfiguration():
-    mac_address : str
-    additional_qemu_args : list[str]
+class NetworkConfiguration:
+    mac_address: str
+    additional_qemu_args: list[str]
+
     def __init__(self) -> None:
         self.mac_address = ""
         self.additional_qemu_args = []
+
     def generate(self) -> str:
         raise NotImplementedError()
 
@@ -222,9 +244,12 @@ class UserNetworkConfiguration(NetworkConfiguration):
     def __init__(self, mac_address, port=6666, device_type="virtio-net-pci") -> None:
         super().__init__()
         self.mac_address = mac_address
-        self.additional_qemu_args = ["-netdev", "user,id=testcloud_net.{},hostfwd=tcp::{}-:22,hostfwd=tcp::{}-:10022".format(
-                                    port, port, (port-1000)),
-                                     "-device", "{},addr=1e.0,netdev=testcloud_net.{}".format(device_type, port)]
+        self.additional_qemu_args = [
+            "-netdev",
+            "user,id=testcloud_net.{},hostfwd=tcp::{}-:22,hostfwd=tcp::{}-:10022".format(port, port, (port - 1000)),
+            "-device",
+            "{},addr=1e.0,netdev=testcloud_net.{}".format(device_type, port),
+        ]
 
     def generate(self):
         return """
@@ -237,7 +262,7 @@ class UserNetworkConfiguration(NetworkConfiguration):
         )
 
 
-class TPMConfiguration():
+class TPMConfiguration:
     def __init__(self, version="2.0") -> None:
         super().__init__()
         self.version = version
@@ -247,10 +272,12 @@ class TPMConfiguration():
         <tpm model='tpm-tis'>
             <backend type='emulator' version='{version}'/>
         </tpm>
-        """.format(version=self.version
+        """.format(
+            version=self.version
         )
 
-class VIRTIOFSConfiguration():
+
+class VIRTIOFSConfiguration:
     def __init__(self, source, target, count) -> None:
         super().__init__()
         self.source = source
@@ -268,11 +295,11 @@ class VIRTIOFSConfiguration():
             <driver type="virtiofs"/>
         </filesystem>
         """.format(
-            source=self.source,
-            tag="virtiofs-%d" % self.count
+            source=self.source, tag="virtiofs-%d" % self.count
         )
 
-class IOMMUConfiguration():
+
+class IOMMUConfiguration:
     def __init__(self, model="virtio") -> None:
         super().__init__()
         self.model = model
@@ -280,9 +307,12 @@ class IOMMUConfiguration():
     def generate(self):
         return """
         <iommu model='{model}'/>
-        """.format(model=self.model)
+        """.format(
+            model=self.model
+        )
 
-class DomainConfiguration():
+
+class DomainConfiguration:
     name: str
     cpu_count: int
     memory_size: int
@@ -304,7 +334,7 @@ class DomainConfiguration():
         self.local_disk = "{}/{}-local.qcow2".format(self.path, self.name)
         self.seed_path = "{}/{}-seed.img".format(self.path, self.name)
         self.xml_path = "{}/{}-domain.xml".format(self.path, self.name)
-        self.config_path = "{}/{}.ign".format(self.path, self.name) # CoreOS
+        self.config_path = "{}/{}.ign".format(self.path, self.name)  # CoreOS
         self.cpu_count = -1
         self.memory_size = -1
         self.system_architecture = None
@@ -333,8 +363,9 @@ class DomainConfiguration():
         return "\n".join([device.generate() for device in self.storage_devices])
 
     def generate_network_devices(self) -> str:
-        return "\n".join([device.generate() for device in self.network_devices + \
-                ([self.network_configuration ] if self.network_configuration else [])])
+        return "\n".join(
+            [device.generate() for device in self.network_devices + ([self.network_configuration] if self.network_configuration else [])]
+        )
 
     def get_emulator(self) -> str:
         assert self.system_architecture is not None
@@ -344,7 +375,7 @@ class DomainConfiguration():
             "/usr/libexec/" + self.system_architecture.qemu,
             # Some systems might only have qemu-kvm as the qemu binary, try that if everything else failed...
             "/usr/bin/qemu-kvm",
-            "/usr/libexec/qemu-kvm"
+            "/usr/libexec/qemu-kvm",
         ]
         for path in qemu_paths:
             if os.path.exists(path):
@@ -355,14 +386,20 @@ class DomainConfiguration():
     def get_qemu_args(self) -> str:
         assert self.network_devices is not [] or self.network_configuration is not None
         assert self.system_architecture is not None
-        for network_device in self.network_devices + ([self.network_configuration ] if self.network_configuration else []):
+        for network_device in self.network_devices + ([self.network_configuration] if self.network_configuration else []):
             self.qemu_args.extend(network_device.additional_qemu_args)
         if self.coreos:
             if type(self.system_architecture) in [AArch64ArchitectureConfiguration, X86_64ArchitectureConfiguration]:
-                self.qemu_args.extend(['-fw_cfg', 'name=opt/com.coreos/config,file=%s'%self.config_path])
+                self.qemu_args.extend(["-fw_cfg", "name=opt/com.coreos/config,file=%s" % self.config_path])
             else:
-                self.qemu_args.extend(['-drive', 'file=%s,if=none,format=raw,readonly=on,id=ignition'%self.config_path,
-                                        '-device', 'virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008'])
+                self.qemu_args.extend(
+                    [
+                        "-drive",
+                        "file=%s,if=none,format=raw,readonly=on,id=ignition" % self.config_path,
+                        "-device",
+                        "virtio-blk,serial=ignition,drive=ignition,devno=fe.0.0008",
+                    ]
+                )
         return "\n".join(["<qemu:arg value='%s'/>" % qemu_arg for qemu_arg in self.qemu_args])
 
     def get_qemu_envs(self) -> str:
@@ -433,23 +470,24 @@ class DomainConfiguration():
         return os.linesep.join([s for s in almost_pretty_xml.splitlines() if s.strip()])
 
 
-def _get_default_domain_conf(name: str,
-                             backingstore_image: image.Image,
-                             mac_address: Optional[str] = None,
-                             use_disk_serial: bool = False,
-                             disk_size: int = 0,
-                             disk_count: int = 1,
-                             nic_count: int = 1,
-                             tpm: bool = False,
-                             coreos: bool = False,
-                             connection: str = "qemu:///system",
-                             vcpus: Optional[int] = None,
-                             ram: Optional[int] = None,
-                             desired_arch: Optional[str] = None,
-                             virtiofs_source: Optional[str] = None,
-                             virtiofs_target: Optional[str] = None,
-                             iommu: bool = False,
-                             ):
+def _get_default_domain_conf(
+    name: str,
+    backingstore_image: image.Image,
+    mac_address: Optional[str] = None,
+    use_disk_serial: bool = False,
+    disk_size: int = 0,
+    disk_count: int = 1,
+    nic_count: int = 1,
+    tpm: bool = False,
+    coreos: bool = False,
+    connection: str = "qemu:///system",
+    vcpus: Optional[int] = None,
+    ram: Optional[int] = None,
+    desired_arch: Optional[str] = None,
+    virtiofs_source: Optional[str] = None,
+    virtiofs_target: Optional[str] = None,
+    iommu: bool = False,
+):
 
     desired_arch = desired_arch or platform.machine()
     vcpus = vcpus or config_data.VCPUS
@@ -490,7 +528,7 @@ def _get_default_domain_conf(name: str,
     else:
         raise TestcloudInstanceError("Unsupported connection type")
 
-    image = QCow2StorageDevice(domain_configuration.local_disk, disk_size, '')
+    image = QCow2StorageDevice(domain_configuration.local_disk, disk_size, "")
     domain_configuration.storage_devices.append(image)
 
     if coreos:
@@ -508,7 +546,7 @@ def _get_default_domain_conf(name: str,
 
     for i in range(disk_count - 1):
         additional_disk_path = "{}/{}-local{}.qcow2".format(domain_configuration.path, name, i + 2)
-        serial_str = "testcloud-{}".format(i + 1) if use_disk_serial else ''
+        serial_str = "testcloud-{}".format(i + 1) if use_disk_serial else ""
         domain_configuration.storage_devices.append(QCow2StorageDevice(additional_disk_path, disk_size, serial_str))
 
     if virtiofs_source and virtiofs_target:
@@ -518,4 +556,3 @@ def _get_default_domain_conf(name: str,
         domain_configuration.iommu_configuration = IOMMUConfiguration()
 
     return domain_configuration
-

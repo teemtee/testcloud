@@ -8,10 +8,11 @@ import logging
 from testcloud import config
 from testcloud import exceptions
 
-log = logging.getLogger('testcloud.util')
+log = logging.getLogger("testcloud.util")
 config_data = config.get_config()
 
-def get_debian_image_url(version:str, arch:str) -> str:
+
+def get_debian_image_url(version: str, arch: str) -> str:
     arch_map = {"x86_64": "amd64", "aarch64": "arm64", "ppc64le": "ppc64el"}
 
     if arch not in arch_map:
@@ -24,7 +25,11 @@ def get_debian_image_url(version:str, arch:str) -> str:
     inverted_releases = {v: k for k, v in config_data.DEBIAN_RELEASE_MAP.items()}
 
     if version == "latest":
-        return config_data.DEBIAN_IMG_URL % (config_data.DEBIAN_RELEASE_MAP[config_data.DEBIAN_LATEST], config_data.DEBIAN_LATEST, arch_map[arch])
+        return config_data.DEBIAN_IMG_URL % (
+            config_data.DEBIAN_RELEASE_MAP[config_data.DEBIAN_LATEST],
+            config_data.DEBIAN_LATEST,
+            arch_map[arch],
+        )
     elif version == "sid":
         return config_data.DEBIAN_IMG_URL % (version, version, arch_map[arch])
     elif version in config_data.DEBIAN_RELEASE_MAP:
@@ -32,6 +37,8 @@ def get_debian_image_url(version:str, arch:str) -> str:
     elif version in config_data.DEBIAN_RELEASE_MAP.values():
         return config_data.DEBIAN_IMG_URL % (version, inverted_releases[version], arch_map[arch])
     else:
-        log.error("Unknown Debian release, valid releases are: "
-        "latest, %s, %s" % (', '.join(config_data.DEBIAN_RELEASE_MAP), ', '.join(inverted_releases)))
+        log.error(
+            "Unknown Debian release, valid releases are: "
+            "latest, %s, %s" % (", ".join(config_data.DEBIAN_RELEASE_MAP), ", ".join(inverted_releases))
+        )
         raise exceptions.TestcloudImageError

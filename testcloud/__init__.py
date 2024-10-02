@@ -13,6 +13,5 @@ def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
 
 
-
 if threading.current_thread() is threading.main_thread():
     signal.signal(signal.SIGTERM, sigterm_handler)

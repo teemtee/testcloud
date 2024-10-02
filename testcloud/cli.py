@@ -8,7 +8,6 @@ This is the primary user entry point for testcloud
 """
 
 import argparse
-import libvirt
 import logging
 import os
 import platform
@@ -17,18 +16,15 @@ import re
 import subprocess
 import sys
 import time
-
 from urllib.parse import urlparse
 
-from testcloud import config
-from testcloud import image
-from testcloud import instance
+import libvirt
 
+from testcloud import config, image, instance
 from testcloud.domain_configuration import _get_default_domain_conf
+from testcloud.exceptions import TestcloudImageError, TestcloudInstanceError, TestcloudPermissionsError
 from testcloud.util import get_image_url
 from testcloud.workarounds import Workarounds
-from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError, TestcloudInstanceError
-
 
 config_data = config.get_config()
 
@@ -36,7 +32,7 @@ config_data = config.get_config()
 if config_data.LOG_FILE is not None:
     logging.basicConfig(filename=config_data.LOG_FILE, level=logging.DEBUG)
 
-log = logging.getLogger('testcloud')
+log = logging.getLogger("testcloud")
 log.addHandler(logging.NullHandler())  # this is needed when running in library mode
 
 if not config_data.DEBUG:
@@ -51,6 +47,7 @@ simply boot images designed for cloud systems."""
 # instance handling functions
 ################################################################################
 
+
 def _handle_connection_tip(ip, port, vagrant=False):
     """
     Prints hint how to connect to the vm
@@ -62,7 +59,7 @@ def _handle_connection_tip(ip, port, vagrant=False):
     if "#cloud-config\nssh_pwauth: true\npassword: ${password}\nchpasswd:\n  expire: false\n" not in config_data.USER_DATA:
         config_altered = True
 
-    print("-"*80)
+    print("-" * 80)
     if config_altered:
         print("To connect to the VM, use the following command:")
         if port == 22:
@@ -79,10 +76,13 @@ def _handle_connection_tip(ip, port, vagrant=False):
         else:
             print("ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null cloud-user@%s -p %d" % (ip, port))
 
-    print("-"*80)
+    print("-" * 80)
     if vagrant:
-        print("Due to limited support for images without cloud-init pre installed,"
-              "it may take up to 2 minutes for connection to be ready...")
+        print(
+            "Due to limited support for images without cloud-init pre installed,"
+            "it may take up to 2 minutes for connection to be ready..."
+        )
+
 
 def _handle_permissions_error_cli(error):
     # User might not be part of testcloud group, print user friendly message how to fix this
@@ -93,6 +93,7 @@ def _handle_permissions_error_cli(error):
     print("su - $USER")
     sys.exit(1)
 
+
 def _list_instance(args):
     """Handler for 'list' command. Expects the following elements in args:
         * name(str)
@@ -102,21 +103,15 @@ def _list_instance(args):
     instances = instance.list_instances()
 
     print("{!s:<16} {!s:^30} {!s:<10}    {!s:<10}".format("Name", "IP", "SSH Port", "State"))
-    print("-"*80)
+    print("-" * 80)
     for inst in instances:
         # Running first
-        if inst['state'] == 'running':
-            print("{!s:<27} {!s:^16} {!s:^12}  {!s:^14}".format(inst['name'],
-                                                       inst['ip'],
-                                                       inst['port'],
-                                                       inst['state']))
+        if inst["state"] == "running":
+            print("{!s:<27} {!s:^16} {!s:^12}  {!s:^14}".format(inst["name"], inst["ip"], inst["port"], inst["state"]))
     # And everything else
     for inst in instances:
-        if inst['state'] != 'running':
-            print("{!s:<27} {!s:^16} {!s:^12}  {!s:^14}".format(inst['name'],
-                                                        inst['ip'],
-                                                        inst['port'],
-                                                        inst['state']))
+        if inst["state"] != "running":
+            print("{!s:<27} {!s:^16} {!s:^12}  {!s:^14}".format(inst["name"], inst["ip"], inst["port"], inst["state"]))
 
     print("")
 
@@ -132,7 +127,7 @@ def _get_used_images(args):
     for inst in instances:
         path = os.path.join(config_data.DATA_DIR, "instances", inst["name"], inst["name"] + "-local.qcow2")
         command = "qemu-img info %s | grep 'backing file: '" % path
-        image_name = subprocess.check_output(command , shell=True).decode().strip().replace("backing file: ", "")
+        image_name = subprocess.check_output(command, shell=True).decode().strip().replace("backing file: ", "")
         if image_name.endswith(".qcow2") or image_name.endswith(".img"):
             images_in_use.add(image_name)
         else:
@@ -156,7 +151,7 @@ def _clean_backingstore(args):
     instances = instance.list_instances()
     running_instances = set()
     for inst in instances:
-        if inst['state'] == "running":
+        if inst["state"] == "running":
             running_instances.add(inst["name"])
     if len(running_instances) > 0:
         print("")
@@ -225,6 +220,7 @@ def _generate_name():
     used_names = [inst["name"] for inst in instance._list_instances()]
 
     # Taken from https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go
+    # fmt: off
     left = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful",
             "blissful", "bold", "boring", "brave", "busy", "charming", "clever", "cool", "compassionate",
             "competent", "condescending", "confident", "cranky", "crazy", "dazzling", "determined", "distracted",
@@ -265,6 +261,7 @@ def _generate_name():
             "swirles", "taussig", "tereshkova", "tesla", "tharp", "thompson", "torvalds", "tu", "turing",
             "varahamihira", "vaughan", "visvesvaraya", "volhard", "villani", "wescoff", "wilbur", "wiles",
             "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"]
+    # fmt: on
 
     name = "%s_%s" % (random.choice(left), random.choice(right))
 
@@ -287,12 +284,13 @@ def _download_image(args):
         sys.exit(1)
 
     try:
-       image.Image._download_remote_image(url, os.path.join(args.dest_path, os.path.basename(urlparse(url).path)))
+        image.Image._download_remote_image(url, os.path.join(args.dest_path, os.path.basename(urlparse(url).path)))
     except TestcloudImageError:
         log.error("Couldn't download the requested image due to an error.")
         sys.exit(1)
     except TestcloudPermissionsError:
         log.error("Couldn't write to the requested target location ( %s )." % args.dest_path)
+
 
 def _create_instance(args):
     """Handler for 'instance create' command. Expects the following elements in args:
@@ -321,10 +319,10 @@ def _create_instance(args):
 
     # can't create existing instances
     if existing_instance is not None:
-        log.error("A testcloud instance named {} already exists at {}. Use 'testcloud instance start "
-                "{}' to start the instance or remove it before re-creating.".format(
-                    args.name,existing_instance.path, args.name)
-             )
+        log.error(
+            "A testcloud instance named {} already exists at {}. Use 'testcloud instance start "
+            "{}' to start the instance or remove it before re-creating.".format(args.name, existing_instance.path, args.name)
+        )
         sys.exit(1)
 
     try:
@@ -334,7 +332,7 @@ def _create_instance(args):
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
 
-    coreos = bool(re.search('coreos|rhcos', url.lower()))
+    coreos = bool(re.search("coreos|rhcos", url.lower()))
 
     virtiofs_split = args.virtiofs.split(":") if args.virtiofs else [None, None]
     if args.virtiofs:
@@ -370,29 +368,31 @@ def _create_instance(args):
         ram = args.ram if args.ram != -1 else config_data.RAM
         disk_size = args.disksize if args.disksize != -1 else config_data.DISK_SIZE
 
-    domain = _get_default_domain_conf(name=args.name,
-                                      desired_arch=args.arch,
-                                      connection=args.connection,
-                                      backingstore_image=tc_image,
-                                      coreos=coreos,
-                                      vcpus=args.vcpus,
-                                      ram=ram,
-                                      disk_size=disk_size,
-                                      disk_count=args.disk_number,
-                                      nic_count=args.nic_number,
-                                      tpm=args.tpm,
-                                      iommu=args.iommu,
-                                      use_disk_serial=args.serial,
-                                      virtiofs_source=virtiofs_split[0],
-                                      virtiofs_target=virtiofs_split[1]
-                                      )
+    domain = _get_default_domain_conf(
+        name=args.name,
+        desired_arch=args.arch,
+        connection=args.connection,
+        backingstore_image=tc_image,
+        coreos=coreos,
+        vcpus=args.vcpus,
+        ram=ram,
+        disk_size=disk_size,
+        disk_count=args.disk_number,
+        nic_count=args.nic_number,
+        tpm=args.tpm,
+        iommu=args.iommu,
+        use_disk_serial=args.serial,
+        virtiofs_source=virtiofs_split[0],
+        virtiofs_target=virtiofs_split[1],
+    )
 
-    tc_instance = instance.Instance(domain_configuration=domain,
-                                    image=tc_image,
-                                    connection=args.connection,
-                                    desired_arch=args.arch,
-                                    workarounds=Workarounds(defaults=True)
-                                    )
+    tc_instance = instance.Instance(
+        domain_configuration=domain,
+        image=tc_image,
+        connection=args.connection,
+        desired_arch=args.arch,
+        workarounds=Workarounds(defaults=True),
+    )
     log.info("create %s instance %s" % ("coreos" if coreos else "cloud", args.name))
 
     if coreos:
@@ -424,10 +424,10 @@ def _create_instance(args):
     except libvirt.libvirtError:
         if not args.keep:
             tc_instance._remove_from_disk()
-        log.error("An instance named {} already exists in libvirt. This might be broken testcloud instance or something else."
-                "Fix the issues or use 'testcloud instance remove {}' to remove the instance and try again.".format(
-                    args.name, args.name)
-             )
+        log.error(
+            "An instance named {} already exists in libvirt. This might be broken testcloud instance or something else."
+            "Fix the issues or use 'testcloud instance remove {}' to remove the instance and try again.".format(args.name, args.name)
+        )
         sys.exit(1)
 
     # start created domain
@@ -451,9 +451,9 @@ def _create_instance(args):
     tc_instance.create_ip_file(vm_ip)
 
     # CentOS .box files don't have cloud-init at all
-    centos_vagrant = bool(re.search(r'centos-(.*)-vagrant-(.*)', args.url.lower()))
+    centos_vagrant = bool(re.search(r"centos-(.*)-vagrant-(.*)", args.url.lower()))
     # Fedora .box files have cloud-init masked
-    fedora_vagrant = bool(re.search(r'fedora-cloud-base-vagrant-(.*)', args.url.lower()))
+    fedora_vagrant = bool(re.search(r"fedora-cloud-base-vagrant-(.*)", args.url.lower()))
     if centos_vagrant:
         tc_instance.prepare_vagrant_init(config_data.VARGANT_CENTOS_SH)
     if fedora_vagrant:
@@ -465,19 +465,22 @@ def _create_instance(args):
 
     _handle_connection_tip(vm_ip, vm_port, centos_vagrant or fedora_vagrant)
 
+
 def _domain_tip(args, action):
     connection = args.connection
     domains = {
-        "qemu:///system": instance._prepare_domain_list(connection = "qemu:///system"),
-        "qemu:///session": instance._prepare_domain_list(connection = "qemu:///session")
+        "qemu:///system": instance._prepare_domain_list(connection="qemu:///system"),
+        "qemu:///session": instance._prepare_domain_list(connection="qemu:///session"),
     }
     # We do the following check only for standard domains, not to break any (probaly not working anyway) wild deployments
     if args.name not in domains[connection].keys() and connection in domains.keys():
         del domains[connection]
         other_connection = list(domains.keys())[0]
         if args.name in domains[other_connection]:
-            log.error("You have tried to %s a %s instance from a %s domain, "
-                      "but it exists in %s domain." % (action, args.name, connection, other_connection))
+            log.error(
+                "You have tried to %s a %s instance from a %s domain, "
+                "but it exists in %s domain." % (action, args.name, connection, other_connection)
+            )
             log.error("You can specify '-c %s' to %s this instance." % (other_connection, action))
 
             if action == "remove":
@@ -487,6 +490,7 @@ def _domain_tip(args, action):
             else:
                 # We can't do the force arg in anything else than remove action, so exit unconditionally
                 sys.exit(1)
+
 
 def _start_instance(args):
     """Handler for 'instance start' command. Expects the following elements in args:
@@ -527,6 +531,7 @@ def _stop_instance(args):
         sys.exit(1)
 
     tc_instance.stop(soft=False)
+
 
 def _shutdown_instance(args, raise_e=False):
     """Handler for 'instance shutdown' command. Expects the following elements in args:
@@ -597,6 +602,7 @@ def _reboot_instance(args):
         sys.exit(1)
     _start_instance(args)
 
+
 def _reset_instance(args):
     """Handler for 'instance reset' command. Expects the following elements in args:
         * name(str)
@@ -621,6 +627,7 @@ def _list_image(args):
     for img in images:
         print("  {}".format(img))
 
+
 def _remove_image(args):
     """Handler for 'image remove' command. Expects the following elements in args:
         * name(str)
@@ -641,14 +648,18 @@ def _remove_image(args):
 
 def get_argparser():
     parser = argparse.ArgumentParser(description=description)
-    subparsers = parser.add_subparsers(title="Command Types",
-                                       description="Types of commands available",
-                                       help="<command> --help")
+    subparsers = parser.add_subparsers(
+        title="Command Types",
+        description="Types of commands available",
+        help="<command> --help",
+    )
 
-    parser.add_argument("-c",
-                         "--connection",
-                         default="qemu:///system",
-                         help="libvirt connection url to use")
+    parser.add_argument(
+        "-c",
+        "--connection",
+        default="qemu:///system",
+        help="libvirt connection url to use",
+    )
 
     # instance list
     instarg_list = subparsers.add_parser("list", help="list all instances")
@@ -656,48 +667,64 @@ def get_argparser():
 
     # instance start
     instarg_start = subparsers.add_parser("start", help="start instance")
-    instarg_start.add_argument("name",
-                               help="name of instance to start")
-    instarg_start.add_argument("--timeout",
-                               help="Time (in seconds) to wait for boot to "
-                               "complete before completion, setting to 0"
-                               " disables all waiting.",
-                               type=int,
-                               default=config_data.BOOT_TIMEOUT)
+    instarg_start.add_argument(
+        "name",
+        help="name of instance to start",
+    )
+    instarg_start.add_argument(
+        "--timeout",
+        help="Time (in seconds) to wait for boot to " "complete before completion, setting to 0" " disables all waiting.",
+        type=int,
+        default=config_data.BOOT_TIMEOUT,
+    )
     instarg_start.set_defaults(func=_start_instance)
 
     # instance stop
     instarg_stop = subparsers.add_parser("stop", help="stop instance (forced poweroff, same as 'instance force-off')")
-    instarg_stop.add_argument("name",
-                              help="name of instance to stop")
+    instarg_stop.add_argument(
+        "name",
+        help="name of instance to stop",
+    )
     instarg_stop.set_defaults(func=_stop_instance)
     # instance force-off
     instarg_foff = subparsers.add_parser("force-off", help="force-off instance (forced poweroff, same as 'instance stop')")
-    instarg_foff.add_argument("name",
-                              help="name of instance to force-off")
+    instarg_foff.add_argument(
+        "name",
+        help="name of instance to force-off",
+    )
     instarg_foff.set_defaults(func=_stop_instance)
     # instance shutdown
     instarg_shutdown = subparsers.add_parser("shutdown", help="shutdown instance (graceful poweroff)")
-    instarg_shutdown.add_argument("name",
-                              help="name of instance to shutdown")
+    instarg_shutdown.add_argument(
+        "name",
+        help="name of instance to shutdown",
+    )
     instarg_shutdown.set_defaults(func=_shutdown_instance)
     # instance remove
     instarg_remove = subparsers.add_parser("remove", help="remove instance")
-    instarg_remove.add_argument("name",
-                                help="name of instance to remove")
-    instarg_remove.add_argument("-f",
-                                "--force",
-                                help="Stop the instance if it's running",
-                                action="store_true")
+    instarg_remove.add_argument(
+        "name",
+        help="name of instance to remove",
+    )
+    instarg_remove.add_argument(
+        "-f",
+        "--force",
+        help="Stop the instance if it's running",
+        action="store_true",
+    )
     instarg_remove.set_defaults(func=_remove_instance)
 
     instarg_destroy = subparsers.add_parser("destroy", help="deprecated alias for remove")
-    instarg_destroy.add_argument("name",
-                                 help="name of instance to remove")
-    instarg_destroy.add_argument("-f",
-                                 "--force",
-                                 help="Stop the instance if it's running",
-                                 action="store_true")
+    instarg_destroy.add_argument(
+        "name",
+        help="name of instance to remove",
+    )
+    instarg_destroy.add_argument(
+        "-f",
+        "--force",
+        help="Stop the instance if it's running",
+        action="store_true",
+    )
     instarg_destroy.set_defaults(func=_remove_instance)
 
     # instance clean
@@ -706,28 +733,32 @@ def get_argparser():
 
     # instance reboot
     instarg_reboot = subparsers.add_parser("reboot", help="reboot instance (graceful reboot)")
-    instarg_reboot.add_argument("name",
-                                help="name of instance to reboot")
-    instarg_reboot.add_argument("--timeout",
-                                help="Time (in seconds) to wait for boot to "
-                                "complete before completion, setting to 0"
-                                " disables all waiting.",
-                                type=int,
-                                default=config_data.BOOT_TIMEOUT)
+    instarg_reboot.add_argument(
+        "name",
+        help="name of instance to reboot",
+    )
+    instarg_reboot.add_argument(
+        "--timeout",
+        help="Time (in seconds) to wait for boot to " "complete before completion, setting to 0" " disables all waiting.",
+        type=int,
+        default=config_data.BOOT_TIMEOUT,
+    )
     instarg_reboot.set_defaults(func=_reboot_instance)
     # instance reset
     instarg_reset = subparsers.add_parser("reset", help="reset instance (forced reboot)")
-    instarg_reset.add_argument("name",
-                                help="name of instance to reset")
-    instarg_reset.add_argument("--timeout",
-                                help="Time (in seconds) to wait for boot to "
-                                "complete before completion, setting to 0"
-                                " disables all waiting.",
-                                type=int,
-                                default=config_data.BOOT_TIMEOUT)
+    instarg_reset.add_argument(
+        "name",
+        help="name of instance to reset",
+    )
+    instarg_reset.add_argument(
+        "--timeout",
+        help="Time (in seconds) to wait for boot to " "complete before completion, setting to 0" " disables all waiting.",
+        type=int,
+        default=config_data.BOOT_TIMEOUT,
+    )
     instarg_reset.set_defaults(func=_reset_instance)
     # instance create
-    create_help = '''
+    create_help = """
     URL to qcow2 image or distro:release string is required.
     Examples of some known distro:release pairs:
     - fedora:rawhide (latest compose), fedora:33, fedora:latest (latest Fedora GA image)
@@ -736,125 +767,178 @@ def get_argparser():
     - centos-stream:XX (eg. centos-stream:8, centos-stream:latest)
     - ubuntu:release_name (eg. ubuntu:focal, ubuntu:latest)
     - debian:release_name/release_number (eg. debian:11, debian:sid, debian:latest)
-    '''
+    """
     instarg_create = subparsers.add_parser("create", help="create instance", formatter_class=argparse.RawTextHelpFormatter)
     instarg_create.set_defaults(func=_create_instance)
-    instarg_create.add_argument("url",
-                                help=create_help,
-                                type=str,
-                                nargs='?')
-    instarg_create.add_argument("-n",
-                                "--name",
-                                help="name of instance to create",
-                                type=str,
-                                default=None)
-    instarg_create.add_argument("-a",
-                                "--arch",
-                                help="desired architecture of an instance",
-                                type=str,
-                                default=platform.machine())
-    instarg_create.add_argument("--ram",
-                                help="Specify the amount of ram in MiB for the VM.",
-                                type=int,
-                                # Default value is handled in _create_instance (config_data.RAM or config_data.RAM_COREOS)
-                                default=-1)
-    instarg_create.add_argument("--vcpus",
-                                help="Number of virtual CPU cores to assign to the VM.",
-                                default=config_data.VCPUS)
-    instarg_create.add_argument("--no-graphic",
-                                help="Turn off graphical display.",
-                                action="store_true")
-    instarg_create.add_argument("--vnc",
-                                help="Turns on vnc at :1 to the instance.",
-                                action="store_true")
-    instarg_create.add_argument("--timeout",
-                                help="Time (in seconds) to wait for boot to "
-                                     "complete before completion, setting to 0"
-                                     " disables all waiting.",
-                                type=int,
-                                default=config_data.BOOT_TIMEOUT)
-    instarg_create.add_argument("--disksize",
-                                help="Desired instance disk size, in GB",
-                                type=int,
-                                # Same as with RAM few line above
-                                default=-1)
-    instarg_create.add_argument("--keep",
-                                help="Don't remove instance from disk when something fails, useful for debugging",
-                                action="store_true")
-    instarg_create.add_argument("--dry",
-                                help="Don't spawn an actual instance, useful for debugging",
-                                action="store_true")
-    instarg_create.add_argument("--ssh_path",
-                                help="specify your ssh pubkey path",
-                                type=str)
-    instarg_create.add_argument("--bu_file",
-                                help="specify your bu file path",
-                                type=str)
-    instarg_create.add_argument("--ign_file",
-                                help="specify your ign file path",
-                                type=str)
-    instarg_create.add_argument("--qemu_cmds",
-                                 type=str,
-                                 help="specify qemu commands")
-    instarg_create.add_argument("--mac_address",
-                                 type=str,
-                                 help="specify mac address")
-    instarg_create.add_argument("--tpm",
-                                 help="add tpm device",
-                                 action="store_true")
-    instarg_create.add_argument("--serial",
-                                 help="set Serial number",
-                                 action="store_true")
-    instarg_create.add_argument("--disk_number",
-                                help="Desired disk number",
-                                type=int,
-                                default=1)
-    instarg_create.add_argument("--nic_number",
-                                help="Desired nic number",
-                                type=int,
-                                default=1)
-    instarg_create.add_argument("--virtiofs",
-                                 type=str,
-                                 help="specify a local directory to mount and mount target like <host path>:<guest path>")
-    instarg_create.add_argument("--iommu",
-                                help="add iommu device",
-                                action="store_true")
+    instarg_create.add_argument(
+        "url",
+        help=create_help,
+        type=str,
+        nargs="?",
+    )
+    instarg_create.add_argument(
+        "-n",
+        "--name",
+        help="name of instance to create",
+        type=str,
+        default=None,
+    )
+    instarg_create.add_argument(
+        "-a",
+        "--arch",
+        help="desired architecture of an instance",
+        type=str,
+        default=platform.machine(),
+    )
+    instarg_create.add_argument(
+        "--ram",
+        help="Specify the amount of ram in MiB for the VM.",
+        type=int,
+        # Default value is handled in _create_instance (config_data.RAM or config_data.RAM_COREOS)
+        default=-1,
+    )
+    instarg_create.add_argument(
+        "--vcpus",
+        help="Number of virtual CPU cores to assign to the VM.",
+        default=config_data.VCPUS,
+    )
+    instarg_create.add_argument(
+        "--no-graphic",
+        help="Turn off graphical display.",
+        action="store_true",
+    )
+    instarg_create.add_argument(
+        "--vnc",
+        help="Turns on vnc at :1 to the instance.",
+        action="store_true",
+    )
+    instarg_create.add_argument(
+        "--timeout",
+        help="Time (in seconds) to wait for boot to " "complete before completion, setting to 0" " disables all waiting.",
+        type=int,
+        default=config_data.BOOT_TIMEOUT,
+    )
+    instarg_create.add_argument(
+        "--disksize",
+        help="Desired instance disk size, in GB",
+        type=int,
+        # Same as with RAM few line above
+        default=-1,
+    )
+    instarg_create.add_argument(
+        "--keep",
+        help="Don't remove instance from disk when something fails, useful for debugging",
+        action="store_true",
+    )
+    instarg_create.add_argument(
+        "--dry",
+        help="Don't spawn an actual instance, useful for debugging",
+        action="store_true",
+    )
+    instarg_create.add_argument(
+        "--ssh_path",
+        help="specify your ssh pubkey path",
+        type=str,
+    )
+    instarg_create.add_argument(
+        "--bu_file",
+        help="specify your bu file path",
+        type=str,
+    )
+    instarg_create.add_argument(
+        "--ign_file",
+        help="specify your ign file path",
+        type=str,
+    )
+    instarg_create.add_argument(
+        "--qemu_cmds",
+        type=str,
+        help="specify qemu commands",
+    )
+    instarg_create.add_argument(
+        "--mac_address",
+        type=str,
+        help="specify mac address",
+    )
+    instarg_create.add_argument(
+        "--tpm",
+        help="add tpm device",
+        action="store_true",
+    )
+    instarg_create.add_argument(
+        "--serial",
+        help="set Serial number",
+        action="store_true",
+    )
+    instarg_create.add_argument(
+        "--disk_number",
+        help="Desired disk number",
+        type=int,
+        default=1,
+    )
+    instarg_create.add_argument(
+        "--nic_number",
+        help="Desired nic number",
+        type=int,
+        default=1,
+    )
+    instarg_create.add_argument(
+        "--virtiofs",
+        type=str,
+        help="specify a local directory to mount and mount target like <host path>:<guest path>",
+    )
+    instarg_create.add_argument(
+        "--iommu",
+        help="add iommu device",
+        action="store_true",
+    )
     imgarg = subparsers.add_parser("image", help="help on image options")
-    imgarg_subp = imgarg.add_subparsers(title="subcommands",
-                                        description="Types of commands available",
-                                        help="<command> help")
+    imgarg_subp = imgarg.add_subparsers(
+        title="subcommands",
+        description="Types of commands available",
+        help="<command> help",
+    )
 
     # image list
     imgarg_list = imgarg_subp.add_parser("list", help="list images")
     imgarg_list.set_defaults(func=_list_image)
 
-
     # image remove
-    imgarg_remove = imgarg_subp.add_parser('remove', help="remove image")
-    imgarg_remove.add_argument("name",
-                               help="name of image to remove")
+    imgarg_remove = imgarg_subp.add_parser("remove", help="remove image")
+    imgarg_remove.add_argument(
+        "name",
+        help="name of image to remove",
+    )
     imgarg_remove.set_defaults(func=_remove_image)
 
-    imgarg_destroy = imgarg_subp.add_parser('destroy', help="deprecated alias for remove")
-    imgarg_destroy.add_argument("name",
-                                help="name of image to remove")
+    imgarg_destroy = imgarg_subp.add_parser("destroy", help="deprecated alias for remove")
+    imgarg_destroy.add_argument(
+        "name",
+        help="name of image to remove",
+    )
     imgarg_destroy.set_defaults(func=_remove_image)
 
     # image download
-    imarg_download = imgarg_subp.add_parser('download', help="download image")
-    imarg_download.add_argument("url",
-                                help=create_help,
-                                type=str)
-    imarg_download.add_argument("-d",
-                                "--dest_path",
-                                help="dest path to put image",
-                                type=str,
-                                default=os.getcwd())
-    imarg_download.add_argument("-a",
-                                "--arch",
-                                help="desired architecture of an image",
-                                type=str,
-                                default=platform.machine())
+    imarg_download = imgarg_subp.add_parser("download", help="download image")
+    imarg_download.add_argument(
+        "url",
+        help=create_help,
+        type=str,
+    )
+    imarg_download.add_argument(
+        "-d",
+        "--dest_path",
+        help="dest path to put image",
+        type=str,
+        default=os.getcwd(),
+    )
+    imarg_download.add_argument(
+        "-a",
+        "--arch",
+        help="desired architecture of an image",
+        type=str,
+        default=platform.machine(),
+    )
 
     imarg_download.set_defaults(func=_download_image)
 
@@ -862,12 +946,12 @@ def get_argparser():
 
 
 def _configure_logging(level=logging.DEBUG):
-    '''Set up logging framework, when running in main script mode. Should not
+    """Set up logging framework, when running in main script mode. Should not
     be called when running in library mode.
 
     :param int level: the stream log level to be set (one of the constants from logging.*)
-    '''
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=level)
+    """
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=level)
 
 
 def main():
