@@ -329,13 +329,29 @@ class Instance(object):
 
         # Spawn http listener to signal readiness of the instance
         if self.connection == "qemu:///session":
-            self.workarounds.add(
-                "python3 -m http.server {0} 2>/dev/null 1>&2 || "
-                "python -m http.server {0} 2>/dev/null 1>&2 || "
-                "/usr/libexec/platform-python -m http.server {0} 2>/dev/null 1>&2 || "
-                "python2 -m SimpleHTTPServer {0} 2>/dev/null 1>&2 || "
-                "python -m SimpleHTTPServer {0} 2>/dev/null 1>&2 &".format(10022),
-                key="spawn_cloud_init_flag",
+
+            simple_http_start_guest = \
+            """
+            python3 -m http.server {0} || python -m http.server {0} ||
+            /usr/libexec/platform-python -m http.server {0} || python2 -m SimpleHTTPServer {0} || python -m SimpleHTTPServer {0}
+            """.format(10022).replace('\n', ' ')
+
+            self.workarounds.add_condition(
+                '[ ! -f /etc/systemd/system/testcloud.service ]',
+                [
+                    'echo "{0}" >> /opt/testcloud-guest.sh'.format(simple_http_start_guest),
+                    'chmod +x /opt/testcloud-guest.sh',
+                    'echo "[Unit]" >> /etc/systemd/system/testcloud.service',
+                    'echo "Description=Testcloud guest integration" >> /etc/systemd/system/testcloud.service',
+                    'echo "After=cloud-init.service" >> /etc/systemd/system/testcloud.service',
+                    'echo "[Service]" >> /etc/systemd/system/testcloud.service',
+                    'echo "ExecStart=/bin/bash /opt/testcloud-guest.sh" >> /etc/systemd/system/testcloud.service',
+                    'echo "[Install]" >> /etc/systemd/system/testcloud.service',
+                    'echo "WantedBy=multi-user.target" >> /etc/systemd/system/testcloud.service',
+                    'systemctl daemon-reload',
+                    'systemctl enable testcloud.service',
+                    'systemctl start testcloud.service'
+                ]
             )
 
         runcommands = self.workarounds.generate_cloud_init_cmd_list()
