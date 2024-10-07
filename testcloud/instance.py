@@ -551,7 +551,7 @@ class Instance(object):
 
         self.start(timeout)
 
-    def start(self, timeout=config_data.BOOT_TIMEOUT):
+    def start(self, timeout=config_data.BOOT_TIMEOUT, retries=0):
         """Start an existing instance and wait up to :py:attr:`timeout` seconds
         for a network interface to appear.
 
@@ -559,11 +559,29 @@ class Instance(object):
                             Setting this to 0 will disable timeout, default
                             is configured with :py:const:`BOOT_TIMEOUT` config
                             value.
+        :param int retries: number of retries attempted
         :raises TestcloudInstanceError: if there is an error while creating the
                                         instance or if the timeout is reached
                                         while looking for a network interface
         """
 
+        if self.connection not in ["qemu:///system", "qemu:///session"]:
+            # We dont know what to do with other connection types yet! TODO: Find out, refactor
+            raise TestcloudInstanceError("We currently don't support connections other than"
+                                         "qemu:///system and qemu:///session")
+
+        excs = []
+        for _ in range(max(1, retries + 1)):
+            try:
+                self._start(timeout=timeout)
+                break
+            except TestcloudInstanceError as exc:
+                excs.append(exc)
+                log.debug("Retrying instance creation due to hang...")
+        else:
+            raise excs[-1]
+
+    def _start(self, timeout):
         log.debug("Creating instance {}".format(self.name))
         dom = self._get_domain()
         try:
@@ -587,10 +605,6 @@ class Instance(object):
         domif = {}
         port = self.get_instance_port()
 
-        if self.connection not in ["qemu:///system", "qemu:///session"]:
-            # We dont know what to do with other connection types yet! TODO: Find out, refactor
-            raise TestcloudInstanceError("We currently don't support connections other than" "qemu:///system and qemu:///session")
-
         # poll libvirt for domain interfaces, returning when an interface is
         # found, indicating that the boot process is post-cloud-init
         while count <= timeout_ticks:
@@ -598,7 +612,7 @@ class Instance(object):
                 domif = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
             elif self.connection == "qemu:///session" and not self.coreos:
                 try:
-                    log.debug("Checking if cloud-init has finished its job...")
+                    log.debug("Checking if cloud-init has finished its job for: " + self.name)
                     requests.head("http://127.0.0.1:%d" % (port - 1000), timeout=1).raise_for_status()
                     port_open = 0
                 except Exception:
