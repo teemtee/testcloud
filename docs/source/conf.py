@@ -48,14 +48,14 @@ master_doc = "index"
 
 # General information about the project.
 project = "testCloud"
-copyright = "2016-2023, testCloud devs"
+copyright = "2016-2024, testCloud devs"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = "0.10.0"
+version = "0.11.0"
 # The full version, including alpha/beta/rc tags.
 release = version
 
