@@ -273,7 +273,7 @@ class Instance(object):
         self.qemu_cmds = []
         self.domain_configuration = domain_configuration
 
-    def prepare(self):
+    def prepare(self, data_tpl=None):
         """Create local directories needed to spawn the instance"""
         # create the dirs needed for this instance
         try:
@@ -281,7 +281,7 @@ class Instance(object):
         except PermissionError:
             raise TestcloudPermissionsError
         if not self.coreos:
-            self._create_user_data(config_data.PASSWORD)
+            self._create_user_data(password=config_data.PASSWORD, user_data_tpl=data_tpl)
             self._create_meta_data(self.hostname)
 
             # generate seed image
@@ -293,7 +293,7 @@ class Instance(object):
             if self.ign_file:
                 shutil.copy(self.ign_file, self.config_path)
             else:
-                self._generate_config_file()
+                self._generate_config_file(coreos_data_tpl=data_tpl)
             chcon_command = subprocess.call("chcon -t svirt_home_t %s" % self.config_path, shell=True)
             if chcon_command == 0:
                 log.info("chcon command succeed ")
@@ -315,14 +315,14 @@ class Instance(object):
             workarounds.add("mount -t virtiofs virtiofs-{count} {target}".format(count=i, target=virtiofs.target))
             i += 1
 
-    def _create_user_data(self, password, overwrite=False):
+    def _create_user_data(self, password, user_data_tpl=None, overwrite=False):
         """Save the right  password to the 'user-data' file needed to
         emulate cloud-init. Default username on cloud images is "fedora"
 
         Will not overwrite an existing user-data file unless
         the overwrite kwarg is set to True."""
 
-        file_data: str | Template = config_data.USER_DATA
+        file_data: str | Template = user_data_tpl or config_data.USER_DATA
 
         # Adds potential virtiofs mounts
         self._adjust_mount_pts(self.workarounds)
@@ -415,7 +415,9 @@ class Instance(object):
             log.error("Seed image generation failed. Exiting")
             raise TestcloudInstanceError("Failure during seed image generation")
 
-    def _generate_config_file(self):
+    def _generate_config_file(self, coreos_data_tpl=None):
+
+        coreos_data_tpl = coreos_data_tpl or config_data.COREOS_DATA
 
         if self.bu_file:
             shutil.copy(self.bu_file, self.bu_path)
