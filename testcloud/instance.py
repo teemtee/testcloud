@@ -571,13 +571,14 @@ class Instance(object):
                                          "qemu:///system and qemu:///session")
 
         excs = []
-        for _ in range(max(1, retries + 1)):
+        for i in range(max(1, retries + 1)):
             try:
                 self._start(timeout=timeout)
                 break
             except TestcloudInstanceError as exc:
                 excs.append(exc)
-                log.debug("Retrying instance creation due to hang...")
+                if i != range(max(1, retries + 1)):
+                    log.debug("Retrying instance creation due to hang...")
         else:
             raise excs[-1]
 
@@ -601,7 +602,7 @@ class Instance(object):
         poll_tick = 0.5
         timeout_ticks = timeout / poll_tick
         count = 0
-        port_open = -1
+        port_open = False
         domif = {}
         port = self.get_instance_port()
 
@@ -609,22 +610,45 @@ class Instance(object):
         # found, indicating that the boot process is post-cloud-init
         while count <= timeout_ticks:
             if self.connection == "qemu:///system":
+                log.debug("Checking if ssh is up on: %s" % self.name)
                 domif = dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
             elif self.connection == "qemu:///session" and not self.coreos:
                 try:
-                    log.debug("Checking if cloud-init has finished its job for: " + self.name)
+                    log.debug("Checking if cloud-init has finished its job for: %s" % self.name)
                     requests.head("http://127.0.0.1:%d" % (port - 1000), timeout=1).raise_for_status()
-                    port_open = 0
+                    port_open = True
                 except Exception:
                     time.sleep(poll_tick * 4)  # Larger value to prevent SYN flood
                     count += 4
                     continue
             elif self.connection == "qemu:///session" and self.coreos:
                 domif = {}
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                port_open = sock.connect_ex(("127.0.0.1", self.get_instance_port()))
+                log.debug("Checking if ssh is up on: %s" % self.name)
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(poll_tick * 4)
+                    sock.connect(("127.0.0.1", self.get_instance_port()))
+                    resp = sock.recv(1024)
+                    assert resp is not None
+                    assert "ssh" in resp.decode("utf-8").lower()
+                    port_open = True
+                except ConnectionRefusedError:
+                    # To support old behavior where sock.connect fails before vm startup
+                    # We didn't wait for timeout in this branch
+                    domain_state = _find_domain(self.name, self.connection)
+                    if domain_state != "running":
+                        break
+                    time.sleep(poll_tick * 4)
+                except (TimeoutError, AssertionError):
+                    # AssertionError To break on abrupt libvirt domain shutoff
+                    # TimeoutError Expected while waiting for ssh in VM
+                    domain_state = _find_domain(self.name, self.connection)
+                    if domain_state != "running":
+                        break
+                finally:
+                    sock.close()
 
-            if len(domif) > 0 or port_open == 0:
+            if len(domif) > 0 or port_open:
                 log.info("Successfully booted instance {}".format(self.name))
                 return
 
