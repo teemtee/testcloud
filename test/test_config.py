@@ -66,7 +66,7 @@ class TestConfig(object):
         test_config = config.ConfigData()
         assert test_config.DATA_DIR != REF_DATA_DIR
 
-        test_config.merge_object(test_config_obj)
+        test_config._merge_object(test_config_obj)
         assert test_config.DATA_DIR == REF_DATA_DIR
 
     def test_load_merge_config_file(self, tmpdir, monkeypatch):

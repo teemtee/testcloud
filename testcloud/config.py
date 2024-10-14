@@ -45,7 +45,7 @@ def _parse_config():
 
     if config_filename is not None:
         loaded_config = _load_config(config_filename)
-        config.merge_object(loaded_config)
+        config._merge_object(loaded_config)
 
     return config
 
@@ -98,7 +98,20 @@ class ConfigData(object):
 
     # Directories testcloud cares about
 
-    DATA_DIR = "/var/lib/testcloud"
+    __DATA_DIR = "/var/lib/testcloud"
+
+    @property
+    def DATA_DIR(self):
+        return self.__DATA_DIR
+
+    @DATA_DIR.setter
+    def DATA_DIR(self, value):
+        if self.__DATA_DIR == value:
+            return
+        from testcloud import sql
+        sql.data_dir_changed(value)
+        self.__DATA_DIR = value
+
     STORE_DIR = "/var/lib/testcloud/backingstores"
 
     # Data for cloud-init
@@ -263,7 +276,7 @@ storage:
     UBUNTU_RELEASES_API = "https://api.launchpad.net/devel/ubuntu/series"
     UBUNTU_IMG_URL = "https://cloud-images.ubuntu.com/%s/current/%s-server-cloudimg-%s.img"
 
-    def merge_object(self, obj):
+    def _merge_object(self, obj):
         """Overwrites default values with values from a python object which have
         names containing all upper case letters.
 
@@ -273,4 +286,15 @@ storage:
 
         for key in dir(obj):
             if key.isupper():
-                setattr(self, key, getattr(obj, key))
+                if key != "DATA_DIR":
+                    setattr(self, key, getattr(obj, key))
+                else:
+                    # I hate life... but since we want to "automagically" work around TMT's
+                    #  way of changing the DATA_DIR on the fly, I don't see another way.
+                    try:
+                        self.DATA_DIR = getattr(obj, key)
+                    except AttributeError as e:
+                        if 'partially initialized module' in str(e):
+                            self.__DATA_DIR = getattr(obj, key)
+                        else:
+                            raise
