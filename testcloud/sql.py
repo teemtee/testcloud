@@ -53,7 +53,7 @@ class DBImage(pw.Model):
 
 def data_dir_changed(pth):
     global DB
-    DB = pw.SqliteDatabase(os.path.join(pth, "testcloud.sqlite"))
+    DB.init(os.path.join(pth, "testcloud.sqlite"))
     DB.connect()
     DB.create_tables([DBImage])
 
