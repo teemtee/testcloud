@@ -5,12 +5,17 @@
 
 """ This module is for testing the behaviour of the Image class."""
 
-import os
-
 from unittest import mock
+from unittest.mock import patch
 
-from testcloud import instance, image, config, domain_configuration
+import os
+import peewee as pw
 
+
+from testcloud import instance, image, config
+from testcloud.sql import DBImage, DB
+
+DB = pw.SqliteDatabase(":memory:")
 
 class dotdict(dict):
     # https://stackoverflow.com/a/23689767
@@ -45,6 +50,15 @@ class TestFindInstance(object):
 
     def setup_method(self, method):
         self.conf = config.ConfigData()
+        DB.bind([DBImage], bind_refs=False, bind_backrefs=False)
+        DB.connect()
+        DB.create_tables([DBImage])
+        self.patcher = patch('testcloud.sql.data_dir_changed', return_value=None)
+        self.mocked_method = self.patcher.start()
+
+    def teardown_method(self, method):
+        DB.drop_tables([DBImage])
+        DB.close()
 
     def test_non_existant_instance(self, monkeypatch):
         ref_name = "test-123"

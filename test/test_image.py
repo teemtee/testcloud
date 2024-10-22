@@ -5,11 +5,16 @@
 
 """ This module is for testing the behaviour of the Image class."""
 
+from unittest.mock import patch
+
 import pytest
+import peewee as pw
 
 from testcloud import image
 from testcloud import exceptions
+from testcloud.sql import DBImage, DB
 
+DB = pw.SqliteDatabase(":memory:")
 
 class TestImage:
 
@@ -39,6 +44,16 @@ class TestImageUriProcess(object):
     def setup_method(self, method):
         self.image_name = "image.img"
         self.len_data = 3
+
+        DB.bind([DBImage], bind_refs=False, bind_backrefs=False)
+        DB.connect()
+        DB.create_tables([DBImage])
+        self.patcher = patch('testcloud.sql.data_dir_changed', return_value=None)
+        self.mocked_method = self.patcher.start()
+
+    def teardown_method(self, method):
+        DB.drop_tables([DBImage])
+        DB.close()
 
     def test_http_ur1(self):
         ref_type = "http"
