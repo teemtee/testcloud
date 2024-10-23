@@ -24,7 +24,7 @@ def get_ubuntu_releases() -> dict:
         raise exceptions.TestcloudImageError
 
     return {
-        "latest": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and "Dev" not in entry["status"]][0],
+        "latest": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and "Current Stable Release" in entry["status"]][0],
         "entries": [entry["name"] for entry in releases_resp["entries"] if entry["active"] and float(entry["version"]) >= 20],
     }
 
