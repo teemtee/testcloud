@@ -3,8 +3,14 @@
 # License: GPL-2.0+ <http://spdx.org/licenses/GPL-2.0+>
 # See the LICENSE file for more details on Licensing
 
-from testcloud import config
+from unittest.mock import patch
 
+import peewee as pw
+
+from testcloud import config
+from testcloud.sql import DBImage, DB
+
+DB = pw.SqliteDatabase(":memory:")
 
 REF_DATA_DIR = "/some/random/dir/for/testing/"
 REF_STORE_DIR = "/some/random/dir/for/testing/backingstore/"
@@ -16,6 +22,15 @@ STORE_DIR = "{}/backingstores"
 class TestConfig(object):
     def setup_method(self, method):
         config._config = None
+        DB.bind([DBImage], bind_refs=False, bind_backrefs=False)
+        DB.connect()
+        DB.create_tables([DBImage])
+        self.patcher = patch('testcloud.sql.data_dir_changed', return_value=None)
+        self.mocked_method = self.patcher.start()
+
+    def teardown_method(self, method):
+        DB.drop_tables([DBImage])
+        DB.close()
 
     def test_get_config_object(self, monkeypatch):
         """Simple test to grab a config object, will return default config
