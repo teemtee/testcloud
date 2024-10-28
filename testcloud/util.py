@@ -138,7 +138,7 @@ def get_image_url(distro_str: str, arch="x86_64", verify=False, additional_handl
         "centos-stream": {"re": r"^c(entos-stream)?(-|:)?(\d+)?$", "fn": get_centos_stream_image_url},
         "coreos": {"re": r"^co(reos)?(-|:)?(%s)?$" % COREOS, "fn": get_coreos_image_url},
         "centos": {"re": r"^c(entos)?(-|:)?(\d+)?$", "fn": get_centos_image_url},
-        "ubuntu": {"re": r"^u(buntu)?(-|:)?(\d+)?$", "fn": get_ubuntu_image_url},
+        "ubuntu": {"re": r"^u(buntu)?([:-]([a-z]+|\d+))?$", "fn": get_ubuntu_image_url},
         "debian": {"re": r"^d(ebian)?(-|:)?(\d+)?$", "fn": get_debian_image_url},
         "alma": {"re": r"^a(lma)?(-|:)?(\d+)?$", "fn": get_alma_image_url},
         "rocky": {"re": r"^r(ocky)?(-|:)?(\d+)?$", "fn": get_rocky_image_url},
