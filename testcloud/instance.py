@@ -339,13 +339,13 @@ class Instance(object):
             self.workarounds.add_condition(
                 '[ ! -f /etc/systemd/system/testcloud.service ]',
                 [
-                    'echo "{0}" >> /opt/testcloud-guest.sh'.format(simple_http_start_guest),
-                    'chmod +x /opt/testcloud-guest.sh',
+                    'echo "{0}" >> /etc/testcloud-guest.sh'.format(simple_http_start_guest),
+                    'chmod +x /etc/testcloud-guest.sh',
                     'echo "[Unit]" >> /etc/systemd/system/testcloud.service',
                     'echo "Description=Testcloud guest integration" >> /etc/systemd/system/testcloud.service',
                     'echo "After=cloud-init.service" >> /etc/systemd/system/testcloud.service',
                     'echo "[Service]" >> /etc/systemd/system/testcloud.service',
-                    'echo "ExecStart=/bin/bash /opt/testcloud-guest.sh" >> /etc/systemd/system/testcloud.service',
+                    'echo "ExecStart=/bin/bash /etc/testcloud-guest.sh" >> /etc/systemd/system/testcloud.service',
                     'echo "[Install]" >> /etc/systemd/system/testcloud.service',
                     'echo "WantedBy=multi-user.target" >> /etc/systemd/system/testcloud.service',
                     'systemctl daemon-reload',
