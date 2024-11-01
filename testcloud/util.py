@@ -158,7 +158,7 @@ def get_image_url(distro_str: str, arch="x86_64", verify=False, additional_handl
         if match:
             return (verify_url if verify else lambda x: x)(distro["fn"](version=match.group(3) or "latest", arch=arch))
 
-    log.error("Invalid url handle (distro or distro-version) passed, supported handles are: %s" % HELP_LIST)
+    log.error("Invalid url handle (distro or distro{-,:}version) passed, supported handles are: %s" % HELP_LIST)
     raise exceptions.TestcloudImageError
 
 
