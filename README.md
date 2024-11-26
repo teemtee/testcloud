@@ -416,10 +416,28 @@ tox
 
 This is a good place to contribute if you\'re looking to help out.
 
+### Releasing
+
+Testcloud is being released to all stable Fedora releases, EPEL branches, and PyPi.
+The release process can be summed up to these steps:
+
+1. A batch of changes has accumulated
+2. Testsuite sanity is verified (via either tox or pytest)
+3. Documentation is verified up-to-date (README.md, docs/, manpages/)
+4. Compatibility with tmt is verified
+5. `__version__` is updated in `testcloud/__init__.py`, `version` is updated in `docs/source/conf.py`
+6. Version bumps are commited, pushed, a new tag is pushed to this repository
+7. A new version is uploaded on PyPi:
+       ```
+       python3 setup.py sdist bdist_wheel && twine upload dist/*
+       ```
+8. Resulting .tar.gz is copied to the dist-git, and build are submitted to all of the stable Fedoras and EPELs
+9. New bodhi builds are queued into the -testing repositories
+
 ### Issue Tracking and Roadmap
 
-Our project tracker is on the Fedora QA-devel
-[Pagure](https://pagure.io/testcloud//) instance.
+Our project tracker is on the teemtee
+[GitHub](https://github.com/teemtee/testcloud) instance.
 
 ### Credit
 
