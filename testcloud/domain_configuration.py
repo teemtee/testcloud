@@ -342,6 +342,7 @@ class DomainConfiguration:
         self.network_configuration = None
         self.network_devices = []
         self.tpm_configuration = None
+        self.console_log_file = None
         self.virtiofs_configuration = []
         self.iommu_configuration = None
         self.qemu_args = []
@@ -366,6 +367,20 @@ class DomainConfiguration:
         return "\n".join(
             [device.generate() for device in self.network_devices + ([self.network_configuration] if self.network_configuration else [])]
         )
+
+    def generate_serial_log_conf(self) -> str:
+        _serial_log_conf = ""
+        if self.console_log_file:
+            # Create an empty log file beforehand so the file will be
+            # accessible to testcloud. Otherwise libvirt will create a file
+            # only accessible to root.
+            with open(self.console_log_file, 'w'):
+                pass
+
+            _serial_log_conf = f'<log file="{self.console_log_file}" append="on"/>'
+
+
+        return _serial_log_conf
 
     def get_emulator(self) -> str:
         assert self.system_architecture is not None
@@ -431,6 +446,7 @@ class DomainConfiguration:
                 {storage_devices}
                 {network_configuraton}
                 <serial type='pty'>
+                    {serial_log_configuraton}
                     <target port='0'/>
                 </serial>
                 <console type='pty'>
@@ -459,6 +475,7 @@ class DomainConfiguration:
             emulator_path=self.get_emulator(),
             storage_devices=self.generate_storage_devices(),
             network_configuraton=self.generate_network_devices(),
+            serial_log_configuraton=self.generate_serial_log_conf(),
             tpm=self.tpm_configuration.generate() if self.tpm_configuration else "",
             virtiofs_head=self.generate_virtiofs_head() if self.virtiofs_configuration else "",
             virtiofs_device=self.generate_virtiofs_mounts() if self.virtiofs_configuration else "",
