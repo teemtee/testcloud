@@ -237,7 +237,7 @@ storage:
     CENTOS_STREAM_VERSIONS = {
         "8": "https://cloud.centos.org/centos/8-stream/{0}/images/CentOS-Stream-GenericCloud-8-20240603.0.{0}.qcow2",
         "9": "https://cloud.centos.org/centos/9-stream/{0}/images/CentOS-Stream-GenericCloud-9-20240715.0.{0}.qcow2",
-        "10": "https://odcs.stream.centos.org/stream-10/production/CentOS-Stream-10-20250217.0/compose/BaseOS/{0}/images/CentOS-Stream-GenericCloud-10-20250217.0.{0}.qcow2",
+        "10": "https://cloud.centos.org/centos/10-stream/{0}/images/CentOS-Stream-GenericCloud-10-20250217.0.{0}.qcow2",
         "latest": "9",
     }
 
