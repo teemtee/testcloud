@@ -4,11 +4,15 @@ import xml.dom.minidom
 import os
 import uuid
 import platform
+import subprocess
+import logging
 
 from testcloud.exceptions import TestcloudInstanceError
 from testcloud import config
 from testcloud import util
 from testcloud import image
+
+log = logging.getLogger("testcloud.domain_configuration")
 
 config_data = config.get_config()
 
@@ -325,6 +329,7 @@ class DomainConfiguration:
     qemu_args: list[str]
     qemu_envs: dict[str, str]
     coreos: Optional[bool]
+    console_log_file: Optional[str]
 
     def __init__(self, name) -> None:
         config_data = config.get_config()
@@ -377,8 +382,21 @@ class DomainConfiguration:
             with open(self.console_log_file, 'w'):
                 pass
 
-            _serial_log_conf = f'<log file="{self.console_log_file}" append="on"/>'
+            # Change label of log file to virt_log_t and give root permission to write
+            # this allows virtlogd to write to log file when testcloud runs with
+            # qemu:///system connection and SELinux is in enforcing mode
+            chcon_result = subprocess.call(["chcon", "-t", "virt_log_t", self.console_log_file])
+            if chcon_result == 0:
+                log.debug("Successfuly changed SELinux context of {}".format(self.console_log_file))
+            else:
+                log.error("Error changing SELinux context of {}".format(self.console_log_file))
+            setfacl_result = subprocess.call(["setfacl", "-m" "u:root:rw", self.console_log_file])
+            if setfacl_result == 0:
+                log.debug("Successfuly modified ACL of {}".format(self.console_log_file))
+            else:
+                log.error("Error modifying ACL of {}".format(self.console_log_file))
 
+            _serial_log_conf = f'<log file="{self.console_log_file}" append="on"/>'
 
         return _serial_log_conf
 
@@ -515,6 +533,7 @@ def _get_default_domain_conf(
     domain_configuration = DomainConfiguration(name)
     domain_configuration.cpu_count = vcpus
     domain_configuration.memory_size = ram * 1024
+    domain_configuration.console_log_file = "{}/console.log".format(domain_configuration.path)
 
     if desired_arch == "x86_64":
         domain_configuration.system_architecture = X86_64ArchitectureConfiguration(
