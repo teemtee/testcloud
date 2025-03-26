@@ -315,6 +315,8 @@ class IOMMUConfiguration:
             model=self.model
         )
 
+def get_console_log_real_path(instance_uuid: str, suffix="console.log"):
+    return os.path.join(config_data.CONSOLE_LOG_DIR, f"{instance_uuid}-{suffix}")
 
 class DomainConfiguration:
     name: str
@@ -376,27 +378,8 @@ class DomainConfiguration:
     def generate_serial_log_conf(self) -> str:
         _serial_log_conf = ""
         if self.console_log_file:
-            # Create an empty log file beforehand so the file will be
-            # accessible to testcloud. Otherwise libvirt will create a file
-            # only accessible to root.
-            with open(self.console_log_file, 'w'):
-                pass
-
-            # Change label of log file to virt_log_t and give root permission to write
-            # this allows virtlogd to write to log file when testcloud runs with
-            # qemu:///system connection and SELinux is in enforcing mode
-            chcon_result = subprocess.call(["chcon", "-t", "virt_log_t", self.console_log_file])
-            if chcon_result == 0:
-                log.debug("Successfuly changed SELinux context of {}".format(self.console_log_file))
-            else:
-                log.error("Error changing SELinux context of {}".format(self.console_log_file))
-            setfacl_result = subprocess.call(["setfacl", "-m" "u:root:rw", self.console_log_file])
-            if setfacl_result == 0:
-                log.debug("Successfuly modified ACL of {}".format(self.console_log_file))
-            else:
-                log.error("Error modifying ACL of {}".format(self.console_log_file))
-
-            _serial_log_conf = f'<log file="{self.console_log_file}" append="on"/>'
+            self._real_console_log_file = get_console_log_real_path(str(self.uuid))
+            _serial_log_conf = f'<log file="{self._real_console_log_file}" append="on"/>'
 
         return _serial_log_conf
 

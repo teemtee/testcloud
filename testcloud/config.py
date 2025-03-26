@@ -100,6 +100,10 @@ class ConfigData(object):
 
     __DATA_DIR = "/var/lib/testcloud"
 
+    # This must point to location where virtlogd is
+    # permitted by SELinux to search
+    CONSOLE_LOG_DIR = "/var/lib/testcloud"
+
     @property
     def DATA_DIR(self):
         return self.__DATA_DIR
