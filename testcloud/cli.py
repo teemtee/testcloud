@@ -573,7 +573,7 @@ def _remove_instance(args):
         sys.exit(1)
 
     try:
-        tc_instance.remove(autostop=args.force)
+        tc_instance.remove(autostop=args.force, keep_console_log=False)
     except TestcloudInstanceError as e:
         log.error(e)
         sys.exit(1)

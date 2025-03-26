@@ -278,6 +278,34 @@ class Instance(object):
         # create the dirs needed for this instance
         try:
             self._create_dirs()
+            if self.domain_configuration.console_log_file:
+                # SELinux is quite picky where it permits virtlogd to write logs,
+                # ConfigData.CONSOLE_LOG_DIR must point to location where virtlogd
+                # is permitted by SELinux to search, create the actual log file
+                # in the CONSOLE_LOG_DIR and point symlink to it
+                console_log_real_path = get_console_log_real_path(str(self.domain_configuration.uuid))
+                log.debug("Creating console log symlink {} -> {}".format(self.domain_configuration.console_log_file, console_log_real_path))
+                os.symlink(console_log_real_path, self.domain_configuration.console_log_file)
+
+                # Create an empty log file beforehand so the file will be
+                # accessible to testcloud. Otherwise libvirt will create a file
+                # only accessible to root.
+                with open(console_log_real_path, 'w'):
+                    pass
+
+                # Change label of log file to virt_log_t and give root permission to write
+                # this allows virtlogd to write to log file when testcloud runs with
+                # qemu:///system connection and SELinux is in enforcing mode
+                chcon_result = subprocess.call(["chcon", "-t", "virt_log_t", console_log_real_path])
+                if chcon_result == 0:
+                    log.debug("Successfuly changed SELinux context of {}".format(console_log_real_path))
+                else:
+                    log.error("Error changing SELinux context of {}".format(console_log_real_path))
+                setfacl_result = subprocess.call(["setfacl", "-m" "u:root:rw", console_log_real_path])
+                if setfacl_result == 0:
+                    log.debug("Successfuly modified ACL of {}".format(console_log_real_path))
+                else:
+                    log.error("Error modifying ACL of {}".format(console_log_real_path))
         except PermissionError:
             raise TestcloudPermissionsError
         if not self.coreos:
@@ -736,7 +764,14 @@ class Instance(object):
                 "you have used a different connection?".format(self.name, self.connection)
             )
 
-    def remove(self, autostop=True):
+    def _remove_real_console_log(self):
+        # remove console log if it exists
+        console_log_real_path = get_console_log_real_path(self._get_domain().UUIDString())
+        if os.path.exists(console_log_real_path):
+            log.debug("Removing console log {}".format(console_log_real_path))
+            os.remove(console_log_real_path)
+
+    def remove(self, autostop=True, keep_console_log=True):
         """Remove an already stopped instance
 
         :param bool autostop: if the instance is running, stop it first
@@ -758,7 +793,8 @@ class Instance(object):
                     "Cannot remove running instance {}. Please stop the "
                     "instance before removing or use '-f' parameter.".format(self.name)
                 )
-
+        if not keep_console_log:
+            self._remove_real_console_log()
         self._remove_from_libvirt()
         self._remove_from_disk()
 
