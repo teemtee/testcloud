@@ -306,8 +306,8 @@ class Instance(object):
                     log.debug("Successfuly modified ACL of {}".format(console_log_real_path))
                 else:
                     log.error("Error modifying ACL of {}".format(console_log_real_path))
-        except PermissionError:
-            raise TestcloudPermissionsError
+        except PermissionError as error:
+            raise TestcloudPermissionsError from error
         if not self.coreos:
             self._create_user_data(password=config_data.PASSWORD, user_data_tpl=data_tpl)
             self._create_meta_data(self.hostname)
