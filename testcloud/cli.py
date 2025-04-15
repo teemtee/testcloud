@@ -646,6 +646,17 @@ def _remove_image(args):
     tc_image.remove()
 
 
+class QEMUConnectionAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values in ("qemu:///session", "qemu:///system"):
+            full_value = values
+        elif values in ("session", "system"):
+            full_value = f"qemu:///{values}"
+        else:
+            parser.error(f"Invalid connection type: {values}. Expected 'session', 'system', 'qemu:///session' or 'qemu:///system'")
+        setattr(namespace, self.dest, full_value)
+
+
 def get_argparser():
     parser = argparse.ArgumentParser(description=description)
     subparsers = parser.add_subparsers(
@@ -659,6 +670,7 @@ def get_argparser():
         "--connection",
         default="qemu:///system",
         help="libvirt connection url to use",
+        action=QEMUConnectionAction
     )
 
     # instance list
