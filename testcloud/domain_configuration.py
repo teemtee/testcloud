@@ -325,6 +325,7 @@ class DomainConfiguration:
     system_architecture: Optional[ArchitectureConfiguration]
     storage_devices: list[StorageDeviceConfiguration]
     network_configuration: Optional[NetworkConfiguration]
+    network_devices: list[NetworkConfiguration]
     tpm_configuration: Optional[TPMConfiguration]
     virtiofs_configuration: list[VIRTIOFSConfiguration]
     iommu_configuration: Optional[IOMMUConfiguration]
