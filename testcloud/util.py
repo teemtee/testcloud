@@ -104,16 +104,6 @@ def spawn_instance_port_file(instance_name):
         return port
 
 
-def generate_mac_address():
-    """Create a workable mac address for our instances."""
-
-    hex_mac = [0x52, 0x54, 0x00]  # These 3 are the prefix libvirt uses
-    hex_mac += [random.randint(0x00, 0xFF) for x in range(3)]
-    mac = ":".join(hex(x)[2:] for x in hex_mac)
-
-    return mac
-
-
 def verify_url(url: str) -> str:
     if not url:
         raise exceptions.TestcloudImageError
