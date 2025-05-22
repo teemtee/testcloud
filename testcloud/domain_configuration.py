@@ -445,7 +445,7 @@ class DomainConfiguration:
             <devices>
                 <emulator>{emulator_path}</emulator>
                 {storage_devices}
-                {network_configuraton}
+                {network_configuration}
                 <serial type='pty'>
                     {serial_log_configuraton}
                     <target port='0'/>
@@ -475,7 +475,7 @@ class DomainConfiguration:
             system_architecture=self.system_architecture.generate(),
             emulator_path=self.get_emulator(),
             storage_devices=self.generate_storage_devices(),
-            network_configuraton=self.generate_network_devices(),
+            network_configuration=self.generate_network_devices(),
             serial_log_configuraton=self.generate_serial_log_conf(),
             tpm=self.tpm_configuration.generate() if self.tpm_configuration else "",
             virtiofs_head=self.generate_virtiofs_head() if self.virtiofs_configuration else "",
