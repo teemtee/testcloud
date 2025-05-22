@@ -216,11 +216,11 @@ class QCow2StorageDevice(StorageDeviceConfiguration):
 
 
 class NetworkConfiguration:
-    mac_address: str
+    mac_address: Optional[str]
     additional_qemu_args: list[str]
 
     def __init__(self) -> None:
-        self.mac_address = ""
+        self.mac_address = None
         self.additional_qemu_args = []
 
     def generate(self) -> str:
@@ -228,24 +228,25 @@ class NetworkConfiguration:
 
 
 class SystemNetworkConfiguration(NetworkConfiguration):
-    def __init__(self, mac_address) -> None:
+    def __init__(self, mac_address=None) -> None:
         super().__init__()
         self.mac_address = mac_address
 
     def generate(self):
+        mac = f'<mac address="{self.mac_address}"/>' if self.mac_address else ''
         return """
         <interface type='network'>
-            <mac address="{mac_address}"/>
+            {mac}
             <source network='default'/>
             <model type='virtio'/>
         </interface>
         """.format(
-            mac_address=self.mac_address,
+            mac=mac,
         )
 
 
 class UserNetworkConfiguration(NetworkConfiguration):
-    def __init__(self, mac_address, port=6666, device_type="virtio-net-pci") -> None:
+    def __init__(self, mac_address=None, port=6666, device_type="virtio-net-pci") -> None:
         super().__init__()
         self.mac_address = mac_address
         self.additional_qemu_args = [
@@ -256,13 +257,14 @@ class UserNetworkConfiguration(NetworkConfiguration):
         ]
 
     def generate(self):
+        mac = f'<mac address="{self.mac_address}"/>' if self.mac_address else ''
         return """
         <interface type='user'>
-            <mac address="{mac_address}"/>
+            {mac}
             <model type='virtio'/>
         </interface>
         """.format(
-            mac_address=self.mac_address,
+            mac=mac,
         )
 
 
@@ -511,7 +513,7 @@ def _get_default_domain_conf(
     desired_arch = desired_arch or platform.machine()
     vcpus = vcpus or config_data.VCPUS
     ram = ram or config_data.RAM
-    mac_address = mac_address or util.generate_mac_address()
+    mac_address = mac_address
     kvm = True if (desired_arch == platform.machine() and os.path.exists("/dev/kvm")) else False
 
     domain_configuration = DomainConfiguration(name)
@@ -536,17 +538,15 @@ def _get_default_domain_conf(
     if connection == "qemu:///system":
         domain_configuration.network_devices.append(SystemNetworkConfiguration(mac_address=mac_address))
         for i in range(nic_count - 1):
-            mac_address = util.generate_mac_address()
-            domain_configuration.network_devices.append(SystemNetworkConfiguration(mac_address=mac_address))
+            domain_configuration.network_devices.append(SystemNetworkConfiguration())
 
     elif connection == "qemu:///session":
         port = util.spawn_instance_port_file(name)
         device_type = "virtio-net-pci" if not util.needs_legacy_net(backingstore_image.name) else "e1000"
         domain_configuration.network_devices.append(UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type))
         for i in range(nic_count - 1):
-            mac_address = util.generate_mac_address()
             domain_configuration.network_devices.append(
-                UserNetworkConfiguration(mac_address=mac_address, port=port, device_type=device_type)
+                UserNetworkConfiguration(port=port, device_type=device_type)
             )
     else:
         raise TestcloudInstanceError("Unsupported connection type")
