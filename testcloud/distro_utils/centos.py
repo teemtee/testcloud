@@ -28,8 +28,7 @@ def _get_centos_image_url(version: str, stream: bool, arch: str) -> str:
             version = config_data.CENTOS_STREAM_VERSIONS["latest"]
 
         # Try to dynamically get the latest at first
-        else:
-            STREAM_URL_PREFIX = config_data.CENTOS_STREAM_URL_PREFIX.format(version, arch)
+        STREAM_URL_PREFIX = config_data.CENTOS_STREAM_URL_PREFIX.format(version, arch)
         IMG_NAME = r"CentOS-Stream-GenericCloud-{0}-[0-9.]+.{1}.qcow2".format(version, arch)
         try:
             return parse_latest_qcow(IMG_NAME, STREAM_URL_PREFIX)
