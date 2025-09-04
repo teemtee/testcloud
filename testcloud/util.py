@@ -11,6 +11,7 @@ import logging
 import random
 import requests
 import re
+import subprocess
 import time
 import os
 import fcntl
@@ -124,6 +125,16 @@ def verify_url(url: str) -> str:
     except requests.exceptions.HTTPError:
         log.error("The generated url ( %s ) for known image doesn't work." % url)
         raise exceptions.TestcloudImageError
+
+
+def has_selinux() -> bool:
+    try:
+        selinux_active = subprocess.call(["selinuxenabled"])
+        return not bool(selinux_active)
+    except FileNotFoundError:
+        logging.debug("selinuxenabled is not present (libselinux-utils package missing?)")
+        logging.debug("Assuming selinux is not installed and therefore disabled")
+        return False
 
 
 def get_image_url(distro_str: str, arch="x86_64", verify=False, additional_handles={}) -> str:
