@@ -25,6 +25,7 @@ from testcloud import config
 from testcloud.image import Image
 from testcloud.exceptions import TestcloudInstanceError, TestcloudPermissionsError
 from testcloud.domain_configuration import *
+from testcloud.util import has_selinux
 from testcloud.workarounds import Workarounds
 
 config_data = config.get_config()
@@ -296,11 +297,13 @@ class Instance(object):
                 # Change label of log file to virt_log_t and give root permission to write
                 # this allows virtlogd to write to log file when testcloud runs with
                 # qemu:///system connection and SELinux is in enforcing mode
-                chcon_result = subprocess.call(["chcon", "-t", "virt_log_t", console_log_real_path])
-                if chcon_result == 0:
-                    log.debug("Successfuly changed SELinux context of {}".format(console_log_real_path))
-                else:
-                    log.error("Error changing SELinux context of {}".format(console_log_real_path))
+                if has_selinux():
+                    chcon_result = subprocess.call(["chcon", "-t", "virt_log_t", console_log_real_path])
+                    if chcon_result == 0:
+                        log.debug("Successfuly changed SELinux context of {}".format(console_log_real_path))
+                    else:
+                        log.error("Error changing SELinux context of {}".format(console_log_real_path))
+
                 setfacl_result = subprocess.call(["setfacl", "-m" "u:root:rw", console_log_real_path])
                 if setfacl_result == 0:
                     log.debug("Successfuly modified ACL of {}".format(console_log_real_path))

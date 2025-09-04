@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 from testcloud import config
 from testcloud.exceptions import TestcloudImageError, TestcloudPermissionsError
 from testcloud.sql import DB, DBImage, utcnow
+from testcloud.util import has_selinux
 
 config_data = config.get_config()
 
@@ -260,15 +261,7 @@ class Image(object):
 
         :param image_path: path to the image to change the context of
         """
-
-        try:
-            selinux_active = subprocess.call(["selinuxenabled"])
-        except FileNotFoundError:
-            logging.debug("selinuxenabled is not present (libselinux-utils package missing?)")
-            logging.debug("Assuming selinux is not installed and therefore disabled")
-            selinux_active = 1
-
-        if selinux_active != 0:
+        if not has_selinux():
             log.debug("SELinux not enabled, not changing context of" "image {}".format(image_path))
             return
 
