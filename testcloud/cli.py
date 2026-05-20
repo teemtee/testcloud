@@ -271,6 +271,13 @@ def _generate_name():
     return name
 
 
+def _unpack_image_url(url_result):
+    """Unpack image URL result into primary URL and fallback list."""
+    if isinstance(url_result, list):
+        return url_result[0], url_result[1:]
+    return url_result, []
+
+
 def _download_image(args):
     if not args.url:
         log.error("Url wasn't specified.")
@@ -278,18 +285,25 @@ def _download_image(args):
 
     try:
         # FIXME maybe change to smth like   ... if args.url[:4] not in ["http", "file"]
-        url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+        url_result = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+        url, fallback_urls = _unpack_image_url(url_result)
     except TestcloudImageError:
         log.error("Couldn't find the desired image ( %s )..." % args.url)
         sys.exit(1)
 
-    try:
-        image.Image._download_remote_image(url, os.path.join(args.dest_path, os.path.basename(urlparse(url).path)))
-    except TestcloudImageError:
-        log.error("Couldn't download the requested image due to an error.")
-        sys.exit(1)
-    except TestcloudPermissionsError:
-        log.error("Couldn't write to the requested target location ( %s )." % args.dest_path)
+    dest_path = os.path.join(args.dest_path, os.path.basename(urlparse(url).path))
+    for url_idx, download_url in enumerate([url] + fallback_urls):
+        try:
+            image.Image._download_remote_image(download_url, dest_path)
+            break
+        except TestcloudImageError:
+            if url_idx < len(fallback_urls):
+                log.warning("Download from %s failed, trying next mirror...", download_url)
+                continue
+            log.error("Couldn't download the requested image due to an error.")
+            sys.exit(1)
+        except TestcloudPermissionsError:
+            log.error("Couldn't write to the requested target location ( %s )." % args.dest_path)
 
 
 def _create_instance(args):
@@ -326,7 +340,8 @@ def _create_instance(args):
         sys.exit(1)
 
     try:
-        url = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+        url_result = get_image_url(args.url, arch=args.arch) if not any([prot in args.url for prot in ["http", "file"]]) else args.url
+        url, fallback_urls = _unpack_image_url(url_result)
         assert url
     except (TestcloudImageError, AssertionError):
         log.error("Couldn't find the desired image ( %s )..." % args.url)
@@ -350,6 +365,7 @@ def _create_instance(args):
             sys.exit(1)
 
     tc_image = image.Image(url)
+    tc_image.fallback_urls = fallback_urls
     try:
         tc_image.prepare()
     except TestcloudPermissionsError as error:
