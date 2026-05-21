@@ -216,13 +216,11 @@ new instance using **testcloud**.
 : To set the amount of VCPUS that will be available to the virtual
     machine.
 
-\--no-graphic
+\--graphics {spice,vnc,none}
 
-: This turns off the graphical display of the virtual machine.
-
-\--vnc
-
-: To open a VNC connection at the `:1` display of the instance.
+: Set the graphics display type. `spice` or `vnc` enables graphical
+    output viewable via `virt-viewer`/`remote-viewer`, `none` (default)
+    runs headless.
 
 -n, \--name NAME
 
@@ -251,6 +249,17 @@ new instance using **testcloud**.
 \--iommu
 
 : To provide virtual iommu device
+
+### Connecting to graphical display
+
+When an instance is created with `--graphics spice` or `--graphics vnc`,
+you can connect to its display using `virt-viewer` or `remote-viewer`:
+
+    $ virt-viewer --connect qemu:///system <instance-name>
+
+For session mode:
+
+    $ virt-viewer --connect qemu:///session <instance-name>
 
 There are several additional options that can be used to create a
 new Coreos instance using **testcloud**.
