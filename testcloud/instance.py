@@ -325,12 +325,14 @@ class Instance(object):
                 shutil.copy(self.ign_file, self.config_path)
             else:
                 self._generate_config_file(coreos_data_tpl=data_tpl)
-            chcon_command = subprocess.call("chcon -t svirt_home_t %s" % self.config_path, shell=True)
-            if chcon_command == 0:
-                log.info("chcon command succeed ")
-            else:
-                log.error("chcon command failed")
-                raise TestcloudInstanceError("Failure during change file SELinux security context")
+
+            if has_selinux():
+                chcon_command = subprocess.call("chcon -t svirt_home_t %s" % self.config_path, shell=True)
+                if chcon_command == 0:
+                    log.info("chcon command succeed ")
+                else:
+                    log.error("chcon command failed")
+                    raise TestcloudInstanceError("Failure during change file SELinux security context")
 
         # deal with backing store
         self._create_local_disk()
