@@ -7,12 +7,47 @@ import logging
 import re
 import requests
 
+from fedora_distro_aliases import get_distro_aliases, Cache
+from fedora_distro_aliases.cache import BadCache
+
 from testcloud import config
 from testcloud import exceptions
 from testcloud.distro_utils.misc import get_requests_session
 
 log = logging.getLogger("testcloud.util")
 config_data = config.get_config()
+
+
+def get_fedora_releases() -> dict:
+    """
+    Resolve current Fedora rawhide/branched/stable release numbers via Bodhi
+    (using the fedora-distro-aliases library).
+
+    Returns a dict shaped like the old oraculum ``releases["fedora"]`` payload:
+    ``{"rawhide": int, "branched": int | None, "stable": int | None}``.
+    """
+    cache = None
+    if config_data.CACHE_IMAGES:
+        cache = Cache(
+            path="{}/fedora_distro_aliases_cache.json".format(config_data.DATA_DIR),
+            ttl=config_data.TRUST_DEADLINE * 60 * 60 * 24,
+        )
+
+    aliases = get_distro_aliases(cache=cache)
+
+    # The highest development release is Rawhide (its ``version`` is overridden to
+    # "rawhide" while ``version_number`` keeps the numeric value); any remaining
+    # development release is the branched one.
+    devel = aliases["fedora-development"]
+    rawhide = next(distro for distro in devel if distro.version == "rawhide")
+    branched = [distro for distro in devel if distro.version != "rawhide"]
+    stable = aliases["fedora-latest-stable"]
+
+    return {
+        "rawhide": int(rawhide.version_number),
+        "branched": int(branched[-1].version_number) if branched else None,
+        "stable": int(stable[0].version_number) if stable else None,
+    }
 
 
 def _process_coreos_url(version: str, arch: str, platform: str) -> str:
@@ -78,19 +113,19 @@ def get_fedora_image_url(version: str, arch: str) -> str:
 
     # get Fedora Cloud url
     try:
-        oraculum_releases = session.get("https://packager-dashboard.fedoraproject.org/api/v1/releases").json()
-    except (ConnectionError, IndexError, requests.exceptions.JSONDecodeError):
-        log.error("Couldn't fetch Fedora releases from oraculum...")
+        fedora_releases = get_fedora_releases()
+    except (requests.exceptions.RequestException, BadCache, StopIteration, KeyError):
+        log.error("Couldn't fetch Fedora releases...")
         raise exceptions.TestcloudImageError
 
-    if oraculum_releases["fedora"]["branched"] and version == str(oraculum_releases["fedora"]["branched"]):
+    if fedora_releases["branched"] and version == str(fedora_releases["branched"]):
         version = "branched"
 
-    if not oraculum_releases["fedora"]["branched"] and version == "branched":
+    if not fedora_releases["branched"] and version == "branched":
         log.warning("Branched release currently doesn't exist, using rawhide...")
         version = "rawhide"
 
-    if version == str(oraculum_releases["fedora"]["rawhide"]):
+    if version == str(fedora_releases["rawhide"]):
         version = "rawhide"
 
     if version == "qa-matrix":
@@ -123,7 +158,7 @@ def get_fedora_image_url(version: str, arch: str) -> str:
         return str(url)
 
     if version == "latest":
-        version = str(oraculum_releases["fedora"]["stable"])
+        version = str(fedora_releases["stable"])
 
     try:
         releases = session.get("https://getfedora.org/releases.json").json()
