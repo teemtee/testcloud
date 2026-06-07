@@ -152,6 +152,10 @@ def get_fedora_image_url(version: str, arch: str) -> str:
             raise exceptions.TestcloudImageError
         return str(url)
 
+    # RISC-V image not released
+    if arch == "riscv64":
+        return "https://dl.fedoraproject.org/pub/alt/risc-v/release/42/Cloud/riscv64/images/Fedora-Cloud-Base-Generic-42.20250911-2251ba41cdd3.riscv64.qcow2"
+
     try:
         releases = session.get("https://getfedora.org/releases.json").json()
     except (ConnectionError, requests.exceptions.JSONDecodeError):
