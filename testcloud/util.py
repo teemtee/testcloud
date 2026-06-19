@@ -132,8 +132,8 @@ def has_selinux() -> bool:
         selinux_active = subprocess.call(["selinuxenabled"])
         return not bool(selinux_active)
     except FileNotFoundError:
-        logging.debug("selinuxenabled is not present (libselinux-utils package missing?)")
-        logging.debug("Assuming selinux is not installed and therefore disabled")
+        log.debug("selinuxenabled is not present (libselinux-utils package missing?)")
+        log.debug("Assuming selinux is not installed and therefore disabled")
         return False
 
 
