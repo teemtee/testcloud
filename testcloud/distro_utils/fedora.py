@@ -118,11 +118,10 @@ def get_fedora_image_url(version: str, arch: str) -> str:
     # get Fedora Cloud url
     try:
         aliases = _get_fedora_aliases()
+        version = _resolve_fedora_version(version, aliases)
     except Exception:
         log.error("Couldn't fetch Fedora releases...")
         raise exceptions.TestcloudImageError
-
-    version = _resolve_fedora_version(version, aliases)
 
     if version == "qa-matrix":
         if arch != "x86_64":
