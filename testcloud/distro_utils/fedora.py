@@ -152,6 +152,22 @@ def get_fedora_image_url(version: str, arch: str) -> str:
             raise exceptions.TestcloudImageError
         return str(url)
 
+    # RISC-V image not released
+    if arch == "riscv64":
+        images_url = "https://dl.fedoraproject.org/pub/alt/risc-v/release/%s/Cloud/riscv64/images/" % version
+        try:
+            response = session.get(images_url)
+            response.raise_for_status()
+        except Exception:
+            log.error("Couldn't fetch RISC-V image listing for Fedora %s" % version)
+            raise exceptions.TestcloudImageError
+        matches = re.findall(r'href="(Fedora-Cloud-Base-Generic-[^"]+\.riscv64\.qcow2)"', response.text)
+        if not matches:
+            log.error("No RISC-V Cloud Base image found for Fedora %s" % version)
+            raise exceptions.TestcloudImageError
+        matches.sort(reverse=True)
+        return images_url + matches[0]
+
     try:
         releases = session.get("https://getfedora.org/releases.json").json()
     except (ConnectionError, requests.exceptions.JSONDecodeError):

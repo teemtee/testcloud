@@ -155,6 +155,37 @@ class S390xArchitectureConfiguration(ArchitectureConfiguration):
         )
 
 
+class RISCV64ArchitectureConfiguration(ArchitectureConfiguration):
+    qemu = "qemu-system-riscv64"
+    arch = "riscv64"
+    model = "virt"
+
+    def __init__(self, kvm=True, uefi=True, model="virt") -> None:
+        self.kvm = kvm
+        self.uefi = uefi
+        self.model = model
+
+    def generate(self) -> str:
+        return """
+        <os>
+            <type arch='{arch}' machine='{model}'>hvm</type>
+            {uefi_loader}
+            <boot dev='hd'/>
+        </os>
+        {cpu}
+        <memballoon model='virtio'></memballoon>
+        """.format(
+            arch=self.arch,
+            model=self.model,
+            uefi_loader="<loader readonly='yes' type='pflash'>/usr/share/edk2/riscv/RISCV_VIRT_CODE.qcow2</loader>",
+            cpu=(
+                "<cpu mode='host-passthrough' check='none'/>"
+                if self.kvm
+                else "<cpu mode='custom' match='exact'><model>rva23s64</model></cpu>"
+            ),
+        )
+
+
 def storage_device_name_generator():
     prefix = "vd"
     for i in range(26):
@@ -529,6 +560,8 @@ def _get_default_domain_conf(
         domain_configuration.system_architecture = Ppc64leArchitectureConfiguration(kvm=kvm, uefi=False, model="pseries")
     elif desired_arch == "s390x":
         domain_configuration.system_architecture = S390xArchitectureConfiguration(kvm=kvm, uefi=False, model="s390-ccw-virtio")
+    elif desired_arch == "riscv64":
+        domain_configuration.system_architecture = RISCV64ArchitectureConfiguration(kvm=kvm, uefi=True, model="virt")
     else:
         raise TestcloudInstanceError("Unsupported arch")
 
