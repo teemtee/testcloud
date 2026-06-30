@@ -112,7 +112,7 @@ the **virt-manager** tool.
 
 Instances can be created with a different architecture than the host architecture. You'll need to have a proper
 qemu binary installed for this to work (eg. qemu-system-aarch64-core for aarch64 on x86_64 on Fedora). Supported
-architectures in testcloud are: x86_64, aarch64, ppc64le, and s390x. Any combinations of these are supported.
+architectures in testcloud are: x86_64, aarch64, ppc64le, s390x, and riscv64. Any combinations of these are supported.
 
 Some examples:
 
@@ -129,6 +129,11 @@ $ testcloud create centos-stream --arch x86_64
 ```
 # Fedora Rawhide ppc64le on aarch64 (or any other)
 $ testcloud create fedora:rawhide --arch ppc64le
+```
+
+```
+# Debian riscv64 on x86_64 (or any other)
+$ testcloud create debian:13 --arch riscv64
 ```
 
 ### Starting, stopping, and removing an instance
