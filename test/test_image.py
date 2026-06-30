@@ -5,6 +5,7 @@
 
 """ This module is for testing the behaviour of the Image class."""
 
+from unittest import mock
 from unittest.mock import patch
 
 import pytest
@@ -26,6 +27,68 @@ class TestImage:
 
     def test_download(self):
         pass
+
+
+class TestImageDownloadFallback(object):
+
+    def setup_method(self, method):
+        DB.bind([DBImage], bind_refs=False, bind_backrefs=False)
+        DB.connect()
+        DB.create_tables([DBImage])
+        self.patcher = patch('testcloud.sql.data_dir_changed', return_value=None)
+        self.mocked_method = self.patcher.start()
+
+    def teardown_method(self, method):
+        self.patcher.stop()
+        DB.drop_tables([DBImage])
+        DB.close()
+
+    def test_download_fallback_on_failure(self, monkeypatch):
+        primary = "https://mirror1.example.com/image.qcow2"
+        fallback = "https://mirror2.example.com/image.qcow2"
+
+        stub_download = mock.Mock(side_effect=[
+            exceptions.TestcloudImageError,
+            exceptions.TestcloudImageError,
+            exceptions.TestcloudImageError,
+            None,
+        ])
+        monkeypatch.setattr(image.Image, "_download_remote_image", stub_download)
+        monkeypatch.setattr("os.path.exists", lambda p: False)
+
+        img = image.Image(primary)
+        img.fallback_urls = [fallback]
+        img.download()
+
+        assert any(fallback in str(c) for c in stub_download.call_args_list)
+
+    def test_download_no_fallback_on_success(self, monkeypatch):
+        primary = "https://mirror1.example.com/image.qcow2"
+        fallback = "https://mirror2.example.com/image.qcow2"
+
+        stub_download = mock.Mock(return_value=None)
+        monkeypatch.setattr(image.Image, "_download_remote_image", stub_download)
+        monkeypatch.setattr("os.path.exists", lambda p: False)
+
+        img = image.Image(primary)
+        img.fallback_urls = [fallback]
+        img.download()
+
+        assert stub_download.call_count == 1
+        assert primary in str(stub_download.call_args_list[0])
+
+    def test_download_all_mirrors_fail(self, monkeypatch):
+        primary = "https://mirror1.example.com/image.qcow2"
+        fallback = "https://mirror2.example.com/image.qcow2"
+
+        stub_download = mock.Mock(side_effect=exceptions.TestcloudImageError)
+        monkeypatch.setattr(image.Image, "_download_remote_image", stub_download)
+        monkeypatch.setattr("os.path.exists", lambda p: False)
+
+        img = image.Image(primary)
+        img.fallback_urls = [fallback]
+        with pytest.raises(exceptions.TestcloudImageError, match="all mirrors"):
+            img.download()
 
 
 #    def test_save_pristine(self):

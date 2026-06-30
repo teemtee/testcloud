@@ -88,6 +88,8 @@ class Image(object):
                     status = "ready"
                 self.sqldata = DBImage.create(name=uri_data["name"], status=status, remote_path=uri, local_path=local_path)
 
+        self.fallback_urls = []
+
     @property
     def name(self):
         return self.sqldata.name
@@ -301,15 +303,27 @@ class Image(object):
                 raise TestcloudPermissionsError("Problem writing to {}. Are you in group testcloud?".format(self.local_path)) from None
 
         elif rpls.startswith("http://") or rpls.startswith("https://"):
-            retries = 0
-            while True:
-                try:
-                    Image._download_remote_image(self.remote_path, raw_local_path, self._download_callback)
+            urls_to_try = [self.remote_path] + self.fallback_urls
+            for url_idx, download_url in enumerate(urls_to_try):
+                retries = 0
+                success = False
+                while retries <= config_data.DOWNLOAD_RETRIES:
+                    try:
+                        Image._download_remote_image(download_url, raw_local_path, self._download_callback)
+                        success = True
+                        break
+                    except TestcloudImageError:
+                        retries += 1
+                if success:
                     break
-                except TestcloudImageError:
-                    retries += 1
-                    if retries > config_data.DOWNLOAD_RETRIES:
-                        raise TestcloudImageError("Image download failed after %d attempts." % retries)
+                if url_idx < len(urls_to_try) - 1:
+                    log.warning(
+                        "Download from %s failed after %d attempts, "
+                        "trying next mirror...", download_url, retries)
+            else:
+                raise TestcloudImageError(
+                    "Image download failed from all mirrors after %d attempts each."
+                    % (config_data.DOWNLOAD_RETRIES + 1))
         else:
             raise TestcloudImageError("Testcloud only supports file, http and https URLs")
 

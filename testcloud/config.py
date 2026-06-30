@@ -275,7 +275,10 @@ storage:
 
     DEBIAN_RELEASE_MAP = {"10": "buster", "11": "bullseye", "12": "bookworm"}
     DEBIAN_LATEST = "12"
-    DEBIAN_IMG_URL = "https://cloud.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2"
+    DEBIAN_IMG_URL = [
+        "https://cdimage.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2",
+        "https://cloud.debian.org/images/cloud/%s/daily/latest/debian-%s-genericcloud-%s-daily.qcow2",
+    ]
 
     UBUNTU_RELEASES_API = "https://api.launchpad.net/devel/ubuntu/series"
     UBUNTU_IMG_URL = "https://cloud-images.ubuntu.com/%s/current/%s-server-cloudimg-%s.img"
