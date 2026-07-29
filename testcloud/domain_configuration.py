@@ -169,7 +169,7 @@ class RISCV64ArchitectureConfiguration(ArchitectureConfiguration):
         return """
         <os>
             <type arch='{arch}' machine='{model}'>hvm</type>
-            {uefi_loader}
+            <loader readonly='yes' type='pflash'>/usr/share/edk2/riscv/RISCV_VIRT_CODE.qcow2</loader>
             <boot dev='hd'/>
         </os>
         {cpu}
@@ -177,7 +177,6 @@ class RISCV64ArchitectureConfiguration(ArchitectureConfiguration):
         """.format(
             arch=self.arch,
             model=self.model,
-            uefi_loader="<loader readonly='yes' type='pflash'>/usr/share/edk2/riscv/RISCV_VIRT_CODE.qcow2</loader>",
             cpu=(
                 "<cpu mode='host-passthrough' check='none'/>"
                 if self.kvm
