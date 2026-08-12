@@ -1,2 +1,42 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "testcloud"
+dynamic = ["version"]
+description = "A tool to download and boot cloud images locally, with an easy to use API."
+readme = "README.md"
+license = "GPL-2.0-or-later"
+requires-python = ">=3.9"
+authors = [
+    {name = "Mike Ruckman", email = "roshi@fedoraproject.org"},
+]
+dependencies = [
+    "libvirt-python",
+    "peewee",
+    "requests",
+    "packaging",
+    "fedora-distro-aliases>=1.5",
+]
+
+[project.optional-dependencies]
+image_resolve_caching = ["requests_cache>=1.2"]
+
+[project.scripts]
+testcloud = "testcloud.cli:main"
+t7d = "testcloud.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/teemtee/testcloud"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options.version_scheme = "release-branch-semver"
+raw-options.git_describe_command = [
+    "git", "describe", "--dirty", "--tags", "--long",
+    "--abbrev=9", "--match", "*[0-9]*",
+]
+
 [tool.black]
 line-length=140

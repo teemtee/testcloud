@@ -1,0 +1,63 @@
+---
+
+specfile_path: packaging/rpm/testcloud.spec
+files_to_sync:
+  - src: packaging/rpm/
+    dest: ./
+    delete: true
+    filters:
+      - "protect .git*"
+      - "protect sources"
+      - "protect changelog"
+  - .packit.yaml
+
+upstream_package_name: testcloud
+downstream_package_name: testcloud
+
+upstream_project_url: https://github.com/teemtee/testcloud
+issue_repository: https://github.com/teemtee/testcloud
+
+srpm_build_deps:
+  - hatch
+  - python3-hatch-vcs
+
+actions:
+  create-archive:
+    - hatch build -t sdist
+    - bash -c "echo dist/testcloud-$PACKIT_PROJECT_VERSION.tar.gz"
+  get-current-version:
+    - hatch version
+
+targets: &all-targets
+  - fedora-all
+  - epel-9
+  - epel-10
+
+jobs:
+  # Build pull requests
+  - job: copr_build
+    trigger: pull_request
+
+  # Propose downstream pull requests
+  - job: propose_downstream
+    trigger: release
+    dist_git_branches:
+      rawhide:
+        fast_forward_merge_into:
+          - fedora-branched
+          - epel-10
+          - epel-9
+
+  # Create koji builds
+  - job: koji_build
+    trigger: commit
+    allowed_pr_authors: ["packit", "all_committers"]
+    dist_git_branches: *all-targets
+
+  # Create bodhi updates
+  - job: bodhi_update
+    trigger: commit
+    dist_git_branches:
+      - fedora-branched
+      - epel-10
+      - epel-9

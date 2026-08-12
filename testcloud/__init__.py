@@ -1,9 +1,9 @@
-# NOTE: if you update version, *make sure* to also update `docs/source/conf.py`
-__version__ = "0.11.8"
-
+import importlib.metadata
 import signal
 import sys
 import threading
+
+__version__ = importlib.metadata.version(__name__)
 
 
 def sigterm_handler(_signo, _stack_frame):

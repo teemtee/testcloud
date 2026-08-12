@@ -12,6 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import importlib.metadata
 import sys
 import os
 
@@ -55,7 +56,7 @@ copyright = "2016-2024, testCloud devs"
 # built documents.
 #
 # The short X.Y version.
-version = "0.11.8"
+version = importlib.metadata.version("testcloud")
 # The full version, including alpha/beta/rc tags.
 release = version
 
