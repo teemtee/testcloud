@@ -15,8 +15,8 @@ Source1:        testcloud.sysusers
 ExclusiveArch: %{kernel_arches} noarch
 BuildArch:      noarch
 
-# Ensure we can create the testcloud group
-Requires(pre):  shadow-utils
+BuildRequires:  systemd-rpm-macros
+%{?sysusers_requires_compat}
 
 Requires:       polkit
 
@@ -50,9 +50,8 @@ Suggests:       libguestfs-tools-c
 %description -n python3-%{name}
 Python 3 interface to testcloud.
 
-# Create the testcloud group
 %pre
-getent group testcloud >/dev/null || groupadd testcloud
+%sysusers_create_compat %{SOURCE1}
 
 %prep
 %autosetup -n %{name}-%{version} -p1
