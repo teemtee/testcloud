@@ -101,10 +101,6 @@ install -p -m644 -D %{SOURCE1} %{buildroot}%{_sysusersdir}/%{name}.conf
 %pyproject_check_import
 %pytest
 
-# Remove compiled .py files from /etc after os_install_post
-rm -f %{buildroot}%{_sysconfdir}/testcloud/*.py{c,o}
-rm -rf %{buildroot}%{_sysconfdir}/testcloud/__pycache__
-
 %files
 %doc README.md
 %{_mandir}/man1/testcloud.1*
