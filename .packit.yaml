@@ -33,10 +33,37 @@ targets: &all-targets
   - epel-9
   - epel-10
 
+# Common definitions
+_:
+  # Copr jobs under the packit project
+  - &copr-under-packit
+    job: copr_build
+    additional_repos:
+      - copr://@teemtee/stable
+
+  # Copr jobs under the teemtee project
+  - &copr-under-teemtee
+    <<: *copr-under-packit
+    list_on_homepage: true
+    preserve_project: true
+    owner: "@teemtee"
+
 jobs:
   # Build pull requests
-  - job: copr_build
+  - <<: *copr-under-packit
     trigger: pull_request
+
+  # Build commits merged to main to latest
+  - <<: *copr-under-teemtee
+    trigger: commit
+    branch: main
+    project: latest
+    release_suffix: "{PACKIT_PROJECT_BRANCH}"
+
+  # Build released bits to stable
+  - <<: *copr-under-teemtee
+    trigger: release
+    project: stable
 
   # Test pull requests
   - job: tests
