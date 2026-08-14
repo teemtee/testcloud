@@ -1,0 +1,8 @@
+summary: Regular user can provision a guest
+description:
+    Provision a fedora and centos-stream guest using a
+    short name under a regular user and run a simple check.
+test: ./test.sh
+framework: beakerlib
+require: tmt+provision-virtual
+duration: 20m

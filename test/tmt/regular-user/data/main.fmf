@@ -1,0 +1,22 @@
+/plan:
+    discover:
+        how: fmf
+    provision:
+        how: virtual
+    execute:
+        how: tmt
+
+    /fedora:
+        provision+:
+            image: fedora
+        environment:
+            EXPECTED: Fedora Linux
+
+    /centos:
+        provision+:
+            image: centos-stream-10
+        environment:
+            EXPECTED: CentOS Stream
+
+/test:
+    test: grep "$EXPECTED" /etc/os-release

@@ -38,6 +38,10 @@ jobs:
   - job: copr_build
     trigger: pull_request
 
+  # Test pull requests
+  - job: tests
+    trigger: pull_request
+
   # Propose downstream pull requests
   - job: propose_downstream
     trigger: release
