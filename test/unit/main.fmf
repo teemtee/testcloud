@@ -4,5 +4,4 @@ path: /
 require:
   - python3-testcloud
   - python3-pytest
-  - python3-pytest-cov
   - python3-munch
