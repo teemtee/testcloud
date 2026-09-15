@@ -40,3 +40,6 @@ raw-options.git_describe_command = [
 
 [tool.black]
 line-length=140
+
+[tool.pytest.ini_options]
+testpaths = ["test"]

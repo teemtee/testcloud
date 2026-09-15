@@ -43,6 +43,7 @@ Requires:       libvirt-daemon
 Requires:       libvirt-daemon-config-network
 Requires:       libvirt-daemon-driver-qemu
 Requires:       libvirt-daemon-driver-storage-core
+Requires:       python3-fedora-distro-aliases
 Recommends:     butane
 Suggests:       python3-libguestfs
 Suggests:       libguestfs-tools-c

@@ -1,0 +1,7 @@
+summary: Run all available unit tests using pytest
+test: python -m pytest -vvv -ra --showlocals
+path: /
+require:
+  - python3-testcloud
+  - python3-pytest
+  - python3-munch

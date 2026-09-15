@@ -2,6 +2,7 @@ summary: Integration testing with tmt
 
 discover:
     how: fmf
+    test: /test/tmt
 
 provision:
     how: virtual
