@@ -13,7 +13,7 @@ config_data = config.get_config()
 
 
 def get_debian_image_url(version: str, arch: str) -> str:
-    arch_map = {"x86_64": "amd64", "aarch64": "arm64", "ppc64le": "ppc64el"}
+    arch_map = {"x86_64": "amd64", "aarch64": "arm64", "ppc64le": "ppc64el", "riscv64": "riscv64"}
 
     if arch not in arch_map:
         log.error("Requested architecture is not supported by testcloud for Debian.")
