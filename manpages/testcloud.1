@@ -106,11 +106,8 @@ recognized.
 \fB--disksize DISKSIZE\fR
         Set the disk size of the instance VM (in GiB).
 
-\fB--vnc\fR
-        Open a VNC connection to the \fB:1\fR display of the instance VM.
-
-\fB--no-graphic\fR
-        Turn off the instance VM's graphical display.
+\fB--graphics {spice,vnc,none}\fR
+        Set the graphics display type. \fBspice\fR or \fBvnc\fR enables graphical output viewable via virt-viewer/remote-viewer, \fBnone\fR (default) runs headless.
 
 \fB--timeout TIMEOUT\fR
         Specify the time (in seconds) to wait for the instance boot to complete. To disable waiting time (default behaviour) set to \fB0\fR.
