@@ -164,7 +164,7 @@ storage:
 
     # Extra cmdline args for the qemu invocation.
     # Customize as needed :)
-    CMD_LINE_ARGS = []
+    CMD_LINE_ARGS = ["-append", "console=tty0 console=ttyS0,115200n8"]
     CMD_LINE_ENVS = {}
 
     # Extra coreos cmdline args for the qemu invocation.
