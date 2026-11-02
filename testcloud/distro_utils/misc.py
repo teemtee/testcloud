@@ -13,6 +13,12 @@ from packaging.version import Version
 config_data = config.get_config()
 log = logging.getLogger("testcloud.util")
 
+try:
+    import requests_cache
+
+except ImportError:
+    _HAS_REQUESTS_SESSION_CACHE = False
+
 
 def parse_latest_qcow(rule: str, url: str) -> str:
     session = get_requests_session()
@@ -27,12 +33,7 @@ def parse_latest_qcow(rule: str, url: str) -> str:
 
 
 def get_requests_session():
-    try:
-        assert config_data.CACHE_IMAGES
-        import requests_cache
-
-        assert Version(requests_cache.__version__) >= Version("1.2")
-
+    if config_data.CACHE_IMAGES and _HAS_REQUESTS_SESSION_CACHE:
         log.debug("Using local image url cache...")
         return requests_cache.CachedSession(
             cache_name="{}/testcloud_image_resolve_cache".format(config_data.DATA_DIR),
@@ -40,6 +41,6 @@ def get_requests_session():
             stale_if_error=True,
             expire_after=config_data.TRUST_DEADLINE * 60 * 60 * 24,
         )
-    except (ImportError, AssertionError):
-        log.debug("Not using local image url cache due to config or unmet dependencies...")
-        return requests.Session()
+
+    log.debug("Not using local image url cache due to config or unmet dependencies...")
+    return requests.Session()
