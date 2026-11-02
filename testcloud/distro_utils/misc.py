@@ -13,11 +13,16 @@ from packaging.version import Version
 config_data = config.get_config()
 log = logging.getLogger("testcloud.util")
 
+
+_HAS_REQUESTS_SESSION_CACHE = False
+
 try:
     import requests_cache
 
+    _HAS_REQUESTS_SESSION_CACHE = True
+
 except ImportError:
-    _HAS_REQUESTS_SESSION_CACHE = False
+    pass
 
 
 def parse_latest_qcow(rule: str, url: str) -> str:
