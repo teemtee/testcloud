@@ -174,6 +174,15 @@ def get_fedora_image_url(version: str, arch: str) -> str:
         log.error("Couldn't fetch Fedora releases list...")
         raise exceptions.TestcloudImageError
 
+    # TODO: remove before merging
+    for release in releases:
+        if release["version"] == "45 Beta":
+            release = release.copy()
+
+            release['version'] = '45'
+
+            releases.append(release)
+
     url = ""
     for release in releases:
         if release["version"] == version and release["subvariant"] == "Cloud_Base" and release["link"].endswith(".qcow2"):
