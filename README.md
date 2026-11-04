@@ -439,6 +439,10 @@ The release process can be summed up to these steps:
 
 ### Releases
 
+#### 0.13.0
+
+* Better test for requests-cache presence and enablement
+
 #### 0.12.0
 
 * Add support for the RISC-V architecture
