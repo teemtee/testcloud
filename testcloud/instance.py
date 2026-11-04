@@ -249,8 +249,6 @@ class Instance(object):
         self.connection = connection
         self.pci_net = None
 
-        self.vnc = False
-        self.graphics = False
         self.hostname = hostname if hostname else config_data.HOSTNAME
 
         self.image_path = os.path.join(config_data.DATA_DIR, "instances", self.name, self.name + "-local.qcow2")

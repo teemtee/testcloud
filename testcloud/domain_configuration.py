@@ -345,6 +345,22 @@ class IOMMUConfiguration:
             model=self.model
         )
 
+
+class GraphicsConfiguration:
+    def __init__(self, graphics_type="spice", listen_address=None) -> None:
+        self.graphics_type = graphics_type
+        self.listen_address = listen_address
+
+    def generate(self):
+        listen_attr = " listen='{}'".format(self.listen_address) if self.listen_address else ""
+        return """
+        <graphics type='{graphics_type}' autoport='yes'{listen_attr}/>
+        <video>
+            <model type='virtio'/>
+        </video>
+        """.format(graphics_type=self.graphics_type, listen_attr=listen_attr)
+
+
 def get_console_log_real_path(instance_uuid: str, suffix="console.log"):
     return os.path.join(config_data.CONSOLE_LOG_DIR, f"{instance_uuid}-{suffix}")
 
@@ -358,6 +374,7 @@ class DomainConfiguration:
     tpm_configuration: Optional[TPMConfiguration]
     virtiofs_configuration: list[VIRTIOFSConfiguration]
     iommu_configuration: Optional[IOMMUConfiguration]
+    graphics_configuration: Optional[GraphicsConfiguration]
     qemu_args: list[str]
     qemu_envs: dict[str, str]
     coreos: Optional[bool]
@@ -382,6 +399,7 @@ class DomainConfiguration:
         self.console_log_file = None
         self.virtiofs_configuration = []
         self.iommu_configuration = None
+        self.graphics_configuration = None
         self.qemu_args = []
         self.qemu_envs = {}
         self.coreos = False
@@ -490,6 +508,7 @@ class DomainConfiguration:
                 {tpm}
                 {virtiofs_device}
                 {iommu}
+                {graphics}
             </devices>
             <qemu:commandline>
                 {qemu_args}
@@ -511,6 +530,7 @@ class DomainConfiguration:
             virtiofs_head=self.generate_virtiofs_head() if self.virtiofs_configuration else "",
             virtiofs_device=self.generate_virtiofs_mounts() if self.virtiofs_configuration else "",
             iommu=self.iommu_configuration.generate() if self.iommu_configuration else "",
+            graphics=self.graphics_configuration.generate() if self.graphics_configuration else "",
             qemu_args=self.get_qemu_args(),
             qemu_envs=self.get_qemu_envs(),
         )
@@ -535,6 +555,7 @@ def _get_default_domain_conf(
     virtiofs_source: Optional[str] = None,
     virtiofs_target: Optional[str] = None,
     iommu: bool = False,
+    graphics: str = "none",
 ):
 
     desired_arch = desired_arch or platform.machine()
@@ -608,5 +629,10 @@ def _get_default_domain_conf(
 
     if iommu:
         domain_configuration.iommu_configuration = IOMMUConfiguration()
+
+    if graphics in ("spice", "vnc"):
+        listen_address = "127.0.0.1" if connection == "qemu:///system" else None
+        domain_configuration.graphics_configuration = GraphicsConfiguration(
+            graphics_type=graphics, listen_address=listen_address)
 
     return domain_configuration
